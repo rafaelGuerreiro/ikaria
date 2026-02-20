@@ -28,17 +28,17 @@ tasks:
     desc: Build server wasm target and host workspace targets
     deps: [clippy]
     cmds:
-      - cargo build -p ikaria-server --target wasm32-unknown-unknown
-      - cargo build --workspace --exclude ikaria-server
+      - cargo build -p ikariadb --target wasm32-unknown-unknown
+      - cargo build --workspace --exclude ikariadb
 
   test-server:
     desc: Run server tests
     deps: [clippy]
     cmds:
-      - cargo test -p ikaria-server
+      - cargo test -p ikariadb
 
   test-client:
     desc: Run client tests
     deps: [clippy]
     cmds:
-      - cargo test -p ikaria-client
+      - cargo test -p ikaria

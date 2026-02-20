@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use ikaria_shared::protocol::WorldTick;
 
 struct IkariaClientPlugin;
 
@@ -9,10 +8,7 @@ impl Plugin for IkariaClientPlugin {
     }
 }
 
-fn startup() {
-    let tick = WorldTick { tick: 0 };
-    info!("Ikaria client scaffold initialized at tick {}.", tick.tick);
-}
+fn startup() {}
 
 fn main() {
     App::new()

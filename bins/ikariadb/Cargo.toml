@@ -1,10 +1,15 @@
 [package]
-name = "ikaria-server"
+name = "ikariadb"
 version = { workspace = true }
 edition = { workspace = true }
 publish = { workspace = true }
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
+ikaria-shared = { workspace = true }
+
 anyhow = { workspace = true }
 spacetimedb = { workspace = true }
-ikaria-shared = { workspace = true }
+thiserror = { workspace = true }

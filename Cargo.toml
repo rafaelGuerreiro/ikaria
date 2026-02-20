@@ -10,6 +10,7 @@ publish = false
 [workspace.dependencies]
 ikaria-shared = { path = "sdks/shared" }
 
-anyhow = "1"
-bevy = "0.18"
-spacetimedb = "1"
+anyhow = "1.0.102"
+bevy = "0.18.0"
+spacetimedb = "1.12.0"
+thiserror = "2.0.18"

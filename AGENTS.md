@@ -7,7 +7,7 @@
 
 ## Build, test, lint
 - Full workspace check: `cargo check --workspace`
-- Check one crate: `cargo check -p ikaria-server` or `cargo check -p ikaria-client`
+- Check one crate: `cargo check -p ikariadb` or `cargo check -p ikaria`
 - Full test suite: `cargo test --workspace`
 - Run a single test by name: `cargo test -p <crate> <test_name>`
 - Run one integration test target: `cargo test -p <crate> --test <target_name>`

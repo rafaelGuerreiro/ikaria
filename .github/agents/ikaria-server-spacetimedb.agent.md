@@ -1,5 +1,5 @@
 ---
-name: ikaria-server-spacetimedb
+name: ikariadb-spacetimedb
 description: Specialized agent for Ikaria SpacetimeDB server work in bins/server, focusing on reducer/service boundaries and deterministic gameplay state transitions.
 target: github-copilot
 tools: [read, edit, search, execute]

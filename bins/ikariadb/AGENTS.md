@@ -20,16 +20,17 @@ Optional from `bins/server` (`bins/server/Taskfile.yml`):
 - `task --taskfile bins/server/Taskfile.yml build`
 
 Direct cargo fallback:
-- Check server crate: `cargo check -p ikaria-server`
-- Run server tests: `cargo test -p ikaria-server`
-- Run one test by name: `cargo test -p ikaria-server <test_name>`
-- Lint server crate: `cargo clippy -p ikaria-server --all-targets -- -D warnings`
-- Run scaffold binary: `cargo run -p ikaria-server`
+- Check server crate: `cargo check -p ikariadb`
+- Run server tests: `cargo test -p ikariadb`
+- Run one test by name: `cargo test -p ikariadb <test_name>`
+- Lint server crate: `cargo clippy -p ikariadb --all-targets -- -D warnings`
+- Run scaffold binary: `cargo run -p ikariadb`
 - If server changes touch shared types, also run: `cargo check --workspace`
 
 ## Server architecture direction
-- `ikaria-server` is the authoritative backend crate and consumes shared contracts from `ikaria-shared` (`sdks/shared`).
+- `ikariadb` is the authoritative backend crate and consumes shared contracts from `ikaria-shared` (`sdks/shared`).
 - Dependency versions live in root `[workspace.dependencies]`; `bins/server/Cargo.toml` must reference them via `workspace = true`.
+- Shared server utilities live in `src/error.rs` and `src/extend/validate.rs` and should be reused for new domains/reducers.
 - As the module grows, follow a split similar to:
   - reducer entrypoints + lifecycle hooks (`init`, `client_connected`, `client_disconnected`)
   - domain services for business logic

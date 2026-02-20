@@ -1,5 +1,5 @@
 ---
-name: ikaria-server-spacetimedb
+name: ikariadb-spacetimedb
 description: Use for SpacetimeDB backend work in bins/server, including reducer/service architecture, deterministic state updates, and server validation.
 ---
 
