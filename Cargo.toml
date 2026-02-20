@@ -1,0 +1,15 @@
+[workspace]
+members = ["bins/*", "sdks/*"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+publish = false
+
+[workspace.dependencies]
+ikaria-shared = { path = "sdks/shared" }
+
+anyhow = "1"
+bevy = "0.18"
+spacetimedb = "1"

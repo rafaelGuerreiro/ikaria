@@ -1,0 +1,44 @@
+version: '3'
+
+tasks:
+  fmt:
+    desc: Format all workspace code
+    cmds:
+      - cargo fmt --all
+
+  clippy:
+    desc: Lint all workspace targets
+    deps: [fmt]
+    cmds:
+      - cargo clippy --workspace --all-targets -- -D warnings
+
+  check:
+    desc: Check all workspace targets
+    deps: [clippy]
+    cmds:
+      - cargo check --workspace --all-targets
+
+  test:
+    desc: Run all workspace tests
+    deps: [clippy]
+    cmds:
+      - cargo test --workspace
+
+  build:
+    desc: Build server wasm target and host workspace targets
+    deps: [clippy]
+    cmds:
+      - cargo build -p ikaria-server --target wasm32-unknown-unknown
+      - cargo build --workspace --exclude ikaria-server
+
+  test-server:
+    desc: Run server tests
+    deps: [clippy]
+    cmds:
+      - cargo test -p ikaria-server
+
+  test-client:
+    desc: Run client tests
+    deps: [clippy]
+    cmds:
+      - cargo test -p ikaria-client

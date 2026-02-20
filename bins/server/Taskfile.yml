@@ -1,0 +1,32 @@
+version: '3'
+
+tasks:
+  fmt:
+    desc: Format workspace code
+    cmds:
+      - cargo fmt --all
+
+  clippy:
+    desc: Lint server targets
+    deps: [fmt]
+    cmds:
+      - cargo clippy -p ikaria-server --all-targets -- -D warnings
+
+  check:
+    desc: Check server targets
+    deps: [clippy]
+    cmds:
+      - cargo check -p ikaria-server --all-targets
+
+  test:
+    desc: Run server tests
+    deps: [clippy]
+    cmds:
+      - cargo test -p ikaria-server
+
+  build:
+    desc: Build SpacetimeDB wasm target and host crates (ARM-friendly split)
+    deps: [clippy]
+    cmds:
+      - cargo build -p ikaria-server --target wasm32-unknown-unknown
+      - cargo build --workspace --exclude ikaria-server

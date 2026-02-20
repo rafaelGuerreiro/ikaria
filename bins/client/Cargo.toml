@@ -1,0 +1,9 @@
+[package]
+name = "ikaria-client"
+version = { workspace = true }
+edition = { workspace = true }
+publish = { workspace = true }
+
+[dependencies]
+bevy = { workspace = true }
+ikaria-shared = { workspace = true }
