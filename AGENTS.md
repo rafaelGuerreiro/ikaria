@@ -1,31 +1,39 @@
-# Ikaria Agent Guide
+# Ikaria Monorepo Agent Guide
+
+## Scope
+This file is for repository-wide guidance only.  
+Backend/database-specific rules live in `bins/ikariadb/AGENTS.md`.
 
 ## Workspace layout
-- `bins/server`: SpacetimeDB-backed server executable.
-- `bins/client`: Bevy-based game client executable.
-- `sdks/shared`: Shared protocol/domain types consumed by both binaries.
+- `bins/ikariadb`: SpacetimeDB backend module.
+- `bins/ikaria`: Bevy client.
+- `sdks/types`: generated Rust bindings consumed by the client.
+- `sdks/shared`: hand-written shared constants.
 
-## Build, test, lint
-- Full workspace check: `cargo check --workspace`
-- Check one crate: `cargo check -p ikariadb` or `cargo check -p ikaria`
-- Full test suite: `cargo test --workspace`
-- Run a single test by name: `cargo test -p <crate> <test_name>`
-- Run one integration test target: `cargo test -p <crate> --test <target_name>`
-- Lint: `cargo clippy --workspace --all-targets -- -D warnings`
-- Format: `cargo fmt --all`
-- Format check: `cargo fmt --all --check`
+## Canonical workflow (root)
+Use `Taskfile.yml` from repository root:
 
-## Architecture (big picture)
-- This repository is a Rust workspace monorepo for Ikaria (Tibia-inspired).
-- Dependency versions are centralized in the root `Cargo.toml` under `[workspace.dependencies]`.
-- `ikaria-shared` (`sdks/shared`) is the contract layer for types exchanged between server and client.
-- The server side is intended to hold authoritative game state and game rules on top of SpacetimeDB patterns (tables + reducers).
-- The client side is intended to use Bevy ECS composition (plugins, systems, resources) to render and simulate client behavior.
+- `task sdk-rust` - regenerate Rust bindings into `sdks/types/src/autogen`.
+- `task fmt` - format workspace.
+- `task check` - lint + type-check workspace.
+- `task test` - run workspace tests.
+- `task build` - build backend wasm and host workspace targets.
+- `task login`, `task publish`, `task publish-prod`, `task unsafe-overwrite` - Spacetime environment operations.
 
-## Repository conventions
-- Add new executable crates under `bins/<name>` and new reusable crates under `sdks/<name>`.
-- When adding any dependency, define it in root `[workspace.dependencies]` and reference it in child crates with `workspace = true`.
-- Keep cross-boundary protocol types in `sdks/shared` to avoid duplicate definitions in `bins/server` and `bins/client`.
-- Avoid direct dependencies between binaries; share code via `sdks/*` crates.
-- For Bevy code, organize features as plugins and schedule systems explicitly (`Startup`, `Update`, etc.).
-- For SpacetimeDB code, keep reducer logic deterministic and centered around state transitions.
+## Generated SDK expectations
+- `sdks/types/src/autogen` is generated output; do not hand-edit it.
+- Client-facing backend types come from `ikaria-types`.
+- If backend schema/reducers change, regenerate bindings and re-check workspace compatibility.
+
+## Cross-cutting conventions
+- Keep dependency versions in root `[workspace.dependencies]`.
+- Child crates should reference shared dependencies with `workspace = true`.
+- Keep edits scoped: backend rules in backend AGENTS, client rules in client code, shared constants in `sdks/shared`.
+
+## Agent/skill catalog
+- Custom agents: `.github/agents/*.agent.md`
+- Skills: `.github/skills/**/SKILL.md`
+
+Use requirement-auditing assets for constrained requests before finalizing:
+- agent: `ikaria-requirement-auditor`
+- skill: `ikaria-requirement-lockstep`

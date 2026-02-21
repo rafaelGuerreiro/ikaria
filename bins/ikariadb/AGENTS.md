@@ -1,58 +1,43 @@
-# Ikaria Server Agent Guide
+# Ikariadb Agent Guide
 
 ## Scope
-This file is for `bins/server` only (SpacetimeDB backend work).
+This file covers backend/database work in `bins/ikariadb` only.
 
-## Build, test, lint (server-focused)
-Preferred from repository root (`Taskfile.yml`):
-- `task fmt`
-- `task clippy`
+## Build, test, validate
+Use root tasks (preferred):
 - `task check`
 - `task test`
 - `task build`
-- `task test-server`
 
-Dependency rule: all non-`fmt` tasks depend on `clippy`, and `clippy` depends on `fmt`.
+## Backend architecture
+- Entry points are in `src/lib.rs`:
+  - `init`
+  - `identity_connected`
+  - `identity_disconnected`
+- Domain modules are under `src/repository` (currently: `account`, `world`, `item`, `progression`, `event`).
+- Shared backend utility modules are in:
+  - `src/error.rs`
+  - `src/extend/*`
+- Event flow uses `repository/event*` with publisher/service + deferred scheduling pattern.
 
-Optional from `bins/server` (`bins/server/Taskfile.yml`):
-- `task --taskfile bins/server/Taskfile.yml check`
-- `task --taskfile bins/server/Taskfile.yml test`
-- `task --taskfile bins/server/Taskfile.yml build`
+## Schema and type rules
+- Table structs (`#[table(...)]`) must not derive traits.
+- IDs:
+  - users: `Identity`
+  - everything else: `u64`
+  - owning tables use `#[auto_inc]`.
+- Coordinates (`x`, `y`, `z`) use `u16`.
+- Ground baseline must come from `ikaria_shared::GROUND_LEVEL`.
+- Gameplay enums are backend-only and live under repository domain `types.rs` files.
+- Spacetime enums should use `V1` suffix (`DirectionV1`, `SkillV1`, etc.) and be annotated with `SpacetimeType`.
+- Avoid ID type aliases; use direct `Identity` / `u64` in table fields.
 
-Direct cargo fallback:
-- Check server crate: `cargo check -p ikariadb`
-- Run server tests: `cargo test -p ikariadb`
-- Run one test by name: `cargo test -p ikariadb <test_name>`
-- Lint server crate: `cargo clippy -p ikariadb --all-targets -- -D warnings`
-- Run scaffold binary: `cargo run -p ikariadb`
-- If server changes touch shared types, also run: `cargo check --workspace`
+## Generated client contract impact
+- Backend schema/reducer changes affect generated SDK in `sdks/types/src/autogen`.
+- Do not edit generated files manually.
+- After backend contract changes, regenerate bindings (`task sdk-rust`) and validate workspace builds/tests.
 
-## Server architecture direction
-- `ikariadb` is the authoritative backend crate and consumes shared contracts from `ikaria-shared` (`sdks/shared`).
-- Dependency versions live in root `[workspace.dependencies]`; `bins/server/Cargo.toml` must reference them via `workspace = true`.
-- Shared server utilities live in `src/error.rs` and `src/extend/validate.rs` and should be reused for new domains/reducers.
-- As the module grows, follow a split similar to:
-  - reducer entrypoints + lifecycle hooks (`init`, `client_connected`, `client_disconnected`)
-  - domain services for business logic
-  - domain tables/types/views grouped by domain
-
-Suggested layout once reducers are introduced:
-```
-src/
-├── lib.rs
-├── error.rs
-├── extend/
-└── repository/
-    ├── mod.rs
-    ├── {domain}.rs
-    └── {domain}/
-        ├── reducers.rs
-        ├── services.rs
-        ├── types.rs
-        └── views.rs
-```
-
-## Conventions to carry from blok/server
+## Implementation style
 - Keep reducers thin: validate input + access control + delegate to services.
 - Services own logic; pass `Identity` explicitly instead of reading sender implicitly deep in service code.
 - Enforce domain boundaries: each domain mutates its own tables; cross-domain writes go through the owning domain service API.
@@ -61,3 +46,5 @@ src/
 - Keep state transitions deterministic; use reducer context time/randomness (`ctx.timestamp`, context RNG) rather than system time/random.
 - Use typed domain errors mapped into a shared `ServiceResult<T>`/`ServiceError` model.
 - Keep shared protocol/data contracts in `sdks/shared` instead of duplicating server/client types.
+- Keep business logic in services/helpers, not reducer entrypoints.
+- Keep table changes compatible with event payloads and downstream generated types.
