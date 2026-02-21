@@ -8,9 +8,11 @@ version = "0.1.0"
 publish = false
 
 [workspace.dependencies]
+ikaria-types = { path = "sdks/types" }
 ikaria-shared = { path = "sdks/shared" }
 
 anyhow = "1.0.102"
 bevy = "0.18.0"
 spacetimedb = "1.12.0"
+spacetimedb-sdk = "1.12.0"
 thiserror = "2.0.18"

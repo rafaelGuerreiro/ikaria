@@ -1,44 +1,59 @@
 version: '3'
 
 tasks:
+  sdk-rust:
+    desc: Generate Rust types into sdks/types/src/autogen
+    deps: [check]
+    cmds:
+      - rm -rf sdks/types/src/autogen
+      - mkdir -p sdks/types/src/autogen
+      - spacetime generate --lang rust --out-dir sdks/types/src/autogen --project-path bins/ikariadb
+
   fmt:
     desc: Format all workspace code
+    deps: [sdk-rust]
     cmds:
       - cargo fmt --all
 
-  clippy:
-    desc: Lint all workspace targets
+  check:
+    desc: Check all workspace targets
     deps: [fmt]
     cmds:
       - cargo clippy --workspace --all-targets -- -D warnings
-
-  check:
-    desc: Check all workspace targets
-    deps: [clippy]
-    cmds:
       - cargo check --workspace --all-targets
 
   test:
     desc: Run all workspace tests
-    deps: [clippy]
+    deps: [check]
     cmds:
       - cargo test --workspace
 
   build:
     desc: Build server wasm target and host workspace targets
-    deps: [clippy]
+    deps: [check]
     cmds:
       - cargo build -p ikariadb --target wasm32-unknown-unknown
       - cargo build --workspace --exclude ikariadb
 
-  test-server:
-    desc: Run server tests
-    deps: [clippy]
+  login:
+    desc: Login to Spacetime using .env token
     cmds:
-      - cargo test -p ikariadb
+      - bash tools/spacetime_login.sh
 
-  test-client:
-    desc: Run client tests
-    deps: [clippy]
+  publish:
+    desc: Publish ikariadb-dev to maincloud
+    deps: [login, check]
     cmds:
-      - cargo test -p ikaria
+      - spacetime publish -p bins/ikariadb -s maincloud -y ikariadb-dev
+
+  publish-prod:
+    desc: Publish ikariadb to maincloud
+    deps: [login, check]
+    cmds:
+      - spacetime publish -p bins/ikariadb -s maincloud -y ikariadb
+
+  unsafe-overwrite:
+    desc: Publish ikariadb-dev to maincloud and delete data
+    deps: [login, check]
+    cmds:
+      - spacetime publish -p bins/ikariadb -s maincloud -y ikariadb-dev --delete-data

@@ -1,11 +1,8 @@
 [package]
-name = "ikaria"
+name = "ikaria-types"
 version = { workspace = true }
 edition = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
-ikaria-types = { workspace = true }
-ikaria-shared = { workspace = true }
-
-bevy = { workspace = true }
+spacetimedb-sdk = { workspace = true }
