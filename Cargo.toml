@@ -11,8 +11,8 @@ publish = false
 ikaria-types = { path = "sdks/types" }
 ikaria-shared = { path = "sdks/shared" }
 
-anyhow = "1.0.102"
-bevy = "0.18.0"
-spacetimedb = "1.12.0"
-spacetimedb-sdk = "1.12.0"
-thiserror = "2.0.18"
+bevy = { version = "0.18.0", features = ["dynamic_linking"] }
+log = { version = "0.4.29", features = ["max_level_debug", "release_max_level_warn"] }
+spacetimedb = { version = "1.12.0" }
+spacetimedb-sdk = { version = "1.12.0" }
+thiserror = { version = "2.0.18" }

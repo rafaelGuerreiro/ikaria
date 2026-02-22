@@ -3,6 +3,7 @@
 
 ### Development files ###
 .env
+.ikaria_token
 
 ### Linux ###
 *~

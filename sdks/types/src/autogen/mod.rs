@@ -18,12 +18,15 @@ pub mod identity_connected_reducer;
 pub mod identity_disconnected_reducer;
 pub mod item_definition_v_1_table;
 pub mod item_definition_v_1_type;
+pub mod map_tile_v_1_type;
+pub mod map_v_1_table;
+pub mod map_v_1_type;
 pub mod oneshot_deferred_event_scheduled_v_1_reducer;
 pub mod oneshot_deferred_event_v_1_table;
 pub mod oneshot_deferred_event_v_1_type;
 pub mod skill_v_1_type;
-pub mod town_v_1_table;
-pub mod town_v_1_type;
+pub mod town_temple_v_1_table;
+pub mod town_temple_v_1_type;
 pub mod user_v_1_table;
 pub mod user_v_1_type;
 
@@ -41,6 +44,9 @@ pub use identity_disconnected_reducer::{
 };
 pub use item_definition_v_1_table::*;
 pub use item_definition_v_1_type::ItemDefinitionV1;
+pub use map_tile_v_1_type::MapTileV1;
+pub use map_v_1_table::*;
+pub use map_v_1_type::MapV1;
 pub use oneshot_deferred_event_scheduled_v_1_reducer::{
     OneshotDeferredEventScheduledV1CallbackId, oneshot_deferred_event_scheduled_v_1,
     set_flags_for_oneshot_deferred_event_scheduled_v_1,
@@ -48,8 +54,8 @@ pub use oneshot_deferred_event_scheduled_v_1_reducer::{
 pub use oneshot_deferred_event_v_1_table::*;
 pub use oneshot_deferred_event_v_1_type::OneshotDeferredEventV1;
 pub use skill_v_1_type::SkillV1;
-pub use town_v_1_table::*;
-pub use town_v_1_type::TownV1;
+pub use town_temple_v_1_table::*;
+pub use town_temple_v_1_type::TownTempleV1;
 pub use user_v_1_table::*;
 pub use user_v_1_type::UserV1;
 
@@ -115,8 +121,9 @@ pub struct DbUpdate {
     character_skill_v_1: __sdk::TableUpdate<CharacterSkillV1>,
     character_v_1: __sdk::TableUpdate<CharacterV1>,
     item_definition_v_1: __sdk::TableUpdate<ItemDefinitionV1>,
+    map_v_1: __sdk::TableUpdate<MapV1>,
     oneshot_deferred_event_v_1: __sdk::TableUpdate<OneshotDeferredEventV1>,
-    town_v_1: __sdk::TableUpdate<TownV1>,
+    town_temple_v_1: __sdk::TableUpdate<TownTempleV1>,
     user_v_1: __sdk::TableUpdate<UserV1>,
 }
 
@@ -138,10 +145,13 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
                 "item_definition_v1" => db_update
                     .item_definition_v_1
                     .append(item_definition_v_1_table::parse_table_update(table_update)?),
+                "map_v1" => db_update.map_v_1.append(map_v_1_table::parse_table_update(table_update)?),
                 "oneshot_deferred_event_v1" => db_update
                     .oneshot_deferred_event_v_1
                     .append(oneshot_deferred_event_v_1_table::parse_table_update(table_update)?),
-                "town_v1" => db_update.town_v_1.append(town_v_1_table::parse_table_update(table_update)?),
+                "town_temple_v1" => db_update
+                    .town_temple_v_1
+                    .append(town_temple_v_1_table::parse_table_update(table_update)?),
                 "user_v1" => db_update.user_v_1.append(user_v_1_table::parse_table_update(table_update)?),
 
                 unknown => {
@@ -173,12 +183,15 @@ impl __sdk::DbUpdate for DbUpdate {
         diff.item_definition_v_1 = cache
             .apply_diff_to_table::<ItemDefinitionV1>("item_definition_v1", &self.item_definition_v_1)
             .with_updates_by_pk(|row| &row.item_id);
+        diff.map_v_1 = cache
+            .apply_diff_to_table::<MapV1>("map_v1", &self.map_v_1)
+            .with_updates_by_pk(|row| &row.map_id);
         diff.oneshot_deferred_event_v_1 = cache
             .apply_diff_to_table::<OneshotDeferredEventV1>("oneshot_deferred_event_v1", &self.oneshot_deferred_event_v_1)
             .with_updates_by_pk(|row| &row.job_id);
-        diff.town_v_1 = cache
-            .apply_diff_to_table::<TownV1>("town_v1", &self.town_v_1)
-            .with_updates_by_pk(|row| &row.town_id);
+        diff.town_temple_v_1 = cache
+            .apply_diff_to_table::<TownTempleV1>("town_temple_v1", &self.town_temple_v_1)
+            .with_updates_by_pk(|row| &row.town_temple_id);
         diff.user_v_1 = cache
             .apply_diff_to_table::<UserV1>("user_v1", &self.user_v_1)
             .with_updates_by_pk(|row| &row.user_id);
@@ -195,8 +208,9 @@ pub struct AppliedDiff<'r> {
     character_skill_v_1: __sdk::TableAppliedDiff<'r, CharacterSkillV1>,
     character_v_1: __sdk::TableAppliedDiff<'r, CharacterV1>,
     item_definition_v_1: __sdk::TableAppliedDiff<'r, ItemDefinitionV1>,
+    map_v_1: __sdk::TableAppliedDiff<'r, MapV1>,
     oneshot_deferred_event_v_1: __sdk::TableAppliedDiff<'r, OneshotDeferredEventV1>,
-    town_v_1: __sdk::TableAppliedDiff<'r, TownV1>,
+    town_temple_v_1: __sdk::TableAppliedDiff<'r, TownTempleV1>,
     user_v_1: __sdk::TableAppliedDiff<'r, UserV1>,
     __unused: std::marker::PhantomData<&'r ()>,
 }
@@ -215,12 +229,13 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
         callbacks.invoke_table_row_callbacks::<CharacterSkillV1>("character_skill_v1", &self.character_skill_v_1, event);
         callbacks.invoke_table_row_callbacks::<CharacterV1>("character_v1", &self.character_v_1, event);
         callbacks.invoke_table_row_callbacks::<ItemDefinitionV1>("item_definition_v1", &self.item_definition_v_1, event);
+        callbacks.invoke_table_row_callbacks::<MapV1>("map_v1", &self.map_v_1, event);
         callbacks.invoke_table_row_callbacks::<OneshotDeferredEventV1>(
             "oneshot_deferred_event_v1",
             &self.oneshot_deferred_event_v_1,
             event,
         );
-        callbacks.invoke_table_row_callbacks::<TownV1>("town_v1", &self.town_v_1, event);
+        callbacks.invoke_table_row_callbacks::<TownTempleV1>("town_temple_v1", &self.town_temple_v_1, event);
         callbacks.invoke_table_row_callbacks::<UserV1>("user_v1", &self.user_v_1, event);
     }
 }
@@ -946,8 +961,9 @@ impl __sdk::SpacetimeModule for RemoteModule {
         character_skill_v_1_table::register_table(client_cache);
         character_v_1_table::register_table(client_cache);
         item_definition_v_1_table::register_table(client_cache);
+        map_v_1_table::register_table(client_cache);
         oneshot_deferred_event_v_1_table::register_table(client_cache);
-        town_v_1_table::register_table(client_cache);
+        town_temple_v_1_table::register_table(client_cache);
         user_v_1_table::register_table(client_cache);
     }
 }

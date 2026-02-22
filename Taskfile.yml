@@ -3,7 +3,6 @@ version: '3'
 tasks:
   sdk-rust:
     desc: Generate Rust types into sdks/types/src/autogen
-    deps: [check]
     cmds:
       - rm -rf sdks/types/src/autogen
       - mkdir -p sdks/types/src/autogen
@@ -34,6 +33,12 @@ tasks:
     cmds:
       - cargo build -p ikariadb --target wasm32-unknown-unknown
       - cargo build --workspace --exclude ikariadb
+
+  run:
+    desc: Run the ikaria client
+    deps: [build]
+    cmds:
+      - cargo run -p ikaria
 
   login:
     desc: Login to Spacetime using .env token

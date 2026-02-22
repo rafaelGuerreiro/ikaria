@@ -1,5 +1,3 @@
-use std::{ops::Deref, time::Duration};
-
 use crate::{
     error::ServiceResult,
     repository::event::{
@@ -8,6 +6,7 @@ use crate::{
     },
 };
 use spacetimedb::{ReducerContext, Table};
+use std::{ops::Deref, time::Duration};
 
 pub trait EventReducerContext {
     fn event_services(&self) -> EventServices<'_>;

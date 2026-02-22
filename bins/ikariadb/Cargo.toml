@@ -10,6 +10,5 @@ crate-type = ["cdylib"]
 [dependencies]
 ikaria-shared = { workspace = true }
 
-anyhow = { workspace = true }
 spacetimedb = { workspace = true }
 thiserror = { workspace = true }
