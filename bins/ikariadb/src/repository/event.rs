@@ -20,10 +20,7 @@ pub struct OneshotDeferredEventV1 {
 }
 
 #[reducer]
-pub fn oneshot_deferred_event_scheduled_v1(
-    ctx: &ReducerContext,
-    timer: OneshotDeferredEventV1,
-) -> ServiceResult<()> {
+pub fn oneshot_deferred_event_scheduled_v1(ctx: &ReducerContext, timer: OneshotDeferredEventV1) -> ServiceResult<()> {
     ctx.require_internal_access()?;
     ctx.event_services().handle_deferred_event(timer);
     Ok(())

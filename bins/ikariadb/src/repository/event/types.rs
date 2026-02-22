@@ -36,12 +36,10 @@ impl EventPublisher<'_> {
     }
 
     pub fn user_signed_in(&self, user_id: Identity) -> ServiceResult<()> {
-        self.event_services()
-            .fire(EventV1::UserSignedIn { user_id })
+        self.event_services().fire(EventV1::UserSignedIn { user_id })
     }
 
     pub fn user_signed_out(&self, user_id: Identity) {
-        self.event_services()
-            .fire_and_forget(EventV1::UserSignedOut { user_id })
+        self.event_services().fire_and_forget(EventV1::UserSignedOut { user_id })
     }
 }

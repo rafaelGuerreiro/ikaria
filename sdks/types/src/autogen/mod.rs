@@ -35,17 +35,15 @@ pub use character_v_1_table::*;
 pub use character_v_1_type::CharacterV1;
 pub use deferred_event_v_1_type::DeferredEventV1;
 pub use direction_v_1_type::DirectionV1;
-pub use identity_connected_reducer::{
-    identity_connected, set_flags_for_identity_connected, IdentityConnectedCallbackId,
-};
+pub use identity_connected_reducer::{IdentityConnectedCallbackId, identity_connected, set_flags_for_identity_connected};
 pub use identity_disconnected_reducer::{
-    identity_disconnected, set_flags_for_identity_disconnected, IdentityDisconnectedCallbackId,
+    IdentityDisconnectedCallbackId, identity_disconnected, set_flags_for_identity_disconnected,
 };
 pub use item_definition_v_1_table::*;
 pub use item_definition_v_1_type::ItemDefinitionV1;
 pub use oneshot_deferred_event_scheduled_v_1_reducer::{
-    oneshot_deferred_event_scheduled_v_1, set_flags_for_oneshot_deferred_event_scheduled_v_1,
-    OneshotDeferredEventScheduledV1CallbackId,
+    OneshotDeferredEventScheduledV1CallbackId, oneshot_deferred_event_scheduled_v_1,
+    set_flags_for_oneshot_deferred_event_scheduled_v_1,
 };
 pub use oneshot_deferred_event_v_1_table::*;
 pub use oneshot_deferred_event_v_1_type::OneshotDeferredEventV1;
@@ -77,9 +75,7 @@ impl __sdk::Reducer for Reducer {
         match self {
             Reducer::IdentityConnected => "identity_connected",
             Reducer::IdentityDisconnected => "identity_disconnected",
-            Reducer::OneshotDeferredEventScheduledV1 { .. } => {
-                "oneshot_deferred_event_scheduled_v1"
-            }
+            Reducer::OneshotDeferredEventScheduledV1 { .. } => "oneshot_deferred_event_scheduled_v1",
             _ => unreachable!(),
         }
     }
@@ -88,27 +84,25 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
     type Error = __sdk::Error;
     fn try_from(value: __ws::ReducerCallInfo<__ws::BsatnFormat>) -> __sdk::Result<Self> {
         match &value.reducer_name[..] {
-            "identity_connected" => Ok(__sdk::parse_reducer_args::<
-                identity_connected_reducer::IdentityConnectedArgs,
-            >("identity_connected", &value.args)?
-            .into()),
-            "identity_disconnected" => Ok(__sdk::parse_reducer_args::<
-                identity_disconnected_reducer::IdentityDisconnectedArgs,
-            >("identity_disconnected", &value.args)?
-            .into()),
+            "identity_connected" => Ok(
+                __sdk::parse_reducer_args::<identity_connected_reducer::IdentityConnectedArgs>(
+                    "identity_connected",
+                    &value.args,
+                )?
+                .into(),
+            ),
+            "identity_disconnected" => Ok(
+                __sdk::parse_reducer_args::<identity_disconnected_reducer::IdentityDisconnectedArgs>(
+                    "identity_disconnected",
+                    &value.args,
+                )?
+                .into(),
+            ),
             "oneshot_deferred_event_scheduled_v1" => Ok(__sdk::parse_reducer_args::<
                 oneshot_deferred_event_scheduled_v_1_reducer::OneshotDeferredEventScheduledV1Args,
-            >(
-                "oneshot_deferred_event_scheduled_v1",
-                &value.args,
-            )?
+            >("oneshot_deferred_event_scheduled_v1", &value.args)?
             .into()),
-            unknown => {
-                Err(
-                    __sdk::InternalError::unknown_name("reducer", unknown, "ReducerCallInfo")
-                        .into(),
-                )
-            }
+            unknown => Err(__sdk::InternalError::unknown_name("reducer", unknown, "ReducerCallInfo").into()),
         }
     }
 }
@@ -132,9 +126,9 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
         let mut db_update = DbUpdate::default();
         for table_update in raw.tables {
             match &table_update.table_name[..] {
-                "character_position_v1" => db_update.character_position_v_1.append(
-                    character_position_v_1_table::parse_table_update(table_update)?,
-                ),
+                "character_position_v1" => db_update
+                    .character_position_v_1
+                    .append(character_position_v_1_table::parse_table_update(table_update)?),
                 "character_skill_v1" => db_update
                     .character_skill_v_1
                     .append(character_skill_v_1_table::parse_table_update(table_update)?),
@@ -144,24 +138,15 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
                 "item_definition_v1" => db_update
                     .item_definition_v_1
                     .append(item_definition_v_1_table::parse_table_update(table_update)?),
-                "oneshot_deferred_event_v1" => db_update.oneshot_deferred_event_v_1.append(
-                    oneshot_deferred_event_v_1_table::parse_table_update(table_update)?,
-                ),
-                "town_v1" => db_update
-                    .town_v_1
-                    .append(town_v_1_table::parse_table_update(table_update)?),
-                "user_v1" => db_update
-                    .user_v_1
-                    .append(user_v_1_table::parse_table_update(table_update)?),
+                "oneshot_deferred_event_v1" => db_update
+                    .oneshot_deferred_event_v_1
+                    .append(oneshot_deferred_event_v_1_table::parse_table_update(table_update)?),
+                "town_v1" => db_update.town_v_1.append(town_v_1_table::parse_table_update(table_update)?),
+                "user_v1" => db_update.user_v_1.append(user_v_1_table::parse_table_update(table_update)?),
 
                 unknown => {
-                    return Err(__sdk::InternalError::unknown_name(
-                        "table",
-                        unknown,
-                        "DatabaseUpdate",
-                    )
-                    .into());
-                }
+                    return Err(__sdk::InternalError::unknown_name("table", unknown, "DatabaseUpdate").into());
+                },
             }
         }
         Ok(db_update)
@@ -173,38 +158,23 @@ impl __sdk::InModule for DbUpdate {
 }
 
 impl __sdk::DbUpdate for DbUpdate {
-    fn apply_to_client_cache(
-        &self,
-        cache: &mut __sdk::ClientCache<RemoteModule>,
-    ) -> AppliedDiff<'_> {
+    fn apply_to_client_cache(&self, cache: &mut __sdk::ClientCache<RemoteModule>) -> AppliedDiff<'_> {
         let mut diff = AppliedDiff::default();
 
         diff.character_position_v_1 = cache
-            .apply_diff_to_table::<CharacterPositionV1>(
-                "character_position_v1",
-                &self.character_position_v_1,
-            )
+            .apply_diff_to_table::<CharacterPositionV1>("character_position_v1", &self.character_position_v_1)
             .with_updates_by_pk(|row| &row.character_position_id);
         diff.character_skill_v_1 = cache
-            .apply_diff_to_table::<CharacterSkillV1>(
-                "character_skill_v1",
-                &self.character_skill_v_1,
-            )
+            .apply_diff_to_table::<CharacterSkillV1>("character_skill_v1", &self.character_skill_v_1)
             .with_updates_by_pk(|row| &row.skill_entry_id);
         diff.character_v_1 = cache
             .apply_diff_to_table::<CharacterV1>("character_v1", &self.character_v_1)
             .with_updates_by_pk(|row| &row.character_id);
         diff.item_definition_v_1 = cache
-            .apply_diff_to_table::<ItemDefinitionV1>(
-                "item_definition_v1",
-                &self.item_definition_v_1,
-            )
+            .apply_diff_to_table::<ItemDefinitionV1>("item_definition_v1", &self.item_definition_v_1)
             .with_updates_by_pk(|row| &row.item_id);
         diff.oneshot_deferred_event_v_1 = cache
-            .apply_diff_to_table::<OneshotDeferredEventV1>(
-                "oneshot_deferred_event_v1",
-                &self.oneshot_deferred_event_v_1,
-            )
+            .apply_diff_to_table::<OneshotDeferredEventV1>("oneshot_deferred_event_v1", &self.oneshot_deferred_event_v_1)
             .with_updates_by_pk(|row| &row.job_id);
         diff.town_v_1 = cache
             .apply_diff_to_table::<TownV1>("town_v1", &self.town_v_1)
@@ -236,31 +206,15 @@ impl __sdk::InModule for AppliedDiff<'_> {
 }
 
 impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
-    fn invoke_row_callbacks(
-        &self,
-        event: &EventContext,
-        callbacks: &mut __sdk::DbCallbacks<RemoteModule>,
-    ) {
+    fn invoke_row_callbacks(&self, event: &EventContext, callbacks: &mut __sdk::DbCallbacks<RemoteModule>) {
         callbacks.invoke_table_row_callbacks::<CharacterPositionV1>(
             "character_position_v1",
             &self.character_position_v_1,
             event,
         );
-        callbacks.invoke_table_row_callbacks::<CharacterSkillV1>(
-            "character_skill_v1",
-            &self.character_skill_v_1,
-            event,
-        );
-        callbacks.invoke_table_row_callbacks::<CharacterV1>(
-            "character_v1",
-            &self.character_v_1,
-            event,
-        );
-        callbacks.invoke_table_row_callbacks::<ItemDefinitionV1>(
-            "item_definition_v1",
-            &self.item_definition_v_1,
-            event,
-        );
+        callbacks.invoke_table_row_callbacks::<CharacterSkillV1>("character_skill_v1", &self.character_skill_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterV1>("character_v1", &self.character_v_1, event);
+        callbacks.invoke_table_row_callbacks::<ItemDefinitionV1>("item_definition_v1", &self.item_definition_v_1, event);
         callbacks.invoke_table_row_callbacks::<OneshotDeferredEventV1>(
             "oneshot_deferred_event_v1",
             &self.oneshot_deferred_event_v_1,
@@ -531,21 +485,21 @@ impl __sdk::SubscriptionHandle for SubscriptionHandle {
 /// either a [`DbConnection`] or an [`EventContext`] and operate on either.
 pub trait RemoteDbContext:
     __sdk::DbContext<
-    DbView = RemoteTables,
-    Reducers = RemoteReducers,
-    SetReducerFlags = SetReducerFlags,
-    SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
->
+        DbView = RemoteTables,
+        Reducers = RemoteReducers,
+        SetReducerFlags = SetReducerFlags,
+        SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
+    >
 {
 }
 impl<
-        Ctx: __sdk::DbContext<
+    Ctx: __sdk::DbContext<
             DbView = RemoteTables,
             Reducers = RemoteReducers,
             SetReducerFlags = SetReducerFlags,
             SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
         >,
-    > RemoteDbContext for Ctx
+> RemoteDbContext for Ctx
 {
 }
 

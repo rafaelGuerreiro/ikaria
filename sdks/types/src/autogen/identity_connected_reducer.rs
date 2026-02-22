@@ -49,8 +49,7 @@ pub trait identity_connected {
 
 impl identity_connected for super::RemoteReducers {
     fn identity_connected(&self) -> __sdk::Result<()> {
-        self.imp
-            .call_reducer("identity_connected", IdentityConnectedArgs {})
+        self.imp.call_reducer("identity_connected", IdentityConnectedArgs {})
     }
     fn on_identity_connected(
         &self,

@@ -11,8 +11,5 @@ impl Plugin for IkariaClientPlugin {
 fn startup() {}
 
 fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugins(IkariaClientPlugin)
-        .run();
+    App::new().add_plugins(DefaultPlugins).add_plugins(IkariaClientPlugin).run();
 }

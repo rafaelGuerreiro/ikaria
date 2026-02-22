@@ -41,10 +41,7 @@ impl __sdk::__query_builder::HasCols for CharacterPositionV1 {
     type Cols = CharacterPositionV1Cols;
     fn cols(table_name: &'static str) -> Self::Cols {
         CharacterPositionV1Cols {
-            character_position_id: __sdk::__query_builder::Col::new(
-                table_name,
-                "character_position_id",
-            ),
+            character_position_id: __sdk::__query_builder::Col::new(table_name, "character_position_id"),
             character_id: __sdk::__query_builder::Col::new(table_name, "character_id"),
             town_id: __sdk::__query_builder::Col::new(table_name, "town_id"),
             x: __sdk::__query_builder::Col::new(table_name, "x"),
@@ -70,10 +67,7 @@ impl __sdk::__query_builder::HasIxCols for CharacterPositionV1 {
     fn ix_cols(table_name: &'static str) -> Self::IxCols {
         CharacterPositionV1IxCols {
             character_id: __sdk::__query_builder::IxCol::new(table_name, "character_id"),
-            character_position_id: __sdk::__query_builder::IxCol::new(
-                table_name,
-                "character_position_id",
-            ),
+            character_position_id: __sdk::__query_builder::IxCol::new(table_name, "character_position_id"),
             town_id: __sdk::__query_builder::IxCol::new(table_name, "town_id"),
         }
     }

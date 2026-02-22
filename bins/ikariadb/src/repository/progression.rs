@@ -1,7 +1,7 @@
-pub mod types;
-
 use self::types::SkillV1;
 use spacetimedb::table;
+
+pub mod types;
 
 #[table(name = character_skill_v1, private)]
 pub struct CharacterSkillV1 {

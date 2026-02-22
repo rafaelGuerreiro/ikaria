@@ -2,8 +2,7 @@
 // WILL NOT BE SAVED. MODIFY TABLES IN YOUR MODULE SOURCE CODE INSTEAD.
 
 #![allow(unused, clippy::all)]
-use super::character_position_v_1_type::CharacterPositionV1;
-use super::direction_v_1_type::DirectionV1;
+use super::{character_position_v_1_type::CharacterPositionV1, direction_v_1_type::DirectionV1};
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 /// Table handle for the table `character_position_v1`.
@@ -32,9 +31,7 @@ pub trait CharacterPositionV1TableAccess {
 impl CharacterPositionV1TableAccess for super::RemoteTables {
     fn character_position_v_1(&self) -> CharacterPositionV1TableHandle<'_> {
         CharacterPositionV1TableHandle {
-            imp: self
-                .imp
-                .get_table::<CharacterPositionV1>("character_position_v1"),
+            imp: self.imp.get_table::<CharacterPositionV1>("character_position_v1"),
             ctx: std::marker::PhantomData,
         }
     }
@@ -130,9 +127,7 @@ impl<'ctx> CharacterPositionV1TableHandle<'ctx> {
     /// Get a handle on the `character_position_id` unique index on the table `character_position_v1`.
     pub fn character_position_id(&self) -> CharacterPositionV1CharacterPositionIdUnique<'ctx> {
         CharacterPositionV1CharacterPositionIdUnique {
-            imp: self
-                .imp
-                .get_unique_constraint::<u64>("character_position_id"),
+            imp: self.imp.get_unique_constraint::<u64>("character_position_id"),
             phantom: std::marker::PhantomData,
         }
     }

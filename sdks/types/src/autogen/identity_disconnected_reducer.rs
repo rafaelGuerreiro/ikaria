@@ -49,8 +49,7 @@ pub trait identity_disconnected {
 
 impl identity_disconnected for super::RemoteReducers {
     fn identity_disconnected(&self) -> __sdk::Result<()> {
-        self.imp
-            .call_reducer("identity_disconnected", IdentityDisconnectedArgs {})
+        self.imp.call_reducer("identity_disconnected", IdentityDisconnectedArgs {})
     }
     fn on_identity_disconnected(
         &self,
@@ -76,8 +75,7 @@ impl identity_disconnected for super::RemoteReducers {
         ))
     }
     fn remove_on_identity_disconnected(&self, callback: IdentityDisconnectedCallbackId) {
-        self.imp
-            .remove_on_reducer("identity_disconnected", callback.0)
+        self.imp.remove_on_reducer("identity_disconnected", callback.0)
     }
 }
 
@@ -97,7 +95,6 @@ pub trait set_flags_for_identity_disconnected {
 
 impl set_flags_for_identity_disconnected for super::SetReducerFlags {
     fn identity_disconnected(&self, flags: __ws::CallReducerFlags) {
-        self.imp
-            .set_call_reducer_flags("identity_disconnected", flags);
+        self.imp.set_call_reducer_flags("identity_disconnected", flags);
     }
 }

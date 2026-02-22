@@ -40,10 +40,10 @@ impl Deref for EventServices<'_> {
 impl EventServices<'_> {
     fn handle_sync_event(&self, event: EventV1, _rethrow: bool) -> ServiceResult<()> {
         match event {
-            EventV1::SystemInit => {}
-            EventV1::UserCreated { .. } => {}
-            EventV1::UserSignedIn { .. } => {}
-            EventV1::UserSignedOut { .. } => {}
+            EventV1::SystemInit => {},
+            EventV1::UserCreated { .. } => {},
+            EventV1::UserSignedIn { .. } => {},
+            EventV1::UserSignedOut { .. } => {},
         }
 
         Ok(())
@@ -51,7 +51,7 @@ impl EventServices<'_> {
 
     pub fn handle_deferred_event(&self, timer: OneshotDeferredEventV1) {
         match timer.event {
-            DeferredEventV1::SignedOut { .. } => {}
+            DeferredEventV1::SignedOut { .. } => {},
         }
     }
 
@@ -71,15 +71,13 @@ impl EventServices<'_> {
     fn enqueue_deferred_event(&self, event: DeferredEventV1) {
         let scheduled_at = self.timestamp + Duration::from_millis(12);
 
-        self.db
-            .oneshot_deferred_event_v1()
-            .insert(OneshotDeferredEventV1 {
-                job_id: 0,
-                scheduled_at: scheduled_at.into(),
-                event,
-                sender: self.sender,
-                created_at: self.timestamp,
-            });
+        self.db.oneshot_deferred_event_v1().insert(OneshotDeferredEventV1 {
+            job_id: 0,
+            scheduled_at: scheduled_at.into(),
+            event,
+            sender: self.sender,
+            created_at: self.timestamp,
+        });
     }
 }
 

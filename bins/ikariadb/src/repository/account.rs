@@ -1,6 +1,6 @@
-pub mod types;
-
 use spacetimedb::{Identity, Timestamp, table};
+
+pub mod types;
 
 #[table(name = user_v1, private)]
 pub struct UserV1 {

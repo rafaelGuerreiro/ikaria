@@ -1,6 +1,6 @@
-pub mod types;
-
 use spacetimedb::table;
+
+pub mod types;
 
 #[table(name = item_definition_v1, private)]
 pub struct ItemDefinitionV1 {

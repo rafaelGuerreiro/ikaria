@@ -1,7 +1,7 @@
-pub mod types;
-
 use self::types::DirectionV1;
 use spacetimedb::{Timestamp, table};
+
+pub mod types;
 
 #[table(name = town_v1, private)]
 pub struct TownV1 {

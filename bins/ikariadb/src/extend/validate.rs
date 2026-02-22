@@ -3,53 +3,23 @@ use spacetimedb::ReducerContext;
 use thiserror::Error;
 
 pub trait ReducerContextRequirements {
-    fn validate_u8(
-        &self,
-        value: u8,
-        name: impl Into<String>,
-        min_value: u8,
-        max_value: u8,
-    ) -> ServiceResult<()> {
+    fn validate_u8(&self, value: u8, name: impl Into<String>, min_value: u8, max_value: u8) -> ServiceResult<()> {
         self.validate_u64(value as u64, name, min_value as u64, max_value as u64)
     }
 
-    fn validate_u16(
-        &self,
-        value: u16,
-        name: impl Into<String>,
-        min_value: u16,
-        max_value: u16,
-    ) -> ServiceResult<()> {
+    fn validate_u16(&self, value: u16, name: impl Into<String>, min_value: u16, max_value: u16) -> ServiceResult<()> {
         self.validate_u64(value as u64, name, min_value as u64, max_value as u64)
     }
 
-    fn validate_u32(
-        &self,
-        value: u32,
-        name: impl Into<String>,
-        min_value: u32,
-        max_value: u32,
-    ) -> ServiceResult<()> {
+    fn validate_u32(&self, value: u32, name: impl Into<String>, min_value: u32, max_value: u32) -> ServiceResult<()> {
         self.validate_u64(value as u64, name, min_value as u64, max_value as u64)
     }
 
-    fn validate_u64(
-        &self,
-        value: u64,
-        name: impl Into<String>,
-        min_value: u64,
-        max_value: u64,
-    ) -> ServiceResult<()> {
+    fn validate_u64(&self, value: u64, name: impl Into<String>, min_value: u64, max_value: u64) -> ServiceResult<()> {
         validate_u64(value, name, min_value, max_value)
     }
 
-    fn validate_str(
-        &self,
-        value: &str,
-        name: impl Into<String>,
-        min_len: u64,
-        max_len: u64,
-    ) -> ServiceResult<()> {
+    fn validate_str(&self, value: &str, name: impl Into<String>, min_len: u64, max_len: u64) -> ServiceResult<()> {
         validate_str(value, name, min_len, max_len)
     }
 
@@ -59,21 +29,13 @@ pub trait ReducerContextRequirements {
 impl ReducerContextRequirements for ReducerContext {
     fn require_internal_access(&self) -> ServiceResult<()> {
         if !self.sender_auth().is_internal() {
-            return Err(ServiceError::unauthorized(
-                self.sender,
-                "Private access required",
-            ));
+            return Err(ServiceError::unauthorized(self.sender, "Private access required"));
         }
         Ok(())
     }
 }
 
-fn validate_u64(
-    value: u64,
-    name: impl Into<String>,
-    min_value: u64,
-    max_value: u64,
-) -> ServiceResult<()> {
+fn validate_u64(value: u64, name: impl Into<String>, min_value: u64, max_value: u64) -> ServiceResult<()> {
     if value < min_value {
         Err(ValidationError::field_too_small(name, min_value))
     } else if value > max_value {
@@ -83,12 +45,7 @@ fn validate_u64(
     }
 }
 
-fn validate_str(
-    value: &str,
-    name: impl Into<String>,
-    min_len: u64,
-    max_len: u64,
-) -> ServiceResult<()> {
+fn validate_str(value: &str, name: impl Into<String>, min_len: u64, max_len: u64) -> ServiceResult<()> {
     let len = value.len() as u64;
     if min_len > 0 && value.is_empty() {
         Err(ValidationError::required_field(name))

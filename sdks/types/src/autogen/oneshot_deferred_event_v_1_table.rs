@@ -2,8 +2,7 @@
 // WILL NOT BE SAVED. MODIFY TABLES IN YOUR MODULE SOURCE CODE INSTEAD.
 
 #![allow(unused, clippy::all)]
-use super::deferred_event_v_1_type::DeferredEventV1;
-use super::oneshot_deferred_event_v_1_type::OneshotDeferredEventV1;
+use super::{deferred_event_v_1_type::DeferredEventV1, oneshot_deferred_event_v_1_type::OneshotDeferredEventV1};
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 /// Table handle for the table `oneshot_deferred_event_v1`.
@@ -32,9 +31,7 @@ pub trait OneshotDeferredEventV1TableAccess {
 impl OneshotDeferredEventV1TableAccess for super::RemoteTables {
     fn oneshot_deferred_event_v_1(&self) -> OneshotDeferredEventV1TableHandle<'_> {
         OneshotDeferredEventV1TableHandle {
-            imp: self
-                .imp
-                .get_table::<OneshotDeferredEventV1>("oneshot_deferred_event_v1"),
+            imp: self.imp.get_table::<OneshotDeferredEventV1>("oneshot_deferred_event_v1"),
             ctx: std::marker::PhantomData,
         }
     }
@@ -83,8 +80,7 @@ impl<'ctx> __sdk::Table for OneshotDeferredEventV1TableHandle<'ctx> {
 
 #[doc(hidden)]
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
-    let _table =
-        client_cache.get_or_make_table::<OneshotDeferredEventV1>("oneshot_deferred_event_v1");
+    let _table = client_cache.get_or_make_table::<OneshotDeferredEventV1>("oneshot_deferred_event_v1");
     _table.add_unique_constraint::<u64>("job_id", |row| &row.job_id);
 }
 pub struct OneshotDeferredEventV1UpdateCallbackId(__sdk::CallbackId);

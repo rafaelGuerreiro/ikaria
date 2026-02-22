@@ -1,9 +1,9 @@
+use crate::error::ServiceResult;
+use spacetimedb::{ReducerContext, reducer};
+
 pub mod error;
 pub mod extend;
 pub mod repository;
-
-use crate::error::ServiceResult;
-use spacetimedb::{ReducerContext, reducer};
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) {

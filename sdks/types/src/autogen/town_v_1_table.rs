@@ -53,10 +53,7 @@ impl<'ctx> __sdk::Table for TownV1TableHandle<'ctx> {
 
     type InsertCallbackId = TownV1InsertCallbackId;
 
-    fn on_insert(
-        &self,
-        callback: impl FnMut(&Self::EventContext, &Self::Row) + Send + 'static,
-    ) -> TownV1InsertCallbackId {
+    fn on_insert(&self, callback: impl FnMut(&Self::EventContext, &Self::Row) + Send + 'static) -> TownV1InsertCallbackId {
         TownV1InsertCallbackId(self.imp.on_insert(Box::new(callback)))
     }
 
@@ -66,10 +63,7 @@ impl<'ctx> __sdk::Table for TownV1TableHandle<'ctx> {
 
     type DeleteCallbackId = TownV1DeleteCallbackId;
 
-    fn on_delete(
-        &self,
-        callback: impl FnMut(&Self::EventContext, &Self::Row) + Send + 'static,
-    ) -> TownV1DeleteCallbackId {
+    fn on_delete(&self, callback: impl FnMut(&Self::EventContext, &Self::Row) + Send + 'static) -> TownV1DeleteCallbackId {
         TownV1DeleteCallbackId(self.imp.on_delete(Box::new(callback)))
     }
 

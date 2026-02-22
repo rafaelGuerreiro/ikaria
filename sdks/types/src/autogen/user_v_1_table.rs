@@ -53,10 +53,7 @@ impl<'ctx> __sdk::Table for UserV1TableHandle<'ctx> {
 
     type InsertCallbackId = UserV1InsertCallbackId;
 
-    fn on_insert(
-        &self,
-        callback: impl FnMut(&Self::EventContext, &Self::Row) + Send + 'static,
-    ) -> UserV1InsertCallbackId {
+    fn on_insert(&self, callback: impl FnMut(&Self::EventContext, &Self::Row) + Send + 'static) -> UserV1InsertCallbackId {
         UserV1InsertCallbackId(self.imp.on_insert(Box::new(callback)))
     }
 
@@ -66,10 +63,7 @@ impl<'ctx> __sdk::Table for UserV1TableHandle<'ctx> {
 
     type DeleteCallbackId = UserV1DeleteCallbackId;
 
-    fn on_delete(
-        &self,
-        callback: impl FnMut(&Self::EventContext, &Self::Row) + Send + 'static,
-    ) -> UserV1DeleteCallbackId {
+    fn on_delete(&self, callback: impl FnMut(&Self::EventContext, &Self::Row) + Send + 'static) -> UserV1DeleteCallbackId {
         UserV1DeleteCallbackId(self.imp.on_delete(Box::new(callback)))
     }
 

@@ -34,10 +34,7 @@ pub trait oneshot_deferred_event_scheduled_v_1 {
     /// This method returns immediately, and errors only if we are unable to send the request.
     /// The reducer will run asynchronously in the future,
     ///  and its status can be observed by listening for [`Self::on_oneshot_deferred_event_scheduled_v_1`] callbacks.
-    fn oneshot_deferred_event_scheduled_v_1(
-        &self,
-        timer: OneshotDeferredEventV1,
-    ) -> __sdk::Result<()>;
+    fn oneshot_deferred_event_scheduled_v_1(&self, timer: OneshotDeferredEventV1) -> __sdk::Result<()>;
     /// Register a callback to run whenever we are notified of an invocation of the reducer `oneshot_deferred_event_scheduled_v1`.
     ///
     /// Callbacks should inspect the [`__sdk::ReducerEvent`] contained in the [`super::ReducerEventContext`]
@@ -51,17 +48,11 @@ pub trait oneshot_deferred_event_scheduled_v_1 {
     ) -> OneshotDeferredEventScheduledV1CallbackId;
     /// Cancel a callback previously registered by [`Self::on_oneshot_deferred_event_scheduled_v_1`],
     /// causing it not to run in the future.
-    fn remove_on_oneshot_deferred_event_scheduled_v_1(
-        &self,
-        callback: OneshotDeferredEventScheduledV1CallbackId,
-    );
+    fn remove_on_oneshot_deferred_event_scheduled_v_1(&self, callback: OneshotDeferredEventScheduledV1CallbackId);
 }
 
 impl oneshot_deferred_event_scheduled_v_1 for super::RemoteReducers {
-    fn oneshot_deferred_event_scheduled_v_1(
-        &self,
-        timer: OneshotDeferredEventV1,
-    ) -> __sdk::Result<()> {
+    fn oneshot_deferred_event_scheduled_v_1(&self, timer: OneshotDeferredEventV1) -> __sdk::Result<()> {
         self.imp.call_reducer(
             "oneshot_deferred_event_scheduled_v1",
             OneshotDeferredEventScheduledV1Args { timer },
@@ -90,12 +81,8 @@ impl oneshot_deferred_event_scheduled_v_1 for super::RemoteReducers {
             }),
         ))
     }
-    fn remove_on_oneshot_deferred_event_scheduled_v_1(
-        &self,
-        callback: OneshotDeferredEventScheduledV1CallbackId,
-    ) {
-        self.imp
-            .remove_on_reducer("oneshot_deferred_event_scheduled_v1", callback.0)
+    fn remove_on_oneshot_deferred_event_scheduled_v_1(&self, callback: OneshotDeferredEventScheduledV1CallbackId) {
+        self.imp.remove_on_reducer("oneshot_deferred_event_scheduled_v1", callback.0)
     }
 }
 
@@ -115,7 +102,6 @@ pub trait set_flags_for_oneshot_deferred_event_scheduled_v_1 {
 
 impl set_flags_for_oneshot_deferred_event_scheduled_v_1 for super::SetReducerFlags {
     fn oneshot_deferred_event_scheduled_v_1(&self, flags: __ws::CallReducerFlags) {
-        self.imp
-            .set_call_reducer_flags("oneshot_deferred_event_scheduled_v1", flags);
+        self.imp.set_call_reducer_flags("oneshot_deferred_event_scheduled_v1", flags);
     }
 }

@@ -32,9 +32,7 @@ impl DurationExt for Duration {
     }
 
     fn from_hours_ext(hours: u64) -> Duration {
-        let secs = hours
-            .saturating_mul(MINS_PER_HOUR)
-            .saturating_mul(SECS_PER_MINUTE);
+        let secs = hours.saturating_mul(MINS_PER_HOUR).saturating_mul(SECS_PER_MINUTE);
         Duration::from_secs(secs)
     }
 
