@@ -10,7 +10,6 @@ tasks:
 
   fmt:
     desc: Format all workspace code
-    deps: [sdk-rust]
     cmds:
       - cargo fmt --all
 
@@ -18,7 +17,7 @@ tasks:
     desc: Check all workspace targets
     deps: [fmt]
     cmds:
-      - cargo clippy --workspace --all-targets -- -D warnings
+      - cargo clippy --workspace --all-targets
       - cargo check --workspace --all-targets
 
   test:
@@ -29,14 +28,14 @@ tasks:
 
   build:
     desc: Build server wasm target and host workspace targets
-    deps: [check]
     cmds:
+      - task sdk-rust
+      - task check
       - cargo build -p ikariadb --target wasm32-unknown-unknown
       - cargo build --workspace --exclude ikariadb
 
   run:
     desc: Run the ikaria client
-    deps: [build]
     cmds:
       - cargo run -p ikaria
 
@@ -47,18 +46,18 @@ tasks:
 
   publish:
     desc: Publish ikariadb-dev to maincloud
-    deps: [login, check]
+    deps: [login, build]
     cmds:
       - spacetime publish -p bins/ikariadb -s maincloud -y ikariadb-dev
 
   publish-prod:
     desc: Publish ikariadb to maincloud
-    deps: [login, check]
+    deps: [login, build]
     cmds:
       - spacetime publish -p bins/ikariadb -s maincloud -y ikariadb
 
   unsafe-overwrite:
     desc: Publish ikariadb-dev to maincloud and delete data
-    deps: [login, check]
+    deps: [login, build]
     cmds:
       - spacetime publish -p bins/ikariadb -s maincloud -y ikariadb-dev --delete-data

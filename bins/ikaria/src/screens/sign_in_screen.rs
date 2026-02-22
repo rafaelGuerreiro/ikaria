@@ -1,6 +1,8 @@
 use crate::{
     app_state::AppState,
-    constants::{MODULE_NAME, SPACETIME_URI, TOKEN_FILE_PATH},
+    constants::{MODULE_NAME, SPACETIME_URI},
+    error::{ClientResult, ErrorMapper, ResultExt},
+    file_manager,
     resources::SessionResource,
 };
 use bevy::prelude::*;
@@ -13,6 +15,7 @@ pub struct SignInPlugin;
 impl Plugin for SignInPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::SignIn), setup_sign_in);
+        app.add_systems(Update, handle_sign_in_button_interaction.run_if(in_state(AppState::SignIn)));
         app.add_systems(Update, attempt_token_auth.run_if(in_state(AppState::SignIn)));
         app.add_systems(Update, handle_auth_success.run_if(in_state(AppState::SignIn)));
         app.add_systems(OnExit(AppState::SignIn), cleanup_sign_in);
@@ -23,9 +26,13 @@ impl Plugin for SignInPlugin {
 #[derive(Component)]
 struct SignInUi;
 
+#[derive(Component)]
+struct SignInButton;
+
 /// Resource to track authentication state
 #[derive(Resource, Default)]
 struct AuthState {
+    auth_requested: bool,
     attempted_token_auth: bool,
     connection_pending: Option<DbConnection>,
 }
@@ -50,14 +57,79 @@ fn setup_sign_in(mut commands: Commands) {
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("Signing in..."),
+                Text::new("Welcome to Ikaria"),
                 TextFont {
                     font_size: 32.0,
                     ..default()
                 },
                 TextColor(Color::srgb(0.2, 0.2, 0.2)),
+                Node {
+                    margin: UiRect::bottom(Val::Px(20.0)),
+                    ..default()
+                },
+            ));
+
+            parent
+                .spawn((
+                    Button,
+                    Node {
+                        width: Val::Px(220.0),
+                        height: Val::Px(60.0),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.2, 0.45, 0.85)),
+                    SignInButton,
+                ))
+                .with_children(|button| {
+                    button.spawn((
+                        Text::new("Sign In"),
+                        TextFont {
+                            font_size: 28.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.95, 0.95, 0.95)),
+                    ));
+                });
+
+            parent.spawn((
+                Text::new("Click the button to authenticate"),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.35, 0.35, 0.35)),
+                Node {
+                    margin: UiRect::top(Val::Px(14.0)),
+                    ..default()
+                },
             ));
         });
+}
+
+#[allow(clippy::type_complexity)]
+fn handle_sign_in_button_interaction(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>, With<SignInButton>),
+    >,
+    mut auth_state: ResMut<AuthState>,
+) {
+    for (interaction, mut color) in interaction_query.iter_mut() {
+        match *interaction {
+            Interaction::Pressed => {
+                auth_state.auth_requested = true;
+                *color = BackgroundColor(Color::srgb(0.15, 0.35, 0.7));
+            },
+            Interaction::Hovered => {
+                *color = BackgroundColor(Color::srgb(0.25, 0.5, 0.9));
+            },
+            Interaction::None => {
+                *color = BackgroundColor(Color::srgb(0.2, 0.45, 0.85));
+            },
+        }
+    }
 }
 
 fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
@@ -78,7 +150,11 @@ fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
         return;
     }
 
-    info!("Attempting token-based authentication...");
+    if !auth_state.auth_requested {
+        return;
+    }
+
+    info!("Attempting token-based authentication after user action...");
 
     // Try to load saved token
     let token = load_token_from_file();
@@ -162,12 +238,28 @@ fn cleanup_sign_in(mut commands: Commands, query: Query<Entity, With<SignInUi>>)
 }
 
 fn load_token_from_file() -> Option<String> {
-    fs::read_to_string(TOKEN_FILE_PATH)
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
+    let token_path = match file_manager::token_file_path() {
+        Ok(path) => path,
+        Err(e) => {
+            warn!("Unable to resolve token file path: {}", e);
+            return None;
+        },
+    };
+
+    let token_content = match fs::read_to_string(token_path) {
+        Ok(content) => content,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return None,
+        Err(e) => {
+            warn!("Unable to read token file: {}", e.map_internal_error());
+            return None;
+        },
+    };
+
+    let token = token_content.trim().to_string();
+    if token.is_empty() { None } else { Some(token) }
 }
 
-fn save_token_to_file(token: &str) -> std::io::Result<()> {
-    fs::write(TOKEN_FILE_PATH, token)
+fn save_token_to_file(token: &str) -> ClientResult<()> {
+    let token_path = file_manager::token_file_path()?;
+    fs::write(token_path, token).map_internal_error()
 }

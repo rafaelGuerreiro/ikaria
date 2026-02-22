@@ -13,6 +13,7 @@ Use root tasks (preferred):
 - Client runtime uses Bevy `0.18.0` from workspace dependencies.
 - Backend contract types consumed by the client come from `ikaria-types`.
 - Shared gameplay constants should live in `ikaria-shared` when reused across crates.
+- Before silencing any Rust/Clippy error or warning (including via `#[allow(...)]`), ask the user first and wait for explicit approval.
 
 ## Bevy 0.18 implementation rules
 - Organize features into plugins (auth, character selection, game world, movement, camera), ideally one plugin per screen/feature.
