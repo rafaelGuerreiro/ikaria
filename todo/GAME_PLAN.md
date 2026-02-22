@@ -56,7 +56,7 @@ Build vertical slices where each slice can be tested in-game immediately.
 5. `m0-client-world-selection`
    - Add manual world selection screen before initial sign-in.
    - Playable result: player explicitly chooses a world first.
-6. `m0-client-dual-connection-flow`
+6. `m0-client-single-connection-flow`
    - Implement single connection flow: connect/authenticate only against selected world module.
    - Playable result: no second authentication is required to enter gameplay.
 7. `m0-world-split-playtest`
