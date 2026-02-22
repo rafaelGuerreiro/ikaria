@@ -2,6 +2,7 @@
 
 ## Goal
 Plan the first playable client loop for a Tibia-inspired 2D game: sign in, select/create character, and walk in a grassland map.
+- UI presentation mode is light mode.
 
 ## Core world rules
 - The game is 2D and tile-based.
@@ -16,6 +17,11 @@ Plan the first playable client loop for a Tibia-inspired 2D game: sign in, selec
 - Represent top-level flow as `AppState` and switch views via `NextState<AppState>`.
 - Keep each view in its own plugin with co-located `OnEnter` setup, `Update` systems gated by `run_if(in_state(...))`, and `OnExit` cleanup.
 - Add `SubStates` only when a view needs internal phases (example: `GameLoading` -> `GamePlaying`).
+- Connect against the development module (`ikariadb-dev`) for client development.
+
+### Connection and tick policy
+- Use `frame_tick()` as the connection advancement strategy.
+- Do not process server ticks on the initial screen before connection; start ticking from post-connection views.
 
 ### 1) SignIn view
 **Purpose**
@@ -65,6 +71,7 @@ Plan the first playable client loop for a Tibia-inspired 2D game: sign in, selec
 - Keep long-lived cross-view data in resources (`SessionResource`, `SelectedCharacterResource`, local player reference).
 - Keep screen-local entities/components owned by the corresponding state/view plugin.
 - Use events for cross-feature communication (auth success, character confirmed, move target requested) to reduce plugin coupling.
+- Subscribe to all tables after connection and let view/state logic determine what data is visible to the player.
 
 ## Movement model
 - **WASD**: move using `W/A/S/D` keys (Bevy `KeyCode::KeyW/KeyA/KeyS/KeyD`).

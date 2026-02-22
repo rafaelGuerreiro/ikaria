@@ -33,6 +33,10 @@ Use root tasks (preferred):
 - `src/resources`: long-lived cross-view resources.
 - `src/events`: events shared between features/plugins.
 
+## Client reference docs
+- `bins/ikaria/GAME_STRUCTURE.md`: authoritative view/state flow, visibility model, and runtime ordering expectations.
+- `bins/ikaria/SPACETIMEDB_RUST_SDK.md`: authoritative SpacetimeDB Rust SDK usage, module target, ticking policy, and subscription strategy.
+
 ## View and movement expectations
 - Sign-in supports loading a saved token from file before manual auth fallback.
 - Character creation input is restricted to `name` and `gender`.
