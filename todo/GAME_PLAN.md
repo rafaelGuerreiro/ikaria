@@ -56,7 +56,7 @@ Build vertical slices where each slice can be tested in-game immediately.
 - `m0-client-world-selection`
    - Add manual world selection screen before initial sign-in.
    - Playable result: player explicitly chooses a world first.
-- `m0-client-dual-connection-flow`
+- `m0-client-single-connection-flow`
    - Implement single connection flow: connect/authenticate only against selected world module.
    - Playable result: no second authentication is required to enter gameplay.
 - `m0-world-split-playtest`
@@ -67,7 +67,7 @@ Build vertical slices where each slice can be tested in-game immediately.
 - `m1-create-character-schema`
    - Add schema support required for name+gender creation contract.
    - Playable result: backend contract supports proper create payload.
-- `m1-create-character-reducer`
+2. `m1-create-character-reducer`
    - Implement reducer/service with validation and global name uniqueness.
    - Playable result: reducer callable and creates persisted characters.
 - `m1-create-character-client-flow`
