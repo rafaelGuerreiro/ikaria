@@ -29,6 +29,8 @@ Use `Taskfile.yml` from repository root:
 - Keep dependency versions in root `[workspace.dependencies]`.
 - Child crates should reference shared dependencies with `workspace = true`.
 - Keep edits scoped: backend rules in backend AGENTS, client rules in client code, shared constants in `sdks/shared`.
+- Do not add `#[allow(dead_code)]` to silence unused code.
+- For unimplemented/placeholder work, keep `dead_code` warnings visible instead of suppressing them.
 
 ## Agent/skill catalog
 - Custom agents: `.github/agents/*.agent.md`

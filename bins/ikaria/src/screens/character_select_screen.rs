@@ -24,7 +24,6 @@ struct CharacterSelectUi;
 
 /// Component marking character list items
 #[derive(Component)]
-#[allow(dead_code)]
 struct CharacterListItem {
     character_id: u64,
     name: String,
