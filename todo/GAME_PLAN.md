@@ -68,7 +68,7 @@ Build vertical slices where each slice can be tested in-game immediately.
    - Add schema support required for name+gender creation contract.
    - Playable result: backend contract supports proper create payload.
 2. `m1-create-character-reducer`
-   - Implement reducer/service with validation and global name uniqueness.
+   - Implement reducer/service with validation and name uniqueness **within a world** (no cross-world global registry).
    - Playable result: reducer callable and creates persisted characters.
 3. `m1-create-character-client-flow`
    - Wire CharacterSelect form to reducer, show errors, auto-enter game on success.
