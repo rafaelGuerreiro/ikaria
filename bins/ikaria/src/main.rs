@@ -5,6 +5,7 @@ use screens::{character_select_screen::CharacterSelectPlugin, game_screen::GameP
 
 pub mod app_state;
 pub mod constants;
+pub mod error;
 pub mod events;
 pub mod file_manager;
 pub mod resources;

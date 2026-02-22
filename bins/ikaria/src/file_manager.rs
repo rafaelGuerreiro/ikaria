@@ -1,20 +1,19 @@
-use crate::constants::{APP_DATA_DIR_NAME, TOKEN_FILE_NAME};
-use std::{env, fs, io, path::PathBuf};
+use crate::{
+    constants::{APP_DATA_DIR_NAME, TOKEN_FILE_NAME},
+    error::{ClientError, ClientResult, ResultExt},
+};
+use std::{env, fs, path::PathBuf};
 
-pub fn game_data_dir() -> io::Result<PathBuf> {
-    let base_dir = platform_data_dir().ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::NotFound,
-            "Unable to resolve a platform data directory for Ikaria",
-        )
-    })?;
+pub fn game_data_dir() -> ClientResult<PathBuf> {
+    let base_dir =
+        platform_data_dir().ok_or_else(|| ClientError::internal("Unable to resolve a platform data directory for Ikaria"))?;
 
     let dir = base_dir.join(APP_DATA_DIR_NAME);
-    fs::create_dir_all(&dir)?;
+    fs::create_dir_all(&dir).map_internal_error()?;
     Ok(dir)
 }
 
-pub fn token_file_path() -> io::Result<PathBuf> {
+pub fn token_file_path() -> ClientResult<PathBuf> {
     Ok(game_data_dir()?.join(TOKEN_FILE_NAME))
 }
 

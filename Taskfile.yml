@@ -28,8 +28,9 @@ tasks:
 
   build:
     desc: Build server wasm target and host workspace targets
-    deps: [sdk-rust, check]
     cmds:
+      - task sdk-rust
+      - task check
       - cargo build -p ikariadb --target wasm32-unknown-unknown
       - cargo build --workspace --exclude ikariadb
 

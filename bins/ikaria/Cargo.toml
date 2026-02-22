@@ -11,6 +11,7 @@ ikaria-shared = { workspace = true }
 bevy = { workspace = true, features = ["dynamic_linking"] }
 log = { workspace = true, features = ["max_level_debug", "release_max_level_warn"] }
 spacetimedb-sdk = { workspace = true }
+thiserror = { workspace = true }
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

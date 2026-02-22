@@ -1,6 +1,7 @@
 use crate::{
     app_state::AppState,
     constants::{MODULE_NAME, SPACETIME_URI},
+    error::{ClientResult, ErrorMapper, ResultExt},
     file_manager,
     resources::SessionResource,
 };
@@ -245,13 +246,20 @@ fn load_token_from_file() -> Option<String> {
         },
     };
 
-    fs::read_to_string(token_path)
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
+    let token_content = match fs::read_to_string(token_path) {
+        Ok(content) => content,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return None,
+        Err(e) => {
+            warn!("Unable to read token file: {}", e.map_internal_error());
+            return None;
+        },
+    };
+
+    let token = token_content.trim().to_string();
+    if token.is_empty() { None } else { Some(token) }
 }
 
-fn save_token_to_file(token: &str) -> std::io::Result<()> {
+fn save_token_to_file(token: &str) -> ClientResult<()> {
     let token_path = file_manager::token_file_path()?;
-    fs::write(token_path, token)
+    fs::write(token_path, token).map_internal_error()
 }
