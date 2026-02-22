@@ -8,6 +8,7 @@ Use root tasks (preferred):
 - `task check`
 - `task test`
 - `task build`
+- Before silencing any Rust/Clippy error or warning (including via `#[allow(...)]`), ask the user first and wait for explicit approval.
 
 ## Backend architecture
 - Entry points are in `src/lib.rs`:
