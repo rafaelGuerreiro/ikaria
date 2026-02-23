@@ -1,0 +1,13 @@
+[package]
+name = "world-beta-ikariadb"
+version = { workspace = true }
+edition = { workspace = true }
+publish = { workspace = true }
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ikariadb-core = { workspace = true }
+
+spacetimedb = { workspace = true }

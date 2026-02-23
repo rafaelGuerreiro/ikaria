@@ -1,0 +1,11 @@
+[package]
+name = "ikariadb-core"
+version = { workspace = true }
+edition = { workspace = true }
+publish = { workspace = true }
+
+[dependencies]
+ikaria-shared = { workspace = true }
+
+spacetimedb = { workspace = true }
+thiserror = { workspace = true }
