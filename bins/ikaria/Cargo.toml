@@ -9,7 +9,7 @@ ikaria-types = { workspace = true }
 ikaria-shared = { workspace = true }
 
 bevy = { workspace = true, features = ["dynamic_linking"] }
-log = { workspace = true, features = ["max_level_debug", "release_max_level_warn"] }
+log = { workspace = true, features = ["max_level_info", "release_max_level_info"] }
 spacetimedb-sdk = { workspace = true }
 thiserror = { workspace = true }
 

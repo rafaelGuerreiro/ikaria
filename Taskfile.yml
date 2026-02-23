@@ -6,7 +6,7 @@ tasks:
     cmds:
       - rm -rf sdks/types/src/autogen
       - mkdir -p sdks/types/src/autogen
-      - spacetime generate --lang rust --out-dir sdks/types/src/autogen --project-path bins/ikariadb
+      - spacetime generate --lang rust --out-dir sdks/types/src/autogen --project-path bins/world-draconis-ikariadb
 
   fmt:
     desc: Format all workspace code
@@ -31,8 +31,9 @@ tasks:
     cmds:
       - task sdk-rust
       - task check
+      - cargo build -p world-alpha-ikariadb --target wasm32-unknown-unknown
       - cargo build -p world-draconis-ikariadb --target wasm32-unknown-unknown
-      - cargo build --workspace --exclude world-draconis-ikariadb
+      - cargo build --workspace --exclude world-alpha-ikariadb --exclude world-draconis-ikariadb
 
   run:
     desc: Run the ikaria client
@@ -48,16 +49,16 @@ tasks:
     desc: Publish world-alpha-ikariadb to maincloud
     deps: [login, build]
     cmds:
-      - spacetime publish -p bins/world-draconis-ikariadb -s maincloud -y world-alpha-ikariadb
+      - spacetime publish -p bins/world-alpha-ikariadb -s maincloud -y world-alpha-ikariadb
+
+  unsafe-overwrite:
+    desc: Publish world-alpha-ikariadb to maincloud and delete data
+    deps: [login, build]
+    cmds:
+      - spacetime publish -p bins/world-alpha-ikariadb -s maincloud -y world-alpha-ikariadb --delete-data
 
   publish-prod:
     desc: Publish world-draconis-ikariadb to maincloud
     deps: [login, build]
     cmds:
       - spacetime publish -p bins/world-draconis-ikariadb -s maincloud -y world-draconis-ikariadb
-
-  unsafe-overwrite:
-    desc: Publish world-alpha-ikariadb to maincloud and delete data
-    deps: [login, build]
-    cmds:
-      - spacetime publish -p bins/world-draconis-ikariadb -s maincloud -y world-alpha-ikariadb --delete-data

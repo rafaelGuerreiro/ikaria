@@ -10,4 +10,5 @@ crate-type = ["cdylib"]
 [dependencies]
 ikariadb-core = { workspace = true }
 
+log = { workspace = true, features = ["max_level_info", "release_max_level_info"] }
 spacetimedb = { workspace = true }

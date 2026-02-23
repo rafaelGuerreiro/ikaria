@@ -31,15 +31,17 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: GAME_TITLE.to_string(),
-                resolution: (1024, 768).into(),
-                ..default()
-            }),
+    let mut app = App::new();
+
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            title: GAME_TITLE.to_string(),
+            resolution: (1024, 768).into(),
             ..default()
-        }))
-        .add_plugins(IkariaClientPlugin)
-        .run();
+        }),
+        ..default()
+    }))
+    .add_plugins(IkariaClientPlugin);
+
+    app.run();
 }
