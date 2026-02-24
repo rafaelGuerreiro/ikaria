@@ -4,7 +4,7 @@ use crate::{
     ui_helpers::{
         self, CHARACTER_BUTTON, GENDER_BUTTON, GENDER_SELECTED_BUTTON, NAME_INPUT_ACTIVE, NAME_INPUT_INACTIVE, PRIMARY_BUTTON,
     },
-    ui_style::{self, character_select as character_ui, palette},
+    ui_style::character_select as character_ui,
 };
 use bevy::{
     input::{ButtonState, keyboard::KeyboardInput},
@@ -34,34 +34,43 @@ impl Plugin for CharacterSelectPlugin {
 
 /// Marker component for character select UI
 #[derive(Component)]
-struct CharacterSelectUi;
+pub(super) struct CharacterSelectUi;
 
 /// Component marking character list items
 #[derive(Component)]
-struct CharacterListItem {
-    character_id: u64,
-    name: String,
+pub(super) struct CharacterListItem {
+    pub(super) character_id: u64,
+    pub(super) name: String,
 }
 
 /// Component for character name input button
 #[derive(Component)]
-struct CharacterNameInputButton;
+pub(super) struct CharacterNameInputButton;
 
 /// Component for character name input text
 #[derive(Component)]
-struct CharacterNameInputText;
+pub(super) struct CharacterNameInputText;
 
 /// Component for character gender selection
 #[derive(Component)]
-struct CharacterGenderButton {
-    gender: Gender,
+pub(super) struct CharacterGenderButton {
+    pub(super) gender: Gender,
 }
 
 #[derive(Component)]
-struct CreateCharacterButton;
+pub(super) struct CreateCharacterButton;
 
 #[derive(Component)]
-struct CharacterFormStatusText;
+pub(super) struct CharacterFormStatusText;
+
+#[derive(Component)]
+pub(super) struct EmptyCharacterListPrompt;
+
+#[derive(Component)]
+pub(super) struct ShowCharacterCreationButton;
+
+#[derive(Component)]
+pub(super) struct CharacterCreationForm;
 
 /// Character creation input state
 #[derive(Resource)]
@@ -69,6 +78,7 @@ struct CharacterCreationState {
     name: String,
     gender: Option<Gender>,
     name_input_active: bool,
+    show_creation_form: bool,
     create_requested: bool,
     status_message: String,
 }
@@ -78,7 +88,8 @@ impl Default for CharacterCreationState {
         Self {
             name: String::new(),
             gender: None,
-            name_input_active: false,
+            name_input_active: true,
+            show_creation_form: false,
             create_requested: false,
             status_message: character_ui::STATUS_DEFAULT_TEXT.to_string(),
         }
@@ -86,13 +97,13 @@ impl Default for CharacterCreationState {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Gender {
+pub(super) enum Gender {
     Male,
     Female,
 }
 
 impl Gender {
-    fn label(self) -> &'static str {
+    pub(super) fn label(self) -> &'static str {
         match self {
             Self::Male => character_ui::GENDER_MALE_TEXT,
             Self::Female => character_ui::GENDER_FEMALE_TEXT,
@@ -118,260 +129,7 @@ fn setup_character_select(mut commands: Commands, session: Res<SessionResource>)
 
     info!("Found {} characters for user", characters.len());
 
-    // Spawn UI
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(ui_style::ROOT_WIDTH_PERCENT),
-                height: Val::Percent(ui_style::ROOT_HEIGHT_PERCENT),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                row_gap: Val::Px(character_ui::ROOT_ROW_GAP),
-                ..default()
-            },
-            BackgroundColor(ui_style::color(palette::BACKGROUND_LIGHT)),
-            CharacterSelectUi,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Text::new(format!("{}{}", character_ui::SCREEN_TITLE_PREFIX, world_name)),
-                TextFont {
-                    font_size: character_ui::TITLE_FONT_SIZE,
-                    ..default()
-                },
-                TextColor(ui_style::color(palette::TEXT_PRIMARY)),
-                Node {
-                    margin: UiRect::bottom(Val::Px(character_ui::TITLE_MARGIN_BOTTOM)),
-                    ..default()
-                },
-            ));
-
-            if characters.is_empty() {
-                // Show character creation UI inline
-                parent
-                    .spawn((Node {
-                        flex_direction: FlexDirection::Column,
-                        row_gap: Val::Px(character_ui::FORM_ROW_GAP),
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },))
-                    .with_children(|form_parent| {
-                        form_parent.spawn((
-                            Text::new(character_ui::CREATE_TITLE_TEXT),
-                            TextFont {
-                                font_size: character_ui::CREATE_TITLE_FONT_SIZE,
-                                ..default()
-                            },
-                            TextColor(ui_style::color(palette::TEXT_SECONDARY)),
-                            Node {
-                                margin: UiRect::bottom(Val::Px(character_ui::CREATE_TITLE_MARGIN_BOTTOM)),
-                                ..default()
-                            },
-                        ));
-
-                        form_parent.spawn((
-                            Text::new(character_ui::NAME_LABEL_TEXT),
-                            TextFont {
-                                font_size: character_ui::SECTION_LABEL_FONT_SIZE,
-                                ..default()
-                            },
-                            TextColor(ui_style::color(palette::TEXT_TERTIARY)),
-                        ));
-
-                        form_parent
-                            .spawn((
-                                Button,
-                                Node {
-                                    width: Val::Px(character_ui::NAME_INPUT_WIDTH),
-                                    height: Val::Px(character_ui::NAME_INPUT_HEIGHT),
-                                    align_items: AlignItems::Center,
-                                    justify_content: JustifyContent::FlexStart,
-                                    padding: UiRect::horizontal(Val::Px(character_ui::NAME_INPUT_PADDING_X)),
-                                    border: UiRect::all(Val::Px(character_ui::NAME_INPUT_BORDER_WIDTH)),
-                                    ..default()
-                                },
-                                BorderColor::all(ui_style::color(palette::BORDER_DEFAULT)),
-                                BackgroundColor(ui_style::color(palette::SURFACE_DEFAULT)),
-                                CharacterNameInputButton,
-                            ))
-                            .with_children(|input| {
-                                input.spawn((
-                                    Text::new(character_ui::NAME_PLACEHOLDER_INACTIVE),
-                                    TextFont {
-                                        font_size: character_ui::NAME_INPUT_FONT_SIZE,
-                                        ..default()
-                                    },
-                                    TextColor(ui_style::color(palette::TEXT_MUTED)),
-                                    CharacterNameInputText,
-                                ));
-                            });
-
-                        form_parent.spawn((
-                            Text::new(character_ui::GENDER_LABEL_TEXT),
-                            TextFont {
-                                font_size: character_ui::SECTION_LABEL_FONT_SIZE,
-                                ..default()
-                            },
-                            TextColor(ui_style::color(palette::TEXT_TERTIARY)),
-                            Node {
-                                margin: UiRect::top(Val::Px(character_ui::GENDER_LABEL_MARGIN_TOP)),
-                                ..default()
-                            },
-                        ));
-
-                        form_parent
-                            .spawn((Node {
-                                flex_direction: FlexDirection::Row,
-                                column_gap: Val::Px(character_ui::GENDER_ROW_GAP),
-                                ..default()
-                            },))
-                            .with_children(|buttons| {
-                                for gender in [Gender::Male, Gender::Female] {
-                                    buttons
-                                        .spawn((
-                                            Button,
-                                            Node {
-                                                width: Val::Px(character_ui::GENDER_BUTTON_WIDTH),
-                                                height: Val::Px(character_ui::GENDER_BUTTON_HEIGHT),
-                                                align_items: AlignItems::Center,
-                                                justify_content: JustifyContent::Center,
-                                                ..default()
-                                            },
-                                            BackgroundColor(ui_style::color(palette::BUTTON_GENDER_DEFAULT)),
-                                            CharacterGenderButton { gender },
-                                        ))
-                                        .with_children(|button| {
-                                            button.spawn((
-                                                Text::new(gender.label()),
-                                                TextFont {
-                                                    font_size: character_ui::GENDER_BUTTON_FONT_SIZE,
-                                                    ..default()
-                                                },
-                                                TextColor(ui_style::color(palette::TEXT_PRIMARY)),
-                                            ));
-                                        });
-                                }
-                            });
-
-                        form_parent
-                            .spawn((
-                                Button,
-                                Node {
-                                    width: Val::Px(character_ui::CREATE_BUTTON_WIDTH),
-                                    height: Val::Px(character_ui::CREATE_BUTTON_HEIGHT),
-                                    align_items: AlignItems::Center,
-                                    justify_content: JustifyContent::Center,
-                                    margin: UiRect::top(Val::Px(character_ui::CREATE_BUTTON_MARGIN_TOP)),
-                                    ..default()
-                                },
-                                BackgroundColor(ui_style::color(palette::BUTTON_PRIMARY)),
-                                CreateCharacterButton,
-                            ))
-                            .with_children(|button| {
-                                button.spawn((
-                                    Text::new(character_ui::CREATE_BUTTON_TEXT),
-                                    TextFont {
-                                        font_size: character_ui::CREATE_BUTTON_FONT_SIZE,
-                                        ..default()
-                                    },
-                                    TextColor(ui_style::color(palette::TEXT_INVERSE)),
-                                ));
-                            });
-
-                        form_parent.spawn((
-                            Text::new(character_ui::CREATE_HELP_TEXT),
-                            TextFont {
-                                font_size: character_ui::FORM_STATUS_FONT_SIZE,
-                                ..default()
-                            },
-                            TextColor(ui_style::color(palette::TEXT_MUTED)),
-                            TextLayout {
-                                justify: Justify::Center,
-                                ..default()
-                            },
-                            Node {
-                                margin: UiRect::top(Val::Px(character_ui::FORM_STATUS_MARGIN_TOP)),
-                                ..default()
-                            },
-                            CharacterFormStatusText,
-                        ));
-
-                        // Backend note
-                        form_parent.spawn((
-                            Text::new(character_ui::BACKEND_NOTE_TEXT),
-                            TextFont {
-                                font_size: character_ui::BACKEND_NOTE_FONT_SIZE,
-                                ..default()
-                            },
-                            TextColor(ui_style::color(palette::TEXT_WARNING)),
-                            TextLayout {
-                                justify: Justify::Center,
-                                ..default()
-                            },
-                            Node {
-                                margin: UiRect::top(Val::Px(character_ui::BACKEND_NOTE_MARGIN_TOP)),
-                                ..default()
-                            },
-                        ));
-                    });
-            } else {
-                // Show character list inline
-                parent
-                    .spawn((Node {
-                        flex_direction: FlexDirection::Column,
-                        row_gap: Val::Px(character_ui::LIST_ROW_GAP),
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },))
-                    .with_children(|list_parent| {
-                        for character in characters {
-                            list_parent
-                                .spawn((
-                                    Button,
-                                    Node {
-                                        width: Val::Px(character_ui::LIST_BUTTON_WIDTH),
-                                        height: Val::Px(character_ui::LIST_BUTTON_HEIGHT),
-                                        align_items: AlignItems::Center,
-                                        justify_content: JustifyContent::Center,
-                                        ..default()
-                                    },
-                                    BackgroundColor(ui_style::color(palette::BUTTON_CHARACTER_DEFAULT)),
-                                    CharacterListItem {
-                                        character_id: character.character_id,
-                                        name: character.name.clone(),
-                                    },
-                                ))
-                                .with_children(|button| {
-                                    button.spawn((
-                                        Text::new(format!(
-                                            "{} (Level {} {})",
-                                            character.name, character.level, character.vocation
-                                        )),
-                                        TextFont {
-                                            font_size: character_ui::LIST_ITEM_FONT_SIZE,
-                                            ..default()
-                                        },
-                                        TextColor(ui_style::color(palette::TEXT_PRIMARY)),
-                                    ));
-                                });
-                        }
-                    });
-
-                parent.spawn((
-                    Text::new(character_ui::LIST_HINT_TEXT),
-                    TextFont {
-                        font_size: character_ui::LIST_HINT_FONT_SIZE,
-                        ..default()
-                    },
-                    TextColor(ui_style::color(palette::TEXT_HINT)),
-                    Node {
-                        margin: UiRect::top(Val::Px(character_ui::LIST_HINT_MARGIN_TOP)),
-                        ..default()
-                    },
-                ));
-            }
-        });
+    super::character_select_screen_ui::spawn_character_select_ui(&mut commands, world_name, &characters);
 }
 
 fn tick_connection(session: Res<SessionResource>) {
@@ -413,17 +171,16 @@ fn handle_character_creation_interactions(
     mut creation_state: ResMut<CharacterCreationState>,
     keyboard: Res<ButtonInput<KeyCode>>,
     mut keyboard_input_events: MessageReader<KeyboardInput>,
-    name_input_query: Query<&Interaction, (Changed<Interaction>, With<Button>, With<CharacterNameInputButton>)>,
-    gender_button_query: Query<
-        (&Interaction, &CharacterGenderButton),
+    button_query: Query<
         (
-            Changed<Interaction>,
-            With<Button>,
-            Without<CreateCharacterButton>,
-            Without<CharacterNameInputButton>,
+            &Interaction,
+            Has<ShowCharacterCreationButton>,
+            Has<CharacterNameInputButton>,
+            Option<&CharacterGenderButton>,
+            Has<CreateCharacterButton>,
         ),
+        (Changed<Interaction>, With<Button>),
     >,
-    create_button_query: Query<&Interaction, (Changed<Interaction>, With<Button>, With<CreateCharacterButton>)>,
     session: Res<SessionResource>,
 ) {
     // Only process input if we're in character creation mode (no existing characters)
@@ -438,24 +195,38 @@ fn handle_character_creation_interactions(
         return;
     }
 
-    for interaction in name_input_query.iter() {
-        if *interaction == Interaction::Pressed {
+    for (interaction, is_show_form_button, is_name_input_button, gender_button, is_create_button) in button_query.iter() {
+        if *interaction != Interaction::Pressed {
+            continue;
+        }
+
+        if is_show_form_button {
+            creation_state.show_creation_form = true;
             creation_state.name_input_active = true;
+            continue;
         }
-    }
 
-    for (interaction, button) in gender_button_query.iter() {
-        if *interaction == Interaction::Pressed {
+        if !creation_state.show_creation_form {
+            continue;
+        }
+
+        if is_name_input_button {
+            creation_state.name_input_active = true;
+            continue;
+        }
+
+        if let Some(button) = gender_button {
             creation_state.gender = Some(button.gender);
-            creation_state.name_input_active = false;
+            continue;
+        }
+
+        if is_create_button {
+            creation_state.create_requested = true;
         }
     }
 
-    for interaction in create_button_query.iter() {
-        if *interaction == Interaction::Pressed {
-            creation_state.create_requested = true;
-            creation_state.name_input_active = false;
-        }
+    if !creation_state.show_creation_form {
+        return;
     }
 
     if creation_state.name_input_active && keyboard.just_pressed(KeyCode::Backspace) {
@@ -522,8 +293,28 @@ fn handle_character_creation_interactions(
 fn sync_character_creation_visuals(
     creation_state: Res<CharacterCreationState>,
     session: Res<SessionResource>,
-    mut name_input_text_query: Query<&mut Text, (With<CharacterNameInputText>, Without<CharacterFormStatusText>)>,
-    mut status_text_query: Query<&mut Text, (With<CharacterFormStatusText>, Without<CharacterNameInputText>)>,
+    mut creation_view_query: Query<
+        (&mut Node, Has<EmptyCharacterListPrompt>, Has<CharacterCreationForm>),
+        (Or<(With<EmptyCharacterListPrompt>, With<CharacterCreationForm>)>,),
+    >,
+    mut primary_button_query: Query<
+        (
+            &Interaction,
+            Has<ShowCharacterCreationButton>,
+            Has<CreateCharacterButton>,
+            &mut BackgroundColor,
+        ),
+        (
+            With<Button>,
+            Or<(With<ShowCharacterCreationButton>, With<CreateCharacterButton>)>,
+            Without<CharacterNameInputButton>,
+            Without<CharacterGenderButton>,
+        ),
+    >,
+    mut form_text_query: Query<
+        (&mut Text, Has<CharacterNameInputText>, Has<CharacterFormStatusText>),
+        Or<(With<CharacterNameInputText>, With<CharacterFormStatusText>)>,
+    >,
     mut name_input_button_query: Query<
         (&Interaction, &mut BackgroundColor),
         (
@@ -541,15 +332,6 @@ fn sync_character_creation_visuals(
             Without<CreateCharacterButton>,
         ),
     >,
-    mut create_button_query: Query<
-        (&Interaction, &mut BackgroundColor),
-        (
-            With<Button>,
-            With<CreateCharacterButton>,
-            Without<CharacterNameInputButton>,
-            Without<CharacterGenderButton>,
-        ),
-    >,
 ) {
     let has_characters = session
         .connection
@@ -562,20 +344,40 @@ fn sync_character_creation_visuals(
         return;
     }
 
-    for mut text in name_input_text_query.iter_mut() {
-        text.0 = if creation_state.name.is_empty() {
-            if creation_state.name_input_active {
-                character_ui::NAME_PLACEHOLDER_ACTIVE.to_string()
+    for (mut node, is_empty_prompt, is_creation_form) in creation_view_query.iter_mut() {
+        if is_empty_prompt {
+            node.display = if creation_state.show_creation_form {
+                Display::None
             } else {
-                character_ui::NAME_PLACEHOLDER_INACTIVE.to_string()
-            }
-        } else {
-            creation_state.name.clone()
-        };
+                Display::Flex
+            };
+        } else if is_creation_form {
+            node.display = if creation_state.show_creation_form {
+                Display::Flex
+            } else {
+                Display::None
+            };
+        }
     }
 
-    for mut text in status_text_query.iter_mut() {
-        text.0 = creation_state.status_message.clone();
+    for (interaction, _is_show_form_button, _is_create_button, mut color) in primary_button_query.iter_mut() {
+        *color = ui_helpers::interaction_background(*interaction, PRIMARY_BUTTON);
+    }
+
+    for (mut text, is_name_input_text, is_status_text) in form_text_query.iter_mut() {
+        if is_name_input_text {
+            text.0 = if creation_state.name.is_empty() {
+                if creation_state.name_input_active {
+                    character_ui::NAME_PLACEHOLDER_ACTIVE.to_string()
+                } else {
+                    character_ui::NAME_PLACEHOLDER_INACTIVE.to_string()
+                }
+            } else {
+                creation_state.name.clone()
+            };
+        } else if is_status_text {
+            text.0 = creation_state.status_message.clone();
+        }
     }
 
     for (interaction, mut color) in name_input_button_query.iter_mut() {
@@ -592,10 +394,6 @@ fn sync_character_creation_visuals(
         } else {
             ui_helpers::interaction_background(*interaction, GENDER_BUTTON)
         };
-    }
-
-    for (interaction, mut color) in create_button_query.iter_mut() {
-        *color = ui_helpers::interaction_background(*interaction, PRIMARY_BUTTON);
     }
 }
 
