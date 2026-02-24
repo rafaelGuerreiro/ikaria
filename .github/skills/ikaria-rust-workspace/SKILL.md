@@ -33,3 +33,4 @@ For server-impacting changes, also run:
 - Keep edits minimal and scoped.
 - Avoid direct binary-to-binary dependencies.
 - Prefer adding reusable logic in `sdks/*` rather than duplicating across bins.
+- For multi-world backend modules, extract shared server code into a dedicated `sdks/*` crate instead of copying `bins/ikariadb*/src` files.

@@ -17,52 +17,11 @@ impl Plugin for GamePlugin {
 
 /// Marker component for game UI
 #[derive(Component)]
-struct GameUi;
+pub(super) struct GameUi;
 
 fn setup_game(mut commands: Commands, _session: Res<SessionResource>, character: Res<SelectedCharacterResource>) {
     info!("Entering Game view with character: {}", character.name);
-
-    // Spawn game UI placeholder
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            BackgroundColor(Color::srgb(0.2, 0.5, 0.2)), // Green for grassland
-            GameUi,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Text::new(format!("Welcome, {}!", character.name)),
-                TextFont {
-                    font_size: 40.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(1.0, 1.0, 1.0)),
-                Node {
-                    margin: UiRect::bottom(Val::Px(20.0)),
-                    ..default()
-                },
-            ));
-
-            parent.spawn((
-                Text::new("Game world placeholder\n\nPress ESC to return to character select"),
-                TextFont {
-                    font_size: 20.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.9, 0.9, 0.9)),
-                TextLayout {
-                    justify: Justify::Center,
-                    ..default()
-                },
-            ));
-        });
+    super::game_screen_ui::spawn_game_ui(&mut commands, &character.name);
 }
 
 fn tick_connection(session: Res<SessionResource>) {

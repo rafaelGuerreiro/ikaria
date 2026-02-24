@@ -1,8 +1,15 @@
 use crate::{
     app_state::AppState,
     resources::{SelectedCharacterResource, SessionResource},
+    ui_helpers::{
+        self, CHARACTER_BUTTON, GENDER_BUTTON, GENDER_SELECTED_BUTTON, NAME_INPUT_ACTIVE, NAME_INPUT_INACTIVE, PRIMARY_BUTTON,
+    },
+    ui_style::character_select as character_ui,
 };
-use bevy::prelude::*;
+use bevy::{
+    input::{ButtonState, keyboard::KeyboardInput},
+    prelude::*,
+};
 use ikaria_types::autogen::{CharacterV1, CharacterV1TableAccess};
 use spacetimedb_sdk::Table;
 
@@ -13,47 +20,100 @@ impl Plugin for CharacterSelectPlugin {
         app.add_systems(OnEnter(AppState::CharacterSelect), setup_character_select);
         app.add_systems(Update, tick_connection.run_if(in_state(AppState::CharacterSelect)));
         app.add_systems(Update, handle_character_selected.run_if(in_state(AppState::CharacterSelect)));
-        app.add_systems(Update, handle_character_creation.run_if(in_state(AppState::CharacterSelect)));
+        app.add_systems(
+            Update,
+            handle_character_creation_interactions.run_if(in_state(AppState::CharacterSelect)),
+        );
+        app.add_systems(
+            Update,
+            sync_character_creation_visuals.run_if(in_state(AppState::CharacterSelect)),
+        );
         app.add_systems(OnExit(AppState::CharacterSelect), cleanup_character_select);
     }
 }
 
 /// Marker component for character select UI
 #[derive(Component)]
-struct CharacterSelectUi;
+pub(super) struct CharacterSelectUi;
 
 /// Component marking character list items
 #[derive(Component)]
-struct CharacterListItem {
-    character_id: u64,
-    name: String,
+pub(super) struct CharacterListItem {
+    pub(super) character_id: u64,
+    pub(super) name: String,
 }
 
-/// Component for character name input field
+/// Component for character name input button
 #[derive(Component)]
-struct CharacterNameInput;
+pub(super) struct CharacterNameInputButton;
+
+/// Component for character name input text
+#[derive(Component)]
+pub(super) struct CharacterNameInputText;
 
 /// Component for character gender selection
 #[derive(Component)]
-struct CharacterGenderButton {
-    gender: Gender,
+pub(super) struct CharacterGenderButton {
+    pub(super) gender: Gender,
 }
 
+#[derive(Component)]
+pub(super) struct CreateCharacterButton;
+
+#[derive(Component)]
+pub(super) struct CharacterFormStatusText;
+
+#[derive(Component)]
+pub(super) struct EmptyCharacterListPrompt;
+
+#[derive(Component)]
+pub(super) struct ShowCharacterCreationButton;
+
+#[derive(Component)]
+pub(super) struct CharacterCreationForm;
+
 /// Character creation input state
-#[derive(Resource, Default)]
+#[derive(Resource)]
 struct CharacterCreationState {
     name: String,
     gender: Option<Gender>,
+    name_input_active: bool,
+    show_creation_form: bool,
+    create_requested: bool,
+    status_message: String,
+}
+
+impl Default for CharacterCreationState {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            gender: None,
+            name_input_active: true,
+            show_creation_form: false,
+            create_requested: false,
+            status_message: character_ui::STATUS_DEFAULT_TEXT.to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Gender {
+pub(super) enum Gender {
     Male,
     Female,
 }
 
+impl Gender {
+    pub(super) fn label(self) -> &'static str {
+        match self {
+            Self::Male => character_ui::GENDER_MALE_TEXT,
+            Self::Female => character_ui::GENDER_FEMALE_TEXT,
+        }
+    }
+}
+
 fn setup_character_select(mut commands: Commands, session: Res<SessionResource>) {
-    info!("Entering CharacterSelect view");
+    let world_name = session.world.name.as_str();
+    info!("Entering CharacterSelect view for world '{}'", world_name);
 
     // Initialize character creation state
     commands.init_resource::<CharacterCreationState>();
@@ -69,214 +129,7 @@ fn setup_character_select(mut commands: Commands, session: Res<SessionResource>)
 
     info!("Found {} characters for user", characters.len());
 
-    // Spawn UI
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            BackgroundColor(Color::srgb(0.95, 0.95, 0.95)),
-            CharacterSelectUi,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Text::new("Character Selection"),
-                TextFont {
-                    font_size: 40.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.2, 0.2, 0.2)),
-                Node {
-                    margin: UiRect::bottom(Val::Px(30.0)),
-                    ..default()
-                },
-            ));
-
-            if characters.is_empty() {
-                // Show character creation UI inline
-                parent
-                    .spawn((Node {
-                        flex_direction: FlexDirection::Column,
-                        row_gap: Val::Px(20.0),
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },))
-                    .with_children(|form_parent| {
-                        // Instructions
-                        form_parent.spawn((
-                            Text::new("Create Your Character"),
-                            TextFont {
-                                font_size: 28.0,
-                                ..default()
-                            },
-                            TextColor(Color::srgb(0.3, 0.3, 0.3)),
-                            Node {
-                                margin: UiRect::bottom(Val::Px(10.0)),
-                                ..default()
-                            },
-                        ));
-
-                        // Name input section
-                        form_parent
-                            .spawn((Node {
-                                flex_direction: FlexDirection::Column,
-                                row_gap: Val::Px(8.0),
-                                align_items: AlignItems::Center,
-                                ..default()
-                            },))
-                            .with_children(|name_section| {
-                                name_section.spawn((
-                                    Text::new("Character Name:"),
-                                    TextFont {
-                                        font_size: 18.0,
-                                        ..default()
-                                    },
-                                    TextColor(Color::srgb(0.4, 0.4, 0.4)),
-                                ));
-
-                                name_section.spawn((
-                                    Text::new("(Type name)"),
-                                    TextFont {
-                                        font_size: 16.0,
-                                        ..default()
-                                    },
-                                    TextColor(Color::srgb(0.6, 0.6, 0.6)),
-                                    CharacterNameInput,
-                                ));
-                            });
-
-                        // Gender selection section
-                        form_parent
-                            .spawn((Node {
-                                flex_direction: FlexDirection::Column,
-                                row_gap: Val::Px(8.0),
-                                align_items: AlignItems::Center,
-                                ..default()
-                            },))
-                            .with_children(|gender_section| {
-                                gender_section.spawn((
-                                    Text::new("Gender:"),
-                                    TextFont {
-                                        font_size: 18.0,
-                                        ..default()
-                                    },
-                                    TextColor(Color::srgb(0.4, 0.4, 0.4)),
-                                ));
-
-                                gender_section
-                                    .spawn((Node {
-                                        flex_direction: FlexDirection::Row,
-                                        column_gap: Val::Px(20.0),
-                                        ..default()
-                                    },))
-                                    .with_children(|buttons| {
-                                        // Male button
-                                        buttons.spawn((
-                                            Text::new("[ Male ]"),
-                                            TextFont {
-                                                font_size: 18.0,
-                                                ..default()
-                                            },
-                                            TextColor(Color::srgb(0.5, 0.5, 0.5)),
-                                            CharacterGenderButton { gender: Gender::Male },
-                                        ));
-
-                                        // Female button
-                                        buttons.spawn((
-                                            Text::new("[ Female ]"),
-                                            TextFont {
-                                                font_size: 18.0,
-                                                ..default()
-                                            },
-                                            TextColor(Color::srgb(0.5, 0.5, 0.5)),
-                                            CharacterGenderButton { gender: Gender::Female },
-                                        ));
-                                    });
-                            });
-
-                        // Instructions
-                        form_parent.spawn((
-                            Text::new("\nPress M for Male, F for Female\nType to enter name\nPress ENTER to create character"),
-                            TextFont {
-                                font_size: 14.0,
-                                ..default()
-                            },
-                            TextColor(Color::srgb(0.5, 0.5, 0.5)),
-                            TextLayout {
-                                justify: Justify::Center,
-                                ..default()
-                            },
-                            Node {
-                                margin: UiRect::top(Val::Px(20.0)),
-                                ..default()
-                            },
-                        ));
-
-                        // Backend note
-                        form_parent.spawn((
-                            Text::new("Note: Backend reducer for character creation\nis not yet implemented"),
-                            TextFont {
-                                font_size: 12.0,
-                                ..default()
-                            },
-                            TextColor(Color::srgb(0.8, 0.3, 0.3)),
-                            TextLayout {
-                                justify: Justify::Center,
-                                ..default()
-                            },
-                            Node {
-                                margin: UiRect::top(Val::Px(10.0)),
-                                ..default()
-                            },
-                        ));
-                    });
-            } else {
-                // Show character list inline
-                parent
-                    .spawn((Node {
-                        flex_direction: FlexDirection::Column,
-                        row_gap: Val::Px(10.0),
-                        ..default()
-                    },))
-                    .with_children(|list_parent| {
-                        for character in characters {
-                            list_parent.spawn((
-                                Text::new(format!(
-                                    "{} (Level {} {})",
-                                    character.name, character.level, character.vocation
-                                )),
-                                TextFont {
-                                    font_size: 24.0,
-                                    ..default()
-                                },
-                                TextColor(Color::srgb(0.3, 0.3, 0.3)),
-                                CharacterListItem {
-                                    character_id: character.character_id,
-                                    name: character.name.clone(),
-                                },
-                            ));
-                        }
-                    });
-
-                parent.spawn((
-                    Text::new("\nPress SPACE to auto-select first character"),
-                    TextFont {
-                        font_size: 16.0,
-                        ..default()
-                    },
-                    TextColor(Color::srgb(0.5, 0.5, 0.5)),
-                    Node {
-                        margin: UiRect::top(Val::Px(20.0)),
-                        ..default()
-                    },
-                ));
-            }
-        });
+    super::character_select_screen_ui::spawn_character_select_ui(&mut commands, world_name, &characters);
 }
 
 fn tick_connection(session: Res<SessionResource>) {
@@ -286,45 +139,48 @@ fn tick_connection(session: Res<SessionResource>) {
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn handle_character_selected(
     mut commands: Commands,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    _character_query: Query<&CharacterListItem>,
+    mut interaction_query: Query<
+        (&Interaction, &CharacterListItem, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
     mut next_state: ResMut<NextState<AppState>>,
-    session: Res<SessionResource>,
 ) {
-    // Auto-select first character on SPACE (starter implementation)
-    if keyboard.just_pressed(KeyCode::Space) {
-        // Get first character for this user
-        let first_char = session
-            .connection
-            .db
-            .character_v_1()
-            .iter()
-            .find(|c| c.user_id == session.identity);
+    for (interaction, character, mut color) in interaction_query.iter_mut() {
+        *color = ui_helpers::interaction_background(*interaction, CHARACTER_BUTTON);
 
-        if let Some(character) = first_char {
-            info!("Selected character: {} ({})", character.name, character.character_id);
-
-            commands.insert_resource(SelectedCharacterResource {
-                character_id: character.character_id,
-                name: character.name.clone(),
-            });
-
-            next_state.set(AppState::Game);
-        } else {
-            info!("No character to select - create character flow would go here");
+        if *interaction != Interaction::Pressed {
+            continue;
         }
+
+        info!("Selected character: {} ({})", character.name, character.character_id);
+
+        commands.insert_resource(SelectedCharacterResource {
+            character_id: character.character_id,
+            name: character.name.clone(),
+        });
+
+        next_state.set(AppState::Game);
     }
 }
 
-fn handle_character_creation(
+#[allow(clippy::type_complexity)]
+fn handle_character_creation_interactions(
     mut creation_state: ResMut<CharacterCreationState>,
     keyboard: Res<ButtonInput<KeyCode>>,
-    mut name_input_query: Query<&mut Text, With<CharacterNameInput>>,
-    mut gender_button_query: Query<(&mut TextColor, &CharacterGenderButton)>,
-    _commands: Commands,
-    _next_state: ResMut<NextState<AppState>>,
+    mut keyboard_input_events: MessageReader<KeyboardInput>,
+    button_query: Query<
+        (
+            &Interaction,
+            Has<ShowCharacterCreationButton>,
+            Has<CharacterNameInputButton>,
+            Option<&CharacterGenderButton>,
+            Has<CreateCharacterButton>,
+        ),
+        (Changed<Interaction>, With<Button>),
+    >,
     session: Res<SessionResource>,
 ) {
     // Only process input if we're in character creation mode (no existing characters)
@@ -339,106 +195,205 @@ fn handle_character_creation(
         return;
     }
 
-    // Handle gender selection via M/F keys
-    if keyboard.just_pressed(KeyCode::KeyM) {
-        creation_state.gender = Some(Gender::Male);
-    } else if keyboard.just_pressed(KeyCode::KeyF) {
-        creation_state.gender = Some(Gender::Female);
-    }
+    for (interaction, is_show_form_button, is_name_input_button, gender_button, is_create_button) in button_query.iter() {
+        if *interaction != Interaction::Pressed {
+            continue;
+        }
 
-    // Update gender button visuals
-    for (mut color, button) in gender_button_query.iter_mut() {
-        if Some(button.gender) == creation_state.gender {
-            *color = TextColor(Color::srgb(0.2, 0.6, 0.2)); // Highlight selected
-        } else {
-            *color = TextColor(Color::srgb(0.5, 0.5, 0.5)); // Default gray
+        if is_show_form_button {
+            creation_state.show_creation_form = true;
+            creation_state.name_input_active = true;
+            continue;
+        }
+
+        if !creation_state.show_creation_form {
+            continue;
+        }
+
+        if is_name_input_button {
+            creation_state.name_input_active = true;
+            continue;
+        }
+
+        if let Some(button) = gender_button {
+            creation_state.gender = Some(button.gender);
+            continue;
+        }
+
+        if is_create_button {
+            creation_state.create_requested = true;
         }
     }
 
-    // Handle name input (simplified - just alphanumeric and backspace)
-    for key in keyboard.get_just_pressed() {
-        match key {
-            KeyCode::Backspace => {
-                creation_state.name.pop();
-            },
-            KeyCode::Space => {
-                if creation_state.name.len() < 20 {
-                    creation_state.name.push(' ');
-                }
-            },
-            // Letters
-            KeyCode::KeyA => creation_state.name.push('A'),
-            KeyCode::KeyB => creation_state.name.push('B'),
-            KeyCode::KeyC => creation_state.name.push('C'),
-            KeyCode::KeyD => creation_state.name.push('D'),
-            KeyCode::KeyE => creation_state.name.push('E'),
-            KeyCode::KeyG => creation_state.name.push('G'),
-            KeyCode::KeyH => creation_state.name.push('H'),
-            KeyCode::KeyI => creation_state.name.push('I'),
-            KeyCode::KeyJ => creation_state.name.push('J'),
-            KeyCode::KeyK => creation_state.name.push('K'),
-            KeyCode::KeyL => creation_state.name.push('L'),
-            KeyCode::KeyN => creation_state.name.push('N'),
-            KeyCode::KeyO => creation_state.name.push('O'),
-            KeyCode::KeyP => creation_state.name.push('P'),
-            KeyCode::KeyQ => creation_state.name.push('Q'),
-            KeyCode::KeyR => creation_state.name.push('R'),
-            KeyCode::KeyS => creation_state.name.push('S'),
-            KeyCode::KeyT => creation_state.name.push('T'),
-            KeyCode::KeyU => creation_state.name.push('U'),
-            KeyCode::KeyV => creation_state.name.push('V'),
-            KeyCode::KeyW => creation_state.name.push('W'),
-            KeyCode::KeyX => creation_state.name.push('X'),
-            KeyCode::KeyY => creation_state.name.push('Y'),
-            KeyCode::KeyZ => creation_state.name.push('Z'),
-            _ => {},
+    if !creation_state.show_creation_form {
+        return;
+    }
+
+    if creation_state.name_input_active && keyboard.just_pressed(KeyCode::Backspace) {
+        creation_state.name.pop();
+    }
+
+    for event in keyboard_input_events.read() {
+        if !creation_state.name_input_active || event.state != ButtonState::Pressed {
+            continue;
+        }
+
+        if let Some(text) = event.text.as_ref() {
+            let typed_text: String = text.chars().filter(|character| !character.is_control()).collect();
+            if !typed_text.is_empty() {
+                creation_state.name.push_str(&typed_text);
+            }
         }
     }
 
-    // Limit name length
-    if creation_state.name.len() > 20 {
-        creation_state.name.truncate(20);
-    }
-
-    // Update name display
-    for mut text in name_input_query.iter_mut() {
-        if creation_state.name.is_empty() {
-            text.0 = "(Type name)".to_string();
-        } else {
-            text.0 = creation_state.name.clone();
-        }
-    }
-
-    // Handle character creation on ENTER
     if keyboard.just_pressed(KeyCode::Enter) {
-        let name = creation_state.name.trim();
+        creation_state.create_requested = true;
+    }
 
-        if name.is_empty() {
-            info!("Character name is empty");
-            return;
+    if !creation_state.create_requested {
+        return;
+    }
+
+    creation_state.create_requested = false;
+    let display_name = creation_state.name.trim().to_string();
+
+    if display_name.is_empty() {
+        creation_state.status_message = character_ui::STATUS_NAME_REQUIRED_TEXT.to_string();
+        info!("Character name is empty");
+        return;
+    }
+
+    if creation_state.gender.is_none() {
+        creation_state.status_message = character_ui::STATUS_GENDER_REQUIRED_TEXT.to_string();
+        info!("Gender not selected");
+        return;
+    }
+
+    let gender = creation_state.gender.expect("checked is_some above");
+    info!(
+        "Attempting to create character: name='{}', gender='{}'",
+        display_name,
+        gender.label()
+    );
+
+    // TODO: Call backend reducer when available
+    // For now, we'll just log a message explaining what would happen
+    warn!("Backend reducer for character creation is not yet implemented");
+    warn!(
+        "Would create character with name='{}', gender='{}'",
+        display_name,
+        gender.label()
+    );
+    warn!("Please implement a 'create_character' reducer in the ikariadb module");
+
+    creation_state.status_message = character_ui::STATUS_BACKEND_PENDING_TEXT.to_string();
+}
+
+#[allow(clippy::type_complexity)]
+fn sync_character_creation_visuals(
+    creation_state: Res<CharacterCreationState>,
+    session: Res<SessionResource>,
+    mut creation_view_query: Query<
+        (&mut Node, Has<EmptyCharacterListPrompt>, Has<CharacterCreationForm>),
+        (Or<(With<EmptyCharacterListPrompt>, With<CharacterCreationForm>)>,),
+    >,
+    mut primary_button_query: Query<
+        (
+            &Interaction,
+            Has<ShowCharacterCreationButton>,
+            Has<CreateCharacterButton>,
+            &mut BackgroundColor,
+        ),
+        (
+            With<Button>,
+            Or<(With<ShowCharacterCreationButton>, With<CreateCharacterButton>)>,
+            Without<CharacterNameInputButton>,
+            Without<CharacterGenderButton>,
+        ),
+    >,
+    mut form_text_query: Query<
+        (&mut Text, Has<CharacterNameInputText>, Has<CharacterFormStatusText>),
+        Or<(With<CharacterNameInputText>, With<CharacterFormStatusText>)>,
+    >,
+    mut name_input_button_query: Query<
+        (&Interaction, &mut BackgroundColor),
+        (
+            With<Button>,
+            With<CharacterNameInputButton>,
+            Without<CreateCharacterButton>,
+            Without<CharacterGenderButton>,
+        ),
+    >,
+    mut gender_button_query: Query<
+        (&Interaction, &CharacterGenderButton, &mut BackgroundColor),
+        (
+            With<Button>,
+            Without<CharacterNameInputButton>,
+            Without<CreateCharacterButton>,
+        ),
+    >,
+) {
+    let has_characters = session
+        .connection
+        .db
+        .character_v_1()
+        .iter()
+        .any(|c| c.user_id == session.identity);
+
+    if has_characters {
+        return;
+    }
+
+    for (mut node, is_empty_prompt, is_creation_form) in creation_view_query.iter_mut() {
+        if is_empty_prompt {
+            node.display = if creation_state.show_creation_form {
+                Display::None
+            } else {
+                Display::Flex
+            };
+        } else if is_creation_form {
+            node.display = if creation_state.show_creation_form {
+                Display::Flex
+            } else {
+                Display::None
+            };
         }
+    }
 
-        if creation_state.gender.is_none() {
-            info!("Gender not selected");
-            return;
+    for (interaction, _is_show_form_button, _is_create_button, mut color) in primary_button_query.iter_mut() {
+        *color = ui_helpers::interaction_background(*interaction, PRIMARY_BUTTON);
+    }
+
+    for (mut text, is_name_input_text, is_status_text) in form_text_query.iter_mut() {
+        if is_name_input_text {
+            text.0 = if creation_state.name.is_empty() {
+                if creation_state.name_input_active {
+                    character_ui::NAME_PLACEHOLDER_ACTIVE.to_string()
+                } else {
+                    character_ui::NAME_PLACEHOLDER_INACTIVE.to_string()
+                }
+            } else {
+                creation_state.name.clone()
+            };
+        } else if is_status_text {
+            text.0 = creation_state.status_message.clone();
         }
+    }
 
-        let gender_str = match creation_state.gender.unwrap() {
-            Gender::Male => "Male",
-            Gender::Female => "Female",
+    for (interaction, mut color) in name_input_button_query.iter_mut() {
+        *color = if creation_state.name_input_active {
+            ui_helpers::interaction_background(*interaction, NAME_INPUT_ACTIVE)
+        } else {
+            ui_helpers::interaction_background(*interaction, NAME_INPUT_INACTIVE)
         };
+    }
 
-        info!("Attempting to create character: {} ({})", name, gender_str);
-
-        // TODO: Call backend reducer when available
-        // For now, we'll just log a message explaining what would happen
-        warn!("Backend reducer for character creation is not yet implemented");
-        warn!("Would create character with name='{}', gender='{}'", name, gender_str);
-        warn!("Please implement a 'create_character' reducer in the ikariadb module");
-
-        // For demonstration purposes, we could create a mock character in the selected resource
-        // and transition to the game, but that would be misleading since it won't persist.
-        // Instead, we'll just show the message and stay on this screen.
+    for (interaction, button, mut color) in gender_button_query.iter_mut() {
+        *color = if Some(button.gender) == creation_state.gender {
+            ui_helpers::interaction_background(*interaction, GENDER_SELECTED_BUTTON)
+        } else {
+            ui_helpers::interaction_background(*interaction, GENDER_BUTTON)
+        };
     }
 }
 

@@ -41,11 +41,19 @@
 Build vertical slices where each slice can be tested in-game immediately.
 
 ### Milestone 0: world split foundation (before gameplay milestones)
-- `m0-split-backend-modules`
+**Status:** In Progress
+
+- ✅ `m0-split-backend-modules` **COMPLETED**
    - Split backend into distinct world servers/modules that can diverge in features and maps.
+   - Created `bins/world-alpha-ikariadb` as parallel backend module.
+   - Created `bins/world-draconis-ikariadb` as parallel backend module.
+   - Extracted shared backend code into `sdks/ikariadb-core` to eliminate duplication.
+   - Both `bins/world-alpha-ikariadb` and `bins/world-draconis-ikariadb` now delegate to shared core.
    - Playable result: each world can run independently.
-- `m0-character-service-schema`
+   - **Next:** Keep world simulation schema isolated per world server.
+- ✅ `m0-character-service-schema` **COMPLETED**
    - Define world-scoped character domain so characters are owned by and listed within a single selected world.
+   - Added world options (`Alpha`, `Draconis`) and world-specific module routing (`world-alpha-ikariadb`, `world-draconis-ikariadb`) in sign-in flow.
    - Playable result: character list is isolated per world.
 - `m0-world-service-schema`
    - Keep world simulation data per world server (map, positions, movement state, floor items, chat visibility context).

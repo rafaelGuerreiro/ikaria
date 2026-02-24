@@ -1,5 +1,5 @@
 [package]
-name = "ikariadb"
+name = "world-alpha-ikariadb"
 version = { workspace = true }
 edition = { workspace = true }
 publish = { workspace = true }
@@ -8,7 +8,7 @@ publish = { workspace = true }
 crate-type = ["cdylib"]
 
 [dependencies]
-ikaria-shared = { workspace = true }
+ikariadb-core = { workspace = true }
 
+log = { workspace = true, features = ["max_level_info", "release_max_level_info"] }
 spacetimedb = { workspace = true }
-thiserror = { workspace = true }

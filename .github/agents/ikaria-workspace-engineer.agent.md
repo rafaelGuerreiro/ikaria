@@ -17,3 +17,4 @@ Use this agent when the task spans multiple crates or workspace wiring.
 3. Use `workspace = true` in child crates for shared dependencies.
 4. Minimize churn; prefer surgical edits.
 5. Validate with root tasks (`task check`, `task test`) before finishing.
+6. When adding parallel backend modules, move shared backend logic into a reusable `sdks/*` crate instead of duplicating module source trees.

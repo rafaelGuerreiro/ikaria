@@ -1,20 +1,24 @@
 use crate::{
     app_state::AppState,
-    constants::{MODULE_NAME, SPACETIME_URI},
-    error::{ClientResult, ErrorMapper, ResultExt},
-    file_manager,
+    constants::SPACETIME_URI,
+    external_resources,
     resources::SessionResource,
+    ui_helpers::{self, DANGER_BUTTON, PRIMARY_BUTTON, SELECTOR_BUTTON},
+    ui_style::sign_in as sign_in_ui,
+    worlds::{WorldDefinition, load_worlds},
 };
 use bevy::prelude::*;
 use ikaria_types::autogen::DbConnection;
 use spacetimedb_sdk::DbContext;
-use std::fs;
 
 pub struct SignInPlugin;
 
 impl Plugin for SignInPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::SignIn), setup_sign_in);
+        app.add_systems(Update, handle_world_selector_interaction.run_if(in_state(AppState::SignIn)));
+        app.add_systems(Update, sync_world_selection_text.run_if(in_state(AppState::SignIn)));
+        app.add_systems(Update, sync_sign_in_hint_text.run_if(in_state(AppState::SignIn)));
         app.add_systems(Update, handle_sign_in_button_interaction.run_if(in_state(AppState::SignIn)));
         app.add_systems(Update, attempt_token_auth.run_if(in_state(AppState::SignIn)));
         app.add_systems(Update, handle_auth_success.run_if(in_state(AppState::SignIn)));
@@ -24,10 +28,21 @@ impl Plugin for SignInPlugin {
 
 /// Marker component for sign-in UI entities
 #[derive(Component)]
-struct SignInUi;
+pub(super) struct SignInUi;
 
 #[derive(Component)]
-struct SignInButton;
+pub(super) struct SignInButton;
+
+#[derive(Component)]
+pub(super) struct WorldSelectionText;
+
+#[derive(Component)]
+pub(super) struct SignInHintText;
+
+#[derive(Component)]
+pub(super) struct WorldSelectorButton {
+    pub(super) step: isize,
+}
 
 /// Resource to track authentication state
 #[derive(Resource, Default)]
@@ -35,77 +50,96 @@ struct AuthState {
     auth_requested: bool,
     attempted_token_auth: bool,
     connection_pending: Option<DbConnection>,
+    worlds: Vec<WorldDefinition>,
+    selected_world_index: usize,
+    world_config_error: Option<String>,
+}
+
+impl AuthState {
+    fn selected_world(&self) -> Option<&WorldDefinition> {
+        self.worlds.get(self.selected_world_index)
+    }
 }
 
 fn setup_sign_in(mut commands: Commands) {
     info!("Entering SignIn view");
-    commands.init_resource::<AuthState>();
 
-    // Spawn simple UI
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            BackgroundColor(Color::srgb(0.95, 0.95, 0.95)),
-            SignInUi,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Text::new("Welcome to Ikaria"),
-                TextFont {
-                    font_size: 32.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.2, 0.2, 0.2)),
-                Node {
-                    margin: UiRect::bottom(Val::Px(20.0)),
-                    ..default()
-                },
-            ));
+    let (worlds, world_config_error) = match load_worlds() {
+        Ok(worlds) => (worlds, None),
+        Err(e) => {
+            error!("Failed to load world config: {}", e);
+            (Vec::new(), Some(e.to_string()))
+        },
+    };
 
-            parent
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(220.0),
-                        height: Val::Px(60.0),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgb(0.2, 0.45, 0.85)),
-                    SignInButton,
-                ))
-                .with_children(|button| {
-                    button.spawn((
-                        Text::new("Sign In"),
-                        TextFont {
-                            font_size: 28.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgb(0.95, 0.95, 0.95)),
-                    ));
-                });
+    let initial_world_label = worlds
+        .first()
+        .map(|world| world.name.clone())
+        .unwrap_or_else(|| sign_in_ui::WORLD_UNAVAILABLE_TEXT.to_string());
 
-            parent.spawn((
-                Text::new("Click the button to authenticate"),
-                TextFont {
-                    font_size: 18.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.35, 0.35, 0.35)),
-                Node {
-                    margin: UiRect::top(Val::Px(14.0)),
-                    ..default()
-                },
-            ));
-        });
+    let initial_hint = match &world_config_error {
+        Some(error) => format!("{}{}", sign_in_ui::HINT_CONFIG_ERROR_PREFIX, error),
+        None if worlds.is_empty() => sign_in_ui::HINT_NO_WORLDS_TEXT.to_string(),
+        None => sign_in_ui::HINT_SELECT_WORLD_TEXT.to_string(),
+    };
+
+    commands.insert_resource(AuthState {
+        worlds,
+        world_config_error,
+        ..default()
+    });
+
+    super::sign_in_screen_ui::spawn_sign_in_ui(&mut commands, initial_world_label, initial_hint);
+}
+
+#[allow(clippy::type_complexity)]
+fn handle_world_selector_interaction(
+    mut interaction_query: Query<
+        (&Interaction, &WorldSelectorButton, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut auth_state: ResMut<AuthState>,
+) {
+    for (interaction, selector, mut color) in interaction_query.iter_mut() {
+        *color = ui_helpers::interaction_background(*interaction, SELECTOR_BUTTON);
+
+        if *interaction != Interaction::Pressed {
+            continue;
+        }
+
+        if auth_state.auth_requested || auth_state.attempted_token_auth || auth_state.worlds.is_empty() {
+            continue;
+        }
+
+        let total = auth_state.worlds.len() as isize;
+        let current = auth_state.selected_world_index as isize;
+        auth_state.selected_world_index = (current + selector.step).rem_euclid(total) as usize;
+    }
+}
+
+fn sync_world_selection_text(auth_state: Res<AuthState>, mut text_query: Query<&mut Text, With<WorldSelectionText>>) {
+    let label = auth_state
+        .selected_world()
+        .map(|world| world.name.clone())
+        .unwrap_or_else(|| sign_in_ui::WORLD_UNAVAILABLE_TEXT.to_string());
+
+    for mut text in text_query.iter_mut() {
+        text.0 = label.clone();
+    }
+}
+
+fn sync_sign_in_hint_text(auth_state: Res<AuthState>, mut hint_query: Query<&mut Text, With<SignInHintText>>) {
+    let hint = match &auth_state.world_config_error {
+        Some(error) => format!("{}{}", sign_in_ui::HINT_CONFIG_ERROR_PREFIX, error),
+        None => match auth_state.selected_world() {
+            Some(world) => format!("{}{}", sign_in_ui::HINT_SELECTED_WORLD_PREFIX, world.name),
+            None => sign_in_ui::HINT_NO_WORLDS_TEXT.to_string(),
+        },
+    };
+
+    for mut text in hint_query.iter_mut() {
+        text.0 = hint.clone();
+    }
 }
 
 #[allow(clippy::type_complexity)]
@@ -116,18 +150,20 @@ fn handle_sign_in_button_interaction(
     >,
     mut auth_state: ResMut<AuthState>,
 ) {
+    let can_authenticate = auth_state.world_config_error.is_none() && auth_state.selected_world().is_some();
+    let palette = if can_authenticate { PRIMARY_BUTTON } else { DANGER_BUTTON };
+
     for (interaction, mut color) in interaction_query.iter_mut() {
-        match *interaction {
-            Interaction::Pressed => {
-                auth_state.auth_requested = true;
-                *color = BackgroundColor(Color::srgb(0.15, 0.35, 0.7));
-            },
-            Interaction::Hovered => {
-                *color = BackgroundColor(Color::srgb(0.25, 0.5, 0.9));
-            },
-            Interaction::None => {
-                *color = BackgroundColor(Color::srgb(0.2, 0.45, 0.85));
-            },
+        *color = ui_helpers::interaction_background(*interaction, palette);
+
+        if *interaction != Interaction::Pressed {
+            continue;
+        }
+
+        if can_authenticate {
+            auth_state.auth_requested = true;
+        } else {
+            warn!("Sign-in blocked: world configuration is not available");
         }
     }
 }
@@ -154,10 +190,27 @@ fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
         return;
     }
 
-    info!("Attempting token-based authentication after user action...");
+    let selected_world = match auth_state.selected_world().cloned() {
+        Some(world) => world,
+        None => {
+            error!("Cannot authenticate: no world selected");
+            return;
+        },
+    };
+
+    info!(
+        "Attempting token-based authentication for world '{}' ({})",
+        selected_world.name, selected_world.module_name
+    );
 
     // Try to load saved token
-    let token = load_token_from_file();
+    let token = match external_resources::read_saved_token() {
+        Ok(token) => token,
+        Err(e) => {
+            warn!("Unable to load token file: {}", e);
+            None
+        },
+    };
 
     if token.is_some() {
         info!("Found saved token, connecting with it...");
@@ -166,7 +219,9 @@ fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
     }
 
     // Build connection with token (or None for anonymous/new identity)
-    let mut builder = DbConnection::builder().with_uri(SPACETIME_URI).with_module_name(MODULE_NAME);
+    let mut builder = DbConnection::builder()
+        .with_uri(SPACETIME_URI)
+        .with_module_name(selected_world.module_name.as_str());
 
     if let Some(ref token_str) = token {
         builder = builder.with_token(Some(token_str.as_str()));
@@ -176,7 +231,7 @@ fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
         .on_connect(move |_ctx, identity, new_token: &str| {
             info!("Connected! Identity: {:?}", identity);
             // Save the new token
-            if let Err(e) = save_token_to_file(new_token) {
+            if let Err(e) = external_resources::save_token(new_token) {
                 warn!("Failed to save token: {}", e);
             }
         })
@@ -206,10 +261,28 @@ fn handle_auth_success(mut commands: Commands, mut auth_state: ResMut<AuthState>
     if let Some(ref connection) = auth_state.connection_pending
         && let Some(identity) = connection.try_identity()
     {
-        info!("Authentication successful, transitioning to CharacterSelect");
+        let selected_world = match auth_state.selected_world().cloned() {
+            Some(world) => world,
+            None => {
+                error!("Authentication succeeded without a selected world");
+                return;
+            },
+        };
+
+        info!(
+            "Authentication successful for world '{}', transitioning to CharacterSelect",
+            selected_world.name
+        );
 
         // Get the token from file (we just saved it)
-        let token = load_token_from_file().unwrap_or_default();
+        let token = match external_resources::read_saved_token() {
+            Ok(Some(token)) => token,
+            Ok(None) => String::new(),
+            Err(e) => {
+                warn!("Unable to load token file: {}", e);
+                String::new()
+            },
+        };
 
         // Take the connection from auth_state
         if let Some(connection) = auth_state.connection_pending.take() {
@@ -221,6 +294,7 @@ fn handle_auth_success(mut commands: Commands, mut auth_state: ResMut<AuthState>
                 connection,
                 identity,
                 token,
+                world: selected_world,
             });
 
             // Transition to character select
@@ -235,31 +309,4 @@ fn cleanup_sign_in(mut commands: Commands, query: Query<Entity, With<SignInUi>>)
         commands.entity(entity).despawn();
     }
     commands.remove_resource::<AuthState>();
-}
-
-fn load_token_from_file() -> Option<String> {
-    let token_path = match file_manager::token_file_path() {
-        Ok(path) => path,
-        Err(e) => {
-            warn!("Unable to resolve token file path: {}", e);
-            return None;
-        },
-    };
-
-    let token_content = match fs::read_to_string(token_path) {
-        Ok(content) => content,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return None,
-        Err(e) => {
-            warn!("Unable to read token file: {}", e.map_internal_error());
-            return None;
-        },
-    };
-
-    let token = token_content.trim().to_string();
-    if token.is_empty() { None } else { Some(token) }
-}
-
-fn save_token_to_file(token: &str) -> ClientResult<()> {
-    let token_path = file_manager::token_file_path()?;
-    fs::write(token_path, token).map_internal_error()
 }
