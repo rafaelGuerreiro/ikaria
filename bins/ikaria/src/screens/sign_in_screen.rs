@@ -1,8 +1,7 @@
 use crate::{
     app_state::AppState,
     constants::SPACETIME_URI,
-    error::{ClientResult, ErrorMapper, ResultExt},
-    file_manager,
+    external_resources,
     resources::SessionResource,
     ui_helpers::{self, DANGER_BUTTON, PRIMARY_BUTTON, SELECTOR_BUTTON},
     ui_style::sign_in as sign_in_ui,
@@ -11,7 +10,6 @@ use crate::{
 use bevy::prelude::*;
 use ikaria_types::autogen::DbConnection;
 use spacetimedb_sdk::DbContext;
-use std::fs;
 
 pub struct SignInPlugin;
 
@@ -206,7 +204,13 @@ fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
     );
 
     // Try to load saved token
-    let token = load_token_from_file();
+    let token = match external_resources::read_saved_token() {
+        Ok(token) => token,
+        Err(e) => {
+            warn!("Unable to load token file: {}", e);
+            None
+        },
+    };
 
     if token.is_some() {
         info!("Found saved token, connecting with it...");
@@ -227,7 +231,7 @@ fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
         .on_connect(move |_ctx, identity, new_token: &str| {
             info!("Connected! Identity: {:?}", identity);
             // Save the new token
-            if let Err(e) = save_token_to_file(new_token) {
+            if let Err(e) = external_resources::save_token(new_token) {
                 warn!("Failed to save token: {}", e);
             }
         })
@@ -271,7 +275,14 @@ fn handle_auth_success(mut commands: Commands, mut auth_state: ResMut<AuthState>
         );
 
         // Get the token from file (we just saved it)
-        let token = load_token_from_file().unwrap_or_default();
+        let token = match external_resources::read_saved_token() {
+            Ok(Some(token)) => token,
+            Ok(None) => String::new(),
+            Err(e) => {
+                warn!("Unable to load token file: {}", e);
+                String::new()
+            },
+        };
 
         // Take the connection from auth_state
         if let Some(connection) = auth_state.connection_pending.take() {
@@ -298,31 +309,4 @@ fn cleanup_sign_in(mut commands: Commands, query: Query<Entity, With<SignInUi>>)
         commands.entity(entity).despawn();
     }
     commands.remove_resource::<AuthState>();
-}
-
-fn load_token_from_file() -> Option<String> {
-    let token_path = match file_manager::token_file_path() {
-        Ok(path) => path,
-        Err(e) => {
-            warn!("Unable to resolve token file path: {}", e);
-            return None;
-        },
-    };
-
-    let token_content = match fs::read_to_string(token_path) {
-        Ok(content) => content,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return None,
-        Err(e) => {
-            warn!("Unable to read token file: {}", e.map_internal_error());
-            return None;
-        },
-    };
-
-    let token = token_content.trim().to_string();
-    if token.is_empty() { None } else { Some(token) }
-}
-
-fn save_token_to_file(token: &str) -> ClientResult<()> {
-    let token_path = file_manager::token_file_path()?;
-    fs::write(token_path, token).map_internal_error()
 }

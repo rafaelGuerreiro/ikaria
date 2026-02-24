@@ -7,7 +7,7 @@ pub mod app_state;
 pub mod constants;
 pub mod error;
 pub mod events;
-pub mod file_manager;
+pub mod external_resources;
 pub mod resources;
 pub mod screens;
 pub mod ui_helpers;
