@@ -19,21 +19,25 @@ pub fn token_file_path() -> ClientResult<PathBuf> {
 
 #[cfg(target_os = "windows")]
 fn platform_data_dir() -> Option<PathBuf> {
-    env::var_os("APPDATA").map(PathBuf::from)
+    env::var_os(crate::constants::ENV_APPDATA).map(PathBuf::from)
 }
 
 #[cfg(target_os = "macos")]
 fn platform_data_dir() -> Option<PathBuf> {
-    env::var_os("HOME")
-        .map(PathBuf::from)
-        .map(|home| home.join("Library").join("Application Support"))
+    env::var_os(crate::constants::ENV_HOME).map(PathBuf::from).map(|home| {
+        home.join(crate::constants::MACOS_LIBRARY_DIR)
+            .join(crate::constants::MACOS_APPLICATION_SUPPORT_DIR)
+    })
 }
 
 #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
 fn platform_data_dir() -> Option<PathBuf> {
-    env::var_os("XDG_DATA_HOME").map(PathBuf::from).or_else(|| {
-        env::var_os("HOME")
-            .map(PathBuf::from)
-            .map(|home| home.join(".local").join("share"))
-    })
+    env::var_os(crate::constants::ENV_XDG_DATA_HOME)
+        .map(PathBuf::from)
+        .or_else(|| {
+            env::var_os(crate::constants::ENV_HOME).map(PathBuf::from).map(|home| {
+                home.join(crate::constants::UNIX_LOCAL_DIR)
+                    .join(crate::constants::UNIX_SHARE_DIR)
+            })
+        })
 }

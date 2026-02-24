@@ -1,6 +1,7 @@
 use crate::{
     app_state::AppState,
     resources::{SelectedCharacterResource, SessionResource},
+    ui_style::{self, game as game_ui, palette},
 };
 use bevy::prelude::*;
 
@@ -26,37 +27,42 @@ fn setup_game(mut commands: Commands, _session: Res<SessionResource>, character:
     commands
         .spawn((
             Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
+                width: Val::Percent(ui_style::ROOT_WIDTH_PERCENT),
+                height: Val::Percent(ui_style::ROOT_HEIGHT_PERCENT),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
                 flex_direction: FlexDirection::Column,
                 ..default()
             },
-            BackgroundColor(Color::srgb(0.2, 0.5, 0.2)), // Green for grassland
+            BackgroundColor(ui_style::color(palette::BACKGROUND_GAME)),
             GameUi,
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new(format!("Welcome, {}!", character.name)),
+                Text::new(format!(
+                    "{}{}{}",
+                    game_ui::WELCOME_PREFIX,
+                    character.name,
+                    game_ui::WELCOME_SUFFIX
+                )),
                 TextFont {
-                    font_size: 40.0,
+                    font_size: game_ui::WELCOME_FONT_SIZE,
                     ..default()
                 },
-                TextColor(Color::srgb(1.0, 1.0, 1.0)),
+                TextColor(ui_style::color(palette::TEXT_INVERSE)),
                 Node {
-                    margin: UiRect::bottom(Val::Px(20.0)),
+                    margin: UiRect::bottom(Val::Px(game_ui::WELCOME_MARGIN_BOTTOM)),
                     ..default()
                 },
             ));
 
             parent.spawn((
-                Text::new("Game world placeholder\n\nPress ESC to return to character select"),
+                Text::new(game_ui::INFO_TEXT),
                 TextFont {
-                    font_size: 20.0,
+                    font_size: game_ui::INFO_FONT_SIZE,
                     ..default()
                 },
-                TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                TextColor(ui_style::color(palette::TEXT_SOFT_INVERSE)),
                 TextLayout {
                     justify: Justify::Center,
                     ..default()

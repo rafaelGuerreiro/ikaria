@@ -10,6 +10,9 @@ pub mod events;
 pub mod file_manager;
 pub mod resources;
 pub mod screens;
+pub mod ui_helpers;
+pub mod ui_style;
+pub mod worlds;
 
 struct IkariaClientPlugin;
 

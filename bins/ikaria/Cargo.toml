@@ -12,6 +12,8 @@ bevy = { workspace = true, features = ["dynamic_linking"] }
 log = { workspace = true, features = ["max_level_info", "release_max_level_info"] }
 spacetimedb-sdk = { workspace = true }
 thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

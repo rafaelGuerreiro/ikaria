@@ -1,0 +1,12 @@
+{
+  "worlds": [
+    {
+      "name": "Alpha",
+      "module_name": "world-alpha-ikariadb"
+    },
+    {
+      "name": "Draconis",
+      "module_name": "world-draconis-ikariadb"
+    }
+  ]
+}

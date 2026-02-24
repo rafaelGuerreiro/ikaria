@@ -1,3 +1,4 @@
+use crate::worlds::WorldDefinition;
 use bevy::prelude::*;
 use spacetimedb_sdk::Identity;
 
@@ -7,6 +8,7 @@ pub struct SessionResource {
     pub connection: ikaria_types::autogen::DbConnection,
     pub identity: Identity,
     pub token: String,
+    pub world: WorldDefinition,
 }
 
 /// Stores the selected character for the current play session
