@@ -2,11 +2,12 @@
 
 ## Problem and current state
 - Goal: deliver a pseudo-Tibia style game loop with small, visible, playable tasks.
-- Current repo already has client state flow (`SignIn -> CharacterSelect -> Game`) and token-based sign-in wiring.
-- Current backend is still a single server module with account/world gameplay data combined.
-- Character creation UI exists but backend reducer is missing.
+- Current repo already has client state flow (`SignIn -> CharacterSelect -> Game`) with world selection before sign-in.
+- Token-based sign-in already connects directly to the selected world module using a single session connection.
+- Backend is split into world-specific modules (`world-alpha-ikariadb`, `world-draconis-ikariadb`) over shared `ikariadb-core`.
+- Character creation UI exists but backend reducer is still missing.
 - Game view is still placeholder UI; no tile map rendering, no movement loop, and no player sync.
-- Backend currently defines tables/events but lacks gameplay reducers for create/select/spawn/move/chat.
+- Backend currently defines schema/events plus lifecycle reducers, but lacks gameplay reducers for create/spawn/move/chat/inventory/stairs.
 
 ## Confirmed product decisions
 - Milestone 1 focus: **proper character creation workflow**.
@@ -41,8 +42,9 @@
 Build vertical slices where each slice can be tested in-game immediately.
 
 ### Milestone 0: world split foundation (before gameplay milestones)
-**Status:** In Progress
+**Status:** In Progress (playtest blocked by missing backend gameplay reducers)
 
+#### Backend track
 - ✅ `m0-split-backend-modules` **COMPLETED**
    - Split backend into distinct world servers/modules that can diverge in features and maps.
    - Created `bins/world-alpha-ikariadb` as parallel backend module.
@@ -53,34 +55,41 @@ Build vertical slices where each slice can be tested in-game immediately.
    - **Next:** Keep world simulation schema isolated per world server.
 - ✅ `m0-character-service-schema` **COMPLETED**
    - Define world-scoped character domain so characters are owned by and listed within a single selected world.
-   - Added world options (`Alpha`, `Draconis`) and world-specific module routing (`world-alpha-ikariadb`, `world-draconis-ikariadb`) in sign-in flow.
    - Playable result: character list is isolated per world.
-- `m0-world-service-schema`
-   - Keep world simulation data per world server (map, positions, movement state, floor items, chat visibility context).
-   - Playable result: world state evolves independently per world.
-- `m0-world-registry-contract`
-   - Define "World" metadata contract (world id/name/features/map identity) so client can choose a world pre-auth.
-   - Playable result: client can render world list before signing in.
-- `m0-client-world-selection`
+- ⚠️ `m0-world-service-schema` **PARTIAL**
+   - Core world schema tables exist (`map_v1`, `town_temple_v1`, `character_position_v1`, `item_definition_v1`) and are isolated per world module.
+   - Backend gameplay reducers/services that make this simulation playable are still missing.
+   - Playable result: world data foundations exist, but world simulation loop is not implemented.
+- ⚠️ `m0-world-registry-contract` **PARTIAL**
+   - World registry contract currently covers module routing (`module_name`) and world label (`name`).
+   - Feature-set/map-identity metadata contract is not implemented yet.
+   - Playable result: basic world routing exists, richer metadata is still pending.
+
+#### Client track
+- ✅ `m0-client-world-selection` **COMPLETED**
    - Add manual world selection screen before initial sign-in.
    - Playable result: player explicitly chooses a world first.
-- `m0-client-single-connection-flow`
+- ✅ `m0-client-single-connection-flow` **COMPLETED**
    - Implement single connection flow: connect/authenticate only against selected world module.
    - Playable result: no second authentication is required to enter gameplay.
-- `m0-world-split-playtest`
+
+#### Shared validation
+- ⛔ `m0-world-split-playtest` **BLOCKED**
    - Validate loop: choose world -> sign in -> see world-scoped characters -> enter matching world server.
-   - Playable result: pre-M1 architecture is proven before gameplay milestones.
+   - Blocked because backend gameplay reducers are not implemented yet (for example, character creation still does not call a backend reducer).
+   - Playable result: pre-M1 architecture will be proven once backend reducers exist.
 
 ### Milestone 1: character creation + multiplayer walking
-- `m1-create-character-schema`
+**Status:** Not Started (client has character-creation UI scaffold only)
+
+#### Backend track
+- ⚠️ `m1-create-character-schema` **PARTIAL**
    - Add schema support required for name+gender creation contract.
+   - Current backend has character tables but does not yet model a proper name+gender creation contract end-to-end.
    - Playable result: backend contract supports proper create payload.
-2. `m1-create-character-reducer`
+- `m1-create-character-reducer`
    - Implement reducer/service with validation and global name uniqueness.
    - Playable result: reducer callable and creates persisted characters.
-- `m1-create-character-client-flow`
-   - Wire CharacterSelect form to reducer, show errors, auto-enter game on success.
-   - Playable result: user can create character and transition to game.
 - `m1-seed-fixed-map`
    - Seed deterministic handcrafted map + spawn/temple points at init.
    - Playable result: world data exists to render and spawn in.
@@ -90,6 +99,12 @@ Build vertical slices where each slice can be tested in-game immediately.
 - `m1-move-reducer`
    - Add server-authoritative movement reducer with walkability/bounds checks.
    - Playable result: position updates are authoritative on server.
+
+#### Client track
+- ⚠️ `m1-create-character-client-flow` **PARTIAL (UI only)**
+   - Wire CharacterSelect form to reducer, show errors, auto-enter game on success.
+   - Current client collects name/gender but logs TODO/warnings because reducer call is not implemented.
+   - Playable result: user can create character and transition to game.
 - `m1-game-map-render`
    - Render simple tile map in Bevy game state.
    - Playable result: player sees a real map instead of placeholder.
@@ -99,54 +114,73 @@ Build vertical slices where each slice can be tested in-game immediately.
 - `m1-wasd-network-input`
    - Send WASD as movement reducer commands and reflect server state updates.
    - Playable result: walking works end-to-end through server.
+
+#### Shared validation
 - `m1-playtest-multiplayer-loop`
-    - Validate full loop: create -> auto-enter -> walk -> see others.
-    - Playable result: first pseudo-Tibia multiplayer walking loop complete.
+   - Validate full loop: create -> auto-enter -> walk -> see others.
+   - Playable result: first pseudo-Tibia multiplayer walking loop complete.
 
 ### Milestone 2: local chat bubbles
-- `m2-chat-input-mode`
-    - Implement chat input mode state: Enter turns chat on; Enter sends and turns chat off.
-    - Playable result: players can reliably switch between movement and text input.
-- `m2-chat-message-rules`
-    - Implement text rules: Shift+Enter/Alt+Enter adds newline, trim on send, and 1024-char max.
-    - Playable result: chat input behaves predictably and bounded.
+**Status:** Not Started
+
+#### Backend track
 - `m2-chat-reducer-nearby`
-    - Add say/chat reducer and delivery scoped by visible radius, receiving already-trimmed bounded messages.
-    - Playable result: valid chat messages are distributed to nearby players only.
+   - Add say/chat reducer and delivery scoped by visible radius, receiving already-trimmed bounded messages.
+   - Playable result: valid chat messages are distributed to nearby players only.
+
+#### Client track
+- `m2-chat-input-mode`
+   - Implement chat input mode state: Enter turns chat on; Enter sends and turns chat off.
+   - Playable result: players can reliably switch between movement and text input.
+- `m2-chat-message-rules`
+   - Implement text rules: Shift+Enter/Alt+Enter adds newline, trim on send, and 1024-char max.
+   - Playable result: chat input behaves predictably and bounded.
 - `m2-chat-bubble-client`
-    - Render overhead chat text per player with duration based on message length.
-    - Playable result: nearby players see temporary overhead text that clears automatically.
+   - Render overhead chat text per player with duration based on message length.
+   - Playable result: nearby players see temporary overhead text that clears automatically.
+
+#### Shared validation
 - `m2-chat-playtest-loop`
-    - Validate full loop: enter chat mode -> type/multiline -> send -> exit chat mode -> nearby visibility only.
-    - Playable result: complete chat loop works as intended in multiplayer.
+   - Validate full loop: enter chat mode -> type/multiline -> send -> exit chat mode -> nearby visibility only.
+   - Playable result: complete chat loop works as intended in multiplayer.
 
 ### Milestone 3: proper inventory foundations
+**Status:** Not Started
+
+#### Backend track
 - `m3-floor-item-instances`
-    - Add server-side floor item instances and deterministic placement rules for visible item drops.
-    - Playable result: items can exist on tiles and be synced to clients.
-- `m3-render-floor-items`
-    - Render floor items in the game view so players can see loot on ground tiles.
-    - Playable result: nearby floor items are visible in-world.
+   - Add server-side floor item instances and deterministic placement rules for visible item drops.
+   - Playable result: items can exist on tiles and be synced to clients.
 - `m3-pickup-to-bag`
-    - Implement pickup reducer flow to move floor items into character inventory with all-or-nothing fit checks.
-    - Playable result: player can pick items from floor into inventory.
+   - Implement pickup reducer flow to move floor items into character inventory with all-or-nothing fit checks.
+   - Playable result: player can pick items from floor into inventory.
 - `m3-bag-eight-slots`
-    - Enforce exactly 8 bag slots and block pickup when no slot/stack space is available.
-    - Playable result: inventory capacity is clear and testable.
-- `m3-hand-slots-equip`
-    - Add hand equip flow so carried items can be equipped into hand slots.
-    - Playable result: player can hold items in hands from inventory.
+   - Enforce exactly 8 bag slots and block pickup when no slot/stack space is available.
+   - Playable result: inventory capacity is clear and testable.
 - `m3-item-stack-limits`
-    - Add item-definition stack limits per item type (example: coins 1000, apples 10).
-    - Playable result: stack behavior is consistent with item category.
+   - Add item-definition stack limits per item type (example: coins 1000, apples 10).
+   - Playable result: stack behavior is consistent with item category.
 - `m3-stackable-combine`
-    - Implement stack merge rules using per-item limits, with all-or-nothing pickup when inventory cannot fully fit the stack.
-    - Playable result: stackable items combine correctly and overflow behavior is deterministic.
+   - Implement stack merge rules using per-item limits, with all-or-nothing pickup when inventory cannot fully fit the stack.
+   - Playable result: stackable items combine correctly and overflow behavior is deterministic.
+
+#### Client track
+- `m3-render-floor-items`
+   - Render floor items in the game view so players can see loot on ground tiles.
+   - Playable result: nearby floor items are visible in-world.
+- `m3-hand-slots-equip`
+   - Add hand equip flow so carried items can be equipped into hand slots.
+   - Playable result: player can hold items in hands from inventory.
+
+#### Shared validation
 - `m3-inventory-playtest-loop`
-    - Validate full loop: see floor items -> pick up -> manage 8-slot bag -> equip hands -> verify stack combining.
-    - Playable result: first complete inventory gameplay loop is usable.
+   - Validate full loop: see floor items -> pick up -> manage 8-slot bag -> equip hands -> verify stack combining.
+   - Playable result: first complete inventory gameplay loop is usable.
 
 ### Milestone 4: character stats foundations (after milestone 3)
+**Status:** Not Started
+
+#### Backend track
 - `m4-stat-model-contract`
    - Define canonical stat contract (capacity, hp, mana, and skill entries for melee/distance/magic/shield) with world-scoped ownership.
    - Playable result: stats are modeled consistently across server/client contracts.
@@ -162,35 +196,46 @@ Build vertical slices where each slice can be tested in-game immediately.
 - `m4-progression-trigger-actions`
    - Add minimal action hooks/reducers that can trigger skill progression before full combat is implemented.
    - Playable result: skill progression is testable in gameplay loop now.
+
+#### Client track
 - `m4-stats-sync-client`
    - Sync stat/skill updates to the client from authoritative server state.
    - Playable result: client always reflects current hp/mana/capacity/skills.
 - `m4-stats-ui-panel`
    - Show hp, mana, capacity, and four skills in a simple visible UI panel.
    - Playable result: players can inspect stat changes in real time.
+
+#### Shared validation
 - `m4-stats-playtest-loop`
    - Validate loop: create/load character -> observe regen -> trigger progression -> verify UI updates from server.
    - Playable result: end-to-end stat foundation is playable and visible.
 
 ### Milestone 5: stair traversal between floors
+**Status:** Not Started
+
+#### Backend track
 - `m5-stair-topology-model`
    - Define stair topology model (stair-up tile + stair-hole tile) and deterministic links between source/target floor positions.
    - Playable result: stairs have explicit floor-transition mapping.
 - `m5-seed-stair-points`
    - Seed first stair links on map data so transitions are testable in-game.
    - Playable result: world has usable up/down stair points.
+- `m5-floor-transition-guards`
+   - Enforce transition guards (valid linked target tile, occupancy/walkability checks, deterministic failure behavior).
+   - Playable result: stair transitions are safe and consistent.
+
+#### Client track
 - `m5-click-stair-up`
    - Implement left-click interaction on stair tile that moves character up one floor via authoritative server transition.
    - Playable result: clicking stair reliably goes up.
 - `m5-walk-hole-down`
    - Implement automatic down transition when walking into stair hole tile.
    - Playable result: walking into hole reliably goes down.
-- `m5-floor-transition-guards`
-   - Enforce transition guards (valid linked target tile, occupancy/walkability checks, deterministic failure behavior).
-   - Playable result: stair transitions are safe and consistent.
 - `m5-zlevel-sync-client`
    - Sync floor/z-level transitions to client rendering and visibility state.
    - Playable result: player and nearby entities render correctly after floor changes.
+
+#### Shared validation
 - `m5-stair-playtest-loop`
    - Validate loop: click stair up -> move around upper floor -> walk into hole -> return down with correct state sync.
    - Playable result: bi-directional stair traversal is fully playable.
