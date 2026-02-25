@@ -10,7 +10,7 @@ use bevy::{
     input::{ButtonState, keyboard::KeyboardInput},
     prelude::*,
 };
-use ikaria_types::autogen::{CharacterV1, CharacterV1TableAccess};
+use ikaria_types::autogen::{CharacterV1, VwCharacterMeV1TableAccess};
 use spacetimedb_sdk::Table;
 
 pub struct CharacterSelectPlugin;
@@ -122,7 +122,7 @@ fn setup_character_select(mut commands: Commands, session: Res<SessionResource>)
     let characters: Vec<CharacterV1> = session
         .connection
         .db
-        .character_v_1()
+        .vw_character_me_v_1()
         .iter()
         .filter(|c| c.user_id == session.identity)
         .collect();
@@ -187,7 +187,7 @@ fn handle_character_creation_interactions(
     let has_characters = session
         .connection
         .db
-        .character_v_1()
+        .vw_character_me_v_1()
         .iter()
         .any(|c| c.user_id == session.identity);
 
@@ -336,7 +336,7 @@ fn sync_character_creation_visuals(
     let has_characters = session
         .connection
         .db
-        .character_v_1()
+        .vw_character_me_v_1()
         .iter()
         .any(|c| c.user_id == session.identity);
 

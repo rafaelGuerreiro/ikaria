@@ -13,10 +13,10 @@ pub fn init(ctx: &ReducerContext) {
 }
 
 pub fn identity_connected(ctx: &ReducerContext) -> ServiceResult<()> {
-    ctx.publish().user_signed_in(ctx.sender)?;
+    ctx.publish().user_signed_in(ctx.sender())?;
     Ok(())
 }
 
 pub fn identity_disconnected(ctx: &ReducerContext) {
-    ctx.publish().user_signed_out(ctx.sender);
+    ctx.publish().user_signed_out(ctx.sender());
 }

@@ -83,7 +83,7 @@ impl EventServices<'_> {
         if let Err(err) = self.handle_sync_event(event, false) {
             warn!(
                 "Sync event handler failed: sender={}, event={event:?}, error={err}",
-                self.sender
+                self.sender()
             );
         }
     }
@@ -96,7 +96,7 @@ impl EventServices<'_> {
             job_id: 0,
             scheduled_at: scheduled_at.into(),
             event,
-            sender: self.sender,
+            sender: self.sender(),
             created_at: self.timestamp,
         });
 
@@ -116,7 +116,7 @@ impl EventServices<'_> {
                 return Err(e);
             }
 
-            warn!("Error in event: {e}; sender={}, event={event:?}", self.sender);
+            warn!("Error in event: {e}; sender={}, event={event:?}", self.sender());
         }
 
         Ok(())

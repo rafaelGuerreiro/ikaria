@@ -59,7 +59,7 @@ Prefer rules that stay valid over time, not feature-by-feature notes.
 11. **Views are curated read surfaces**
     - Keep public views in `{domain}/views.rs`.
     - Return only what clients should read; keep tables private by default.
-    - Scope caller-specific views by `ctx.sender` when identity matters.
+    - Scope caller-specific views by `ctx.sender()` when identity matters.
 
 12. **Constants belong in `src/constants.rs`**
     - Validation bounds and default gameplay values should be centralized.

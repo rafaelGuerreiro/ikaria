@@ -5,7 +5,7 @@
 use super::{map_tile_v_1_type::MapTileV1, map_v_1_type::MapV1};
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
-/// Table handle for the table `vw_world_map_v1`.
+/// Table handle for the table `vw_world_map_v_1`.
 ///
 /// Obtain a handle from the [`VwWorldMapV1TableAccess::vw_world_map_v_1`] method on [`super::RemoteTables`],
 /// like `ctx.db.vw_world_map_v_1()`.
@@ -19,19 +19,19 @@ pub struct VwWorldMapV1TableHandle<'ctx> {
 }
 
 #[allow(non_camel_case_types)]
-/// Extension trait for access to the table `vw_world_map_v1`.
+/// Extension trait for access to the table `vw_world_map_v_1`.
 ///
 /// Implemented for [`super::RemoteTables`].
 pub trait VwWorldMapV1TableAccess {
     #[allow(non_snake_case)]
-    /// Obtain a [`VwWorldMapV1TableHandle`], which mediates access to the table `vw_world_map_v1`.
+    /// Obtain a [`VwWorldMapV1TableHandle`], which mediates access to the table `vw_world_map_v_1`.
     fn vw_world_map_v_1(&self) -> VwWorldMapV1TableHandle<'_>;
 }
 
 impl VwWorldMapV1TableAccess for super::RemoteTables {
     fn vw_world_map_v_1(&self) -> VwWorldMapV1TableHandle<'_> {
         VwWorldMapV1TableHandle {
-            imp: self.imp.get_table::<MapV1>("vw_world_map_v1"),
+            imp: self.imp.get_table::<MapV1>("vw_world_map_v_1"),
             ctx: std::marker::PhantomData,
         }
     }
@@ -80,13 +80,11 @@ impl<'ctx> __sdk::Table for VwWorldMapV1TableHandle<'ctx> {
 
 #[doc(hidden)]
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
-    let _table = client_cache.get_or_make_table::<MapV1>("vw_world_map_v1");
+    let _table = client_cache.get_or_make_table::<MapV1>("vw_world_map_v_1");
 }
 
 #[doc(hidden)]
-pub(super) fn parse_table_update(
-    raw_updates: __ws::TableUpdate<__ws::BsatnFormat>,
-) -> __sdk::Result<__sdk::TableUpdate<MapV1>> {
+pub(super) fn parse_table_update(raw_updates: __ws::v2::TableUpdate) -> __sdk::Result<__sdk::TableUpdate<MapV1>> {
     __sdk::TableUpdate::parse_table_update(raw_updates).map_err(|e| {
         __sdk::InternalError::failed_parse("TableUpdate<MapV1>", "TableUpdate")
             .with_cause(e)
@@ -98,14 +96,14 @@ pub(super) fn parse_table_update(
 /// Extension trait for query builder access to the table `MapV1`.
 ///
 /// Implemented for [`__sdk::QueryTableAccessor`].
-pub trait vw_world_map_v1QueryTableAccess {
+pub trait vw_world_map_v_1QueryTableAccess {
     #[allow(non_snake_case)]
     /// Get a query builder for the table `MapV1`.
-    fn vw_world_map_v1(&self) -> __sdk::__query_builder::Table<MapV1>;
+    fn vw_world_map_v_1(&self) -> __sdk::__query_builder::Table<MapV1>;
 }
 
-impl vw_world_map_v1QueryTableAccess for __sdk::QueryTableAccessor {
-    fn vw_world_map_v1(&self) -> __sdk::__query_builder::Table<MapV1> {
-        __sdk::__query_builder::Table::new("vw_world_map_v1")
+impl vw_world_map_v_1QueryTableAccess for __sdk::QueryTableAccessor {
+    fn vw_world_map_v_1(&self) -> __sdk::__query_builder::Table<MapV1> {
+        __sdk::__query_builder::Table::new("vw_world_map_v_1")
     }
 }

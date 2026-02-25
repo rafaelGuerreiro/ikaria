@@ -7,7 +7,7 @@ pub mod services;
 pub mod types;
 pub mod views;
 
-#[table(name = character_v1, private)]
+#[table(accessor = character_v1, private)]
 pub struct CharacterV1 {
     #[auto_inc]
     #[primary_key]
@@ -23,7 +23,7 @@ pub struct CharacterV1 {
     pub created_at: Timestamp,
 }
 
-#[table(name = character_stats_v1, private)]
+#[table(accessor = character_stats_v1, private)]
 pub struct CharacterStatsV1 {
     #[primary_key]
     pub character_id: u64,
@@ -36,7 +36,7 @@ pub struct CharacterStatsV1 {
     pub capacity: u32,
 }
 
-#[table(name = current_character_v1, private)]
+#[table(accessor = current_character_v1, private)]
 pub struct CurrentCharacterV1 {
     #[primary_key]
     pub user_id: Identity,

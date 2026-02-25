@@ -3,7 +3,7 @@ use spacetimedb::table;
 
 pub mod types;
 
-#[table(name = character_skill_v1, private)]
+#[table(accessor = character_skill_v1, private)]
 pub struct CharacterSkillV1 {
     #[auto_inc]
     #[primary_key]

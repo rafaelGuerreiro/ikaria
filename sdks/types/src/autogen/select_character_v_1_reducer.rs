@@ -22,84 +22,43 @@ impl __sdk::InModule for SelectCharacterV1Args {
     type Module = super::RemoteModule;
 }
 
-pub struct SelectCharacterV1CallbackId(__sdk::CallbackId);
-
 #[allow(non_camel_case_types)]
-/// Extension trait for access to the reducer `select_character_v1`.
+/// Extension trait for access to the reducer `select_character_v_1`.
 ///
 /// Implemented for [`super::RemoteReducers`].
 pub trait select_character_v_1 {
-    /// Request that the remote module invoke the reducer `select_character_v1` to run as soon as possible.
+    /// Request that the remote module invoke the reducer `select_character_v_1` to run as soon as possible.
     ///
     /// This method returns immediately, and errors only if we are unable to send the request.
     /// The reducer will run asynchronously in the future,
-    ///  and its status can be observed by listening for [`Self::on_select_character_v_1`] callbacks.
-    fn select_character_v_1(&self, character_id: u64) -> __sdk::Result<()>;
-    /// Register a callback to run whenever we are notified of an invocation of the reducer `select_character_v1`.
+    ///  and this method provides no way to listen for its completion status.
+    /// /// Use [`select_character_v_1:select_character_v_1_then`] to run a callback after the reducer completes.
+    fn select_character_v_1(&self, character_id: u64) -> __sdk::Result<()> {
+        self.select_character_v_1_then(character_id, |_, _| {})
+    }
+
+    /// Request that the remote module invoke the reducer `select_character_v_1` to run as soon as possible,
+    /// registering `callback` to run when we are notified that the reducer completed.
     ///
-    /// Callbacks should inspect the [`__sdk::ReducerEvent`] contained in the [`super::ReducerEventContext`]
-    /// to determine the reducer's status.
-    ///
-    /// The returned [`SelectCharacterV1CallbackId`] can be passed to [`Self::remove_on_select_character_v_1`]
-    /// to cancel the callback.
-    fn on_select_character_v_1(
+    /// This method returns immediately, and errors only if we are unable to send the request.
+    /// The reducer will run asynchronously in the future,
+    ///  and its status can be observed with the `callback`.
+    fn select_character_v_1_then(
         &self,
-        callback: impl FnMut(&super::ReducerEventContext, &u64) + Send + 'static,
-    ) -> SelectCharacterV1CallbackId;
-    /// Cancel a callback previously registered by [`Self::on_select_character_v_1`],
-    /// causing it not to run in the future.
-    fn remove_on_select_character_v_1(&self, callback: SelectCharacterV1CallbackId);
+        character_id: u64,
+
+        callback: impl FnOnce(&super::ReducerEventContext, Result<Result<(), String>, __sdk::InternalError>) + Send + 'static,
+    ) -> __sdk::Result<()>;
 }
 
 impl select_character_v_1 for super::RemoteReducers {
-    fn select_character_v_1(&self, character_id: u64) -> __sdk::Result<()> {
-        self.imp
-            .call_reducer("select_character_v1", SelectCharacterV1Args { character_id })
-    }
-    fn on_select_character_v_1(
+    fn select_character_v_1_then(
         &self,
-        mut callback: impl FnMut(&super::ReducerEventContext, &u64) + Send + 'static,
-    ) -> SelectCharacterV1CallbackId {
-        SelectCharacterV1CallbackId(self.imp.on_reducer(
-            "select_character_v1",
-            Box::new(move |ctx: &super::ReducerEventContext| {
-                #[allow(irrefutable_let_patterns)]
-                let super::ReducerEventContext {
-                    event:
-                        __sdk::ReducerEvent {
-                            reducer: super::Reducer::SelectCharacterV1 { character_id },
-                            ..
-                        },
-                    ..
-                } = ctx
-                else {
-                    unreachable!()
-                };
-                callback(ctx, character_id)
-            }),
-        ))
-    }
-    fn remove_on_select_character_v_1(&self, callback: SelectCharacterV1CallbackId) {
-        self.imp.remove_on_reducer("select_character_v1", callback.0)
-    }
-}
+        character_id: u64,
 
-#[allow(non_camel_case_types)]
-#[doc(hidden)]
-/// Extension trait for setting the call-flags for the reducer `select_character_v1`.
-///
-/// Implemented for [`super::SetReducerFlags`].
-///
-/// This type is currently unstable and may be removed without a major version bump.
-pub trait set_flags_for_select_character_v_1 {
-    /// Set the call-reducer flags for the reducer `select_character_v1` to `flags`.
-    ///
-    /// This type is currently unstable and may be removed without a major version bump.
-    fn select_character_v_1(&self, flags: __ws::CallReducerFlags);
-}
-
-impl set_flags_for_select_character_v_1 for super::SetReducerFlags {
-    fn select_character_v_1(&self, flags: __ws::CallReducerFlags) {
-        self.imp.set_call_reducer_flags("select_character_v1", flags);
+        callback: impl FnOnce(&super::ReducerEventContext, Result<Result<(), String>, __sdk::InternalError>) + Send + 'static,
+    ) -> __sdk::Result<()> {
+        self.imp
+            .invoke_reducer_with_callback(SelectCharacterV1Args { character_id }, callback)
     }
 }

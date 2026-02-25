@@ -5,7 +5,7 @@
 use super::{character_v_1_type::CharacterV1, class_v_1_type::ClassV1, gender_v_1_type::GenderV1, race_v_1_type::RaceV1};
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
-/// Table handle for the table `vw_nearby_characters_v1`.
+/// Table handle for the table `vw_nearby_characters_v_1`.
 ///
 /// Obtain a handle from the [`VwNearbyCharactersV1TableAccess::vw_nearby_characters_v_1`] method on [`super::RemoteTables`],
 /// like `ctx.db.vw_nearby_characters_v_1()`.
@@ -19,19 +19,19 @@ pub struct VwNearbyCharactersV1TableHandle<'ctx> {
 }
 
 #[allow(non_camel_case_types)]
-/// Extension trait for access to the table `vw_nearby_characters_v1`.
+/// Extension trait for access to the table `vw_nearby_characters_v_1`.
 ///
 /// Implemented for [`super::RemoteTables`].
 pub trait VwNearbyCharactersV1TableAccess {
     #[allow(non_snake_case)]
-    /// Obtain a [`VwNearbyCharactersV1TableHandle`], which mediates access to the table `vw_nearby_characters_v1`.
+    /// Obtain a [`VwNearbyCharactersV1TableHandle`], which mediates access to the table `vw_nearby_characters_v_1`.
     fn vw_nearby_characters_v_1(&self) -> VwNearbyCharactersV1TableHandle<'_>;
 }
 
 impl VwNearbyCharactersV1TableAccess for super::RemoteTables {
     fn vw_nearby_characters_v_1(&self) -> VwNearbyCharactersV1TableHandle<'_> {
         VwNearbyCharactersV1TableHandle {
-            imp: self.imp.get_table::<CharacterV1>("vw_nearby_characters_v1"),
+            imp: self.imp.get_table::<CharacterV1>("vw_nearby_characters_v_1"),
             ctx: std::marker::PhantomData,
         }
     }
@@ -80,13 +80,11 @@ impl<'ctx> __sdk::Table for VwNearbyCharactersV1TableHandle<'ctx> {
 
 #[doc(hidden)]
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
-    let _table = client_cache.get_or_make_table::<CharacterV1>("vw_nearby_characters_v1");
+    let _table = client_cache.get_or_make_table::<CharacterV1>("vw_nearby_characters_v_1");
 }
 
 #[doc(hidden)]
-pub(super) fn parse_table_update(
-    raw_updates: __ws::TableUpdate<__ws::BsatnFormat>,
-) -> __sdk::Result<__sdk::TableUpdate<CharacterV1>> {
+pub(super) fn parse_table_update(raw_updates: __ws::v2::TableUpdate) -> __sdk::Result<__sdk::TableUpdate<CharacterV1>> {
     __sdk::TableUpdate::parse_table_update(raw_updates).map_err(|e| {
         __sdk::InternalError::failed_parse("TableUpdate<CharacterV1>", "TableUpdate")
             .with_cause(e)
@@ -98,14 +96,14 @@ pub(super) fn parse_table_update(
 /// Extension trait for query builder access to the table `CharacterV1`.
 ///
 /// Implemented for [`__sdk::QueryTableAccessor`].
-pub trait vw_nearby_characters_v1QueryTableAccess {
+pub trait vw_nearby_characters_v_1QueryTableAccess {
     #[allow(non_snake_case)]
     /// Get a query builder for the table `CharacterV1`.
-    fn vw_nearby_characters_v1(&self) -> __sdk::__query_builder::Table<CharacterV1>;
+    fn vw_nearby_characters_v_1(&self) -> __sdk::__query_builder::Table<CharacterV1>;
 }
 
-impl vw_nearby_characters_v1QueryTableAccess for __sdk::QueryTableAccessor {
-    fn vw_nearby_characters_v1(&self) -> __sdk::__query_builder::Table<CharacterV1> {
-        __sdk::__query_builder::Table::new("vw_nearby_characters_v1")
+impl vw_nearby_characters_v_1QueryTableAccess for __sdk::QueryTableAccessor {
+    fn vw_nearby_characters_v_1(&self) -> __sdk::__query_builder::Table<CharacterV1> {
+        __sdk::__query_builder::Table::new("vw_nearby_characters_v_1")
     }
 }

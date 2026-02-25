@@ -72,3 +72,5 @@ impl __sdk::__query_builder::HasIxCols for CharacterV1 {
         }
     }
 }
+
+impl __sdk::__query_builder::CanBeLookupTable for CharacterV1 {}

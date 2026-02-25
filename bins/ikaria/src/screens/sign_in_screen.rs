@@ -200,7 +200,7 @@ fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
 
     info!(
         "Attempting token-based authentication for world '{}' ({})",
-        selected_world.name, selected_world.module_name
+        selected_world.name, selected_world.database
     );
 
     // Try to load saved token
@@ -221,7 +221,7 @@ fn attempt_token_auth(mut auth_state: ResMut<AuthState>) {
     // Build connection with token (or None for anonymous/new identity)
     let mut builder = DbConnection::builder()
         .with_uri(SPACETIME_URI)
-        .with_module_name(selected_world.module_name.as_str());
+        .with_database_name(selected_world.database.as_str());
 
     if let Some(ref token_str) = token {
         builder = builder.with_token(Some(token_str.as_str()));

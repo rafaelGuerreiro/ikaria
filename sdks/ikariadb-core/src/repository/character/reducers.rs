@@ -10,12 +10,12 @@ use spacetimedb::{ReducerContext, reducer};
 #[reducer]
 pub fn create_character_v1(ctx: &ReducerContext, display_name: String, gender: GenderV1, race: RaceV1) -> ServiceResult<()> {
     ctx.character_services()
-        .create_character(ctx.sender, display_name, gender, race)?;
+        .create_character(ctx.sender(), display_name, gender, race)?;
     Ok(())
 }
 
 #[reducer]
 pub fn select_character_v1(ctx: &ReducerContext, character_id: u64) -> ServiceResult<()> {
-    ctx.character_services().select_character(ctx.sender, character_id)?;
+    ctx.character_services().select_character(ctx.sender(), character_id)?;
     Ok(())
 }

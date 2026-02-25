@@ -51,3 +51,5 @@ impl __sdk::__query_builder::HasIxCols for CurrentCharacterV1 {
         }
     }
 }
+
+impl __sdk::__query_builder::CanBeLookupTable for CurrentCharacterV1 {}

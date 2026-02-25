@@ -10,7 +10,7 @@ const EMBEDDED_WORLDS_CONFIG: &str = include_str!("../config/worlds.json");
 #[derive(Debug, Clone, Deserialize)]
 pub struct WorldDefinition {
     pub name: String,
-    pub module_name: String,
+    pub database: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -31,9 +31,9 @@ pub fn load_worlds() -> ClientResult<Vec<WorldDefinition>> {
             return Err(ClientError::user("World config has a world with an empty name"));
         }
 
-        if world.module_name.trim().is_empty() {
+        if world.database.trim().is_empty() {
             return Err(ClientError::user(format!(
-                "World '{}' has an empty module_name in world config",
+                "World '{}' has an empty database in world config",
                 world.name
             )));
         }

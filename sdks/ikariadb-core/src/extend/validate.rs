@@ -34,13 +34,13 @@ pub trait ReducerContextRequirements {
 impl ReducerContextRequirements for ReducerContext {
     fn require_internal_access(&self) -> ServiceResult<()> {
         if !self.sender_auth().is_internal() {
-            return Err(ServiceError::unauthorized(self.sender, "Private access required"));
+            return Err(ServiceError::unauthorized(self.sender(), "Private access required"));
         }
         Ok(())
     }
 
     fn require_character(&self) -> ServiceResult<CharacterV1> {
-        self.character_services().get_current(self.sender)
+        self.character_services().get_current(self.sender())
     }
 }
 
