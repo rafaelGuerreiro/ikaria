@@ -1,5 +1,8 @@
 use ikariadb_core::ServiceResult;
-use spacetimedb::{ReducerContext, reducer};
+use spacetimedb::{CaseConversionPolicy, ReducerContext, reducer};
+
+#[spacetimedb::settings]
+const CASE_CONVERSION_POLICY: CaseConversionPolicy = CaseConversionPolicy::None;
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) {

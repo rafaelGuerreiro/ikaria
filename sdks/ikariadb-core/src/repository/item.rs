@@ -2,7 +2,7 @@ use spacetimedb::table;
 
 pub mod types;
 
-#[table(name = item_definition_v1, private)]
+#[table(accessor = item_definition_v1, private)]
 pub struct ItemDefinitionV1 {
     #[auto_inc]
     #[primary_key]

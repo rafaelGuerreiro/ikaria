@@ -10,9 +10,11 @@ pub enum EventV1 {
     UserCreated { user_id: Identity },
     UserSignedIn { user_id: Identity },
     UserSignedOut { user_id: Identity },
+    CharacterCreated { user_id: Identity, character_id: u64 },
+    CharacterSelected { user_id: Identity, character_id: u64 },
 }
 
-#[derive(SpacetimeType)]
+#[derive(Debug, Clone, Copy, SpacetimeType)]
 pub enum DeferredEventV1 {
     SignedOut { user_id: Identity },
 }
@@ -41,5 +43,15 @@ impl EventPublisher<'_> {
 
     pub fn user_signed_out(&self, user_id: Identity) {
         self.event_services().fire_and_forget(EventV1::UserSignedOut { user_id })
+    }
+
+    pub fn character_created(&self, user_id: Identity, character_id: u64) -> ServiceResult<()> {
+        self.event_services()
+            .fire(EventV1::CharacterCreated { user_id, character_id })
+    }
+
+    pub fn character_selected(&self, user_id: Identity, character_id: u64) -> ServiceResult<()> {
+        self.event_services()
+            .fire(EventV1::CharacterSelected { user_id, character_id })
     }
 }

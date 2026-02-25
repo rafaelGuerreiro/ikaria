@@ -1,4 +1,7 @@
-use crate::error::{ErrorMapper, ServiceError, ServiceResult};
+use crate::{
+    error::{ErrorMapper, ServiceError, ServiceResult},
+    repository::character::{CharacterV1, services::CharacterReducerContext},
+};
 use spacetimedb::ReducerContext;
 use thiserror::Error;
 
@@ -24,14 +27,20 @@ pub trait ReducerContextRequirements {
     }
 
     fn require_internal_access(&self) -> ServiceResult<()>;
+
+    fn require_character(&self) -> ServiceResult<CharacterV1>;
 }
 
 impl ReducerContextRequirements for ReducerContext {
     fn require_internal_access(&self) -> ServiceResult<()> {
         if !self.sender_auth().is_internal() {
-            return Err(ServiceError::unauthorized(self.sender, "Private access required"));
+            return Err(ServiceError::unauthorized(self.sender(), "Private access required"));
         }
         Ok(())
+    }
+
+    fn require_character(&self) -> ServiceResult<CharacterV1> {
+        self.character_services().get_current(self.sender())
     }
 }
 

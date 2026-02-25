@@ -2,9 +2,11 @@ use self::types::{DirectionV1, MapTileV1};
 use spacetimedb::{Timestamp, table};
 
 pub mod math;
+pub mod services;
 pub mod types;
+pub mod views;
 
-#[table(name = map_v1, private, index(name = position_ix, btree(columns = [x, y, z])))]
+#[table(accessor = map_v1, private, index(accessor = position_ix, btree(columns = [x, y, z])))]
 pub struct MapV1 {
     #[primary_key]
     pub map_id: u64,
@@ -14,7 +16,7 @@ pub struct MapV1 {
     pub tile: MapTileV1,
 }
 
-#[table(name = town_temple_v1, private)]
+#[table(accessor = town_temple_v1, private)]
 pub struct TownTempleV1 {
     #[auto_inc]
     #[primary_key]
@@ -25,15 +27,10 @@ pub struct TownTempleV1 {
     pub z: u16,
 }
 
-#[table(name = character_position_v1, private)]
+#[table(accessor = character_position_v1, private)]
 pub struct CharacterPositionV1 {
-    #[auto_inc]
     #[primary_key]
-    pub character_position_id: u64,
-    #[index(btree)]
     pub character_id: u64,
-    #[index(btree)]
-    pub town_id: u64,
     pub x: u16,
     pub y: u16,
     pub z: u16,

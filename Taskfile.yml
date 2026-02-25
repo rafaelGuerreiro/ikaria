@@ -6,7 +6,7 @@ tasks:
     cmds:
       - rm -rf sdks/types/src/autogen
       - mkdir -p sdks/types/src/autogen
-      - spacetime generate --lang rust --out-dir sdks/types/src/autogen --project-path bins/world-draconis-ikariadb
+      - spacetime generate --lang rust --out-dir sdks/types/src/autogen --module-path bins/world-draconis-ikariadb
 
   fmt:
     desc: Format all workspace code
