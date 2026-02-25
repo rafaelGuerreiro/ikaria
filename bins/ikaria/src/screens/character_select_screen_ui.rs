@@ -280,8 +280,8 @@ pub(super) fn spawn_character_select_ui(commands: &mut Commands, world_name: &st
                                 .with_children(|button| {
                                     button.spawn((
                                         Text::new(format!(
-                                            "{} (Level {} {})",
-                                            character.name, character.level, character.vocation
+                                            "{} ({:?} {:?})",
+                                            character.display_name, character.race, character.class
                                         )),
                                         TextFont {
                                             font_size: character_ui::LIST_ITEM_FONT_SIZE,

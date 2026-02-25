@@ -96,7 +96,7 @@ impl CharacterServices<'_> {
 
         self.db
             .character_stats_v1()
-            .try_insert(CharacterStatsV1::new(character.character_id))
+            .try_insert(CharacterStatsV1::new(&character))
             .map_conflict()?;
 
         self.publish().character_created(user_id, character.character_id)?;
@@ -155,9 +155,10 @@ impl CharacterServices<'_> {
 }
 
 impl CharacterStatsV1 {
-    pub fn new(character_id: u64) -> Self {
+    pub fn new(character: &CharacterV1) -> Self {
         Self {
-            character_id,
+            character_id: character.character_id,
+            user_id: character.user_id,
             level: DEFAULT_CHARACTER_LEVEL,
             experience: DEFAULT_CHARACTER_EXPERIENCE,
             health: DEFAULT_CHARACTER_HEALTH,

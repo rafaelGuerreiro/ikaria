@@ -8,6 +8,7 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 #[sats(crate = __lib)]
 pub struct CharacterStatsV1 {
     pub character_id: u64,
+    pub user_id: __sdk::Identity,
     pub level: u16,
     pub experience: u64,
     pub health: u32,
@@ -24,6 +25,7 @@ impl __sdk::InModule for CharacterStatsV1 {
 /// Provides typed access to columns for query building.
 pub struct CharacterStatsV1Cols {
     pub character_id: __sdk::__query_builder::Col<CharacterStatsV1, u64>,
+    pub user_id: __sdk::__query_builder::Col<CharacterStatsV1, __sdk::Identity>,
     pub level: __sdk::__query_builder::Col<CharacterStatsV1, u16>,
     pub experience: __sdk::__query_builder::Col<CharacterStatsV1, u64>,
     pub health: __sdk::__query_builder::Col<CharacterStatsV1, u32>,
@@ -36,6 +38,7 @@ impl __sdk::__query_builder::HasCols for CharacterStatsV1 {
     fn cols(table_name: &'static str) -> Self::Cols {
         CharacterStatsV1Cols {
             character_id: __sdk::__query_builder::Col::new(table_name, "character_id"),
+            user_id: __sdk::__query_builder::Col::new(table_name, "user_id"),
             level: __sdk::__query_builder::Col::new(table_name, "level"),
             experience: __sdk::__query_builder::Col::new(table_name, "experience"),
             health: __sdk::__query_builder::Col::new(table_name, "health"),
@@ -50,6 +53,7 @@ impl __sdk::__query_builder::HasCols for CharacterStatsV1 {
 /// Provides typed access to indexed columns for query building.
 pub struct CharacterStatsV1IxCols {
     pub character_id: __sdk::__query_builder::IxCol<CharacterStatsV1, u64>,
+    pub user_id: __sdk::__query_builder::IxCol<CharacterStatsV1, __sdk::Identity>,
 }
 
 impl __sdk::__query_builder::HasIxCols for CharacterStatsV1 {
@@ -57,6 +61,7 @@ impl __sdk::__query_builder::HasIxCols for CharacterStatsV1 {
     fn ix_cols(table_name: &'static str) -> Self::IxCols {
         CharacterStatsV1IxCols {
             character_id: __sdk::__query_builder::IxCol::new(table_name, "character_id"),
+            user_id: __sdk::__query_builder::IxCol::new(table_name, "user_id"),
         }
     }
 }

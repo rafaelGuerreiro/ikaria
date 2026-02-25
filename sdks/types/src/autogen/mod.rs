@@ -38,6 +38,9 @@ pub mod town_temple_v_1_table;
 pub mod town_temple_v_1_type;
 pub mod user_v_1_table;
 pub mod user_v_1_type;
+pub mod vw_all_my_character_stats_v_1_table;
+pub mod vw_all_my_character_v_1_table;
+pub mod vw_my_character_stats_v_1_table;
 pub mod vw_my_character_v_1_table;
 pub mod vw_my_user_v_1_table;
 pub mod vw_nearby_characters_v_1_table;
@@ -53,15 +56,15 @@ pub use character_stats_v_1_type::CharacterStatsV1;
 pub use character_v_1_table::*;
 pub use character_v_1_type::CharacterV1;
 pub use class_v_1_type::ClassV1;
-pub use create_character_v_1_reducer::{create_character_v_1, set_flags_for_create_character_v_1, CreateCharacterV1CallbackId};
+pub use create_character_v_1_reducer::{CreateCharacterV1CallbackId, create_character_v_1, set_flags_for_create_character_v_1};
 pub use current_character_v_1_table::*;
 pub use current_character_v_1_type::CurrentCharacterV1;
 pub use deferred_event_v_1_type::DeferredEventV1;
 pub use direction_v_1_type::DirectionV1;
 pub use gender_v_1_type::GenderV1;
-pub use identity_connected_reducer::{identity_connected, set_flags_for_identity_connected, IdentityConnectedCallbackId};
+pub use identity_connected_reducer::{IdentityConnectedCallbackId, identity_connected, set_flags_for_identity_connected};
 pub use identity_disconnected_reducer::{
-    identity_disconnected, set_flags_for_identity_disconnected, IdentityDisconnectedCallbackId,
+    IdentityDisconnectedCallbackId, identity_disconnected, set_flags_for_identity_disconnected,
 };
 pub use item_definition_v_1_table::*;
 pub use item_definition_v_1_type::ItemDefinitionV1;
@@ -69,18 +72,21 @@ pub use map_tile_v_1_type::MapTileV1;
 pub use map_v_1_table::*;
 pub use map_v_1_type::MapV1;
 pub use oneshot_deferred_event_scheduled_v_1_reducer::{
-    oneshot_deferred_event_scheduled_v_1, set_flags_for_oneshot_deferred_event_scheduled_v_1,
-    OneshotDeferredEventScheduledV1CallbackId,
+    OneshotDeferredEventScheduledV1CallbackId, oneshot_deferred_event_scheduled_v_1,
+    set_flags_for_oneshot_deferred_event_scheduled_v_1,
 };
 pub use oneshot_deferred_event_v_1_table::*;
 pub use oneshot_deferred_event_v_1_type::OneshotDeferredEventV1;
 pub use race_v_1_type::RaceV1;
-pub use select_character_v_1_reducer::{select_character_v_1, set_flags_for_select_character_v_1, SelectCharacterV1CallbackId};
+pub use select_character_v_1_reducer::{SelectCharacterV1CallbackId, select_character_v_1, set_flags_for_select_character_v_1};
 pub use skill_v_1_type::SkillV1;
 pub use town_temple_v_1_table::*;
 pub use town_temple_v_1_type::TownTempleV1;
 pub use user_v_1_table::*;
 pub use user_v_1_type::UserV1;
+pub use vw_all_my_character_stats_v_1_table::*;
+pub use vw_all_my_character_v_1_table::*;
+pub use vw_my_character_stats_v_1_table::*;
 pub use vw_my_character_v_1_table::*;
 pub use vw_my_user_v_1_table::*;
 pub use vw_nearby_characters_v_1_table::*;
@@ -181,6 +187,9 @@ pub struct DbUpdate {
     oneshot_deferred_event_v_1: __sdk::TableUpdate<OneshotDeferredEventV1>,
     town_temple_v_1: __sdk::TableUpdate<TownTempleV1>,
     user_v_1: __sdk::TableUpdate<UserV1>,
+    vw_all_my_character_stats_v_1: __sdk::TableUpdate<CharacterStatsV1>,
+    vw_all_my_character_v_1: __sdk::TableUpdate<CharacterV1>,
+    vw_my_character_stats_v_1: __sdk::TableUpdate<CharacterStatsV1>,
     vw_my_character_v_1: __sdk::TableUpdate<CharacterV1>,
     vw_my_user_v_1: __sdk::TableUpdate<UserV1>,
     vw_nearby_characters_v_1: __sdk::TableUpdate<CharacterV1>,
@@ -220,6 +229,15 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
                     .town_temple_v_1
                     .append(town_temple_v_1_table::parse_table_update(table_update)?),
                 "user_v1" => db_update.user_v_1.append(user_v_1_table::parse_table_update(table_update)?),
+                "vw_all_my_character_stats_v1" => db_update
+                    .vw_all_my_character_stats_v_1
+                    .append(vw_all_my_character_stats_v_1_table::parse_table_update(table_update)?),
+                "vw_all_my_character_v1" => db_update
+                    .vw_all_my_character_v_1
+                    .append(vw_all_my_character_v_1_table::parse_table_update(table_update)?),
+                "vw_my_character_stats_v1" => db_update
+                    .vw_my_character_stats_v_1
+                    .append(vw_my_character_stats_v_1_table::parse_table_update(table_update)?),
                 "vw_my_character_v1" => db_update
                     .vw_my_character_v_1
                     .append(vw_my_character_v_1_table::parse_table_update(table_update)?),
@@ -283,6 +301,12 @@ impl __sdk::DbUpdate for DbUpdate {
         diff.user_v_1 = cache
             .apply_diff_to_table::<UserV1>("user_v1", &self.user_v_1)
             .with_updates_by_pk(|row| &row.user_id);
+        diff.vw_all_my_character_stats_v_1 =
+            cache.apply_diff_to_table::<CharacterStatsV1>("vw_all_my_character_stats_v1", &self.vw_all_my_character_stats_v_1);
+        diff.vw_all_my_character_v_1 =
+            cache.apply_diff_to_table::<CharacterV1>("vw_all_my_character_v1", &self.vw_all_my_character_v_1);
+        diff.vw_my_character_stats_v_1 =
+            cache.apply_diff_to_table::<CharacterStatsV1>("vw_my_character_stats_v1", &self.vw_my_character_stats_v_1);
         diff.vw_my_character_v_1 = cache.apply_diff_to_table::<CharacterV1>("vw_my_character_v1", &self.vw_my_character_v_1);
         diff.vw_my_user_v_1 = cache.apply_diff_to_table::<UserV1>("vw_my_user_v1", &self.vw_my_user_v_1);
         diff.vw_nearby_characters_v_1 =
@@ -311,6 +335,9 @@ pub struct AppliedDiff<'r> {
     oneshot_deferred_event_v_1: __sdk::TableAppliedDiff<'r, OneshotDeferredEventV1>,
     town_temple_v_1: __sdk::TableAppliedDiff<'r, TownTempleV1>,
     user_v_1: __sdk::TableAppliedDiff<'r, UserV1>,
+    vw_all_my_character_stats_v_1: __sdk::TableAppliedDiff<'r, CharacterStatsV1>,
+    vw_all_my_character_v_1: __sdk::TableAppliedDiff<'r, CharacterV1>,
+    vw_my_character_stats_v_1: __sdk::TableAppliedDiff<'r, CharacterStatsV1>,
     vw_my_character_v_1: __sdk::TableAppliedDiff<'r, CharacterV1>,
     vw_my_user_v_1: __sdk::TableAppliedDiff<'r, UserV1>,
     vw_nearby_characters_v_1: __sdk::TableAppliedDiff<'r, CharacterV1>,
@@ -343,6 +370,17 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
         );
         callbacks.invoke_table_row_callbacks::<TownTempleV1>("town_temple_v1", &self.town_temple_v_1, event);
         callbacks.invoke_table_row_callbacks::<UserV1>("user_v1", &self.user_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterStatsV1>(
+            "vw_all_my_character_stats_v1",
+            &self.vw_all_my_character_stats_v_1,
+            event,
+        );
+        callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_all_my_character_v1", &self.vw_all_my_character_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterStatsV1>(
+            "vw_my_character_stats_v1",
+            &self.vw_my_character_stats_v_1,
+            event,
+        );
         callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_my_character_v1", &self.vw_my_character_v_1, event);
         callbacks.invoke_table_row_callbacks::<UserV1>("vw_my_user_v1", &self.vw_my_user_v_1, event);
         callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_nearby_characters_v1", &self.vw_nearby_characters_v_1, event);
@@ -615,21 +653,21 @@ impl __sdk::SubscriptionHandle for SubscriptionHandle {
 /// either a [`DbConnection`] or an [`EventContext`] and operate on either.
 pub trait RemoteDbContext:
     __sdk::DbContext<
-    DbView = RemoteTables,
-    Reducers = RemoteReducers,
-    SetReducerFlags = SetReducerFlags,
-    SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
->
+        DbView = RemoteTables,
+        Reducers = RemoteReducers,
+        SetReducerFlags = SetReducerFlags,
+        SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
+    >
 {
 }
 impl<
-        Ctx: __sdk::DbContext<
+    Ctx: __sdk::DbContext<
             DbView = RemoteTables,
             Reducers = RemoteReducers,
             SetReducerFlags = SetReducerFlags,
             SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
         >,
-    > RemoteDbContext for Ctx
+> RemoteDbContext for Ctx
 {
 }
 
@@ -1082,6 +1120,9 @@ impl __sdk::SpacetimeModule for RemoteModule {
         oneshot_deferred_event_v_1_table::register_table(client_cache);
         town_temple_v_1_table::register_table(client_cache);
         user_v_1_table::register_table(client_cache);
+        vw_all_my_character_stats_v_1_table::register_table(client_cache);
+        vw_all_my_character_v_1_table::register_table(client_cache);
+        vw_my_character_stats_v_1_table::register_table(client_cache);
         vw_my_character_v_1_table::register_table(client_cache);
         vw_my_user_v_1_table::register_table(client_cache);
         vw_nearby_characters_v_1_table::register_table(client_cache);

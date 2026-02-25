@@ -27,6 +27,8 @@ pub struct CharacterV1 {
 pub struct CharacterStatsV1 {
     #[primary_key]
     pub character_id: u64,
+    #[index(btree)]
+    pub user_id: Identity,
     pub level: u16,
     pub experience: u64,
     pub health: u32,
