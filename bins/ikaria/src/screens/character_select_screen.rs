@@ -3,6 +3,7 @@ use crate::{
     resources::{SelectedCharacterResource, SessionResource},
     ui_helpers::{
         self, CHARACTER_BUTTON, GENDER_BUTTON, GENDER_SELECTED_BUTTON, NAME_INPUT_ACTIVE, NAME_INPUT_INACTIVE, PRIMARY_BUTTON,
+        RACE_BUTTON, RACE_SELECTED_BUTTON,
     },
     ui_style::character_select as character_ui,
 };
@@ -10,8 +11,10 @@ use bevy::{
     input::{ButtonState, keyboard::KeyboardInput},
     prelude::*,
 };
-use ikaria_types::autogen::{CharacterV1, VwCharacterAllMineV1TableAccess};
-use spacetimedb_sdk::Table;
+use ikaria_types::autogen::{
+    CharacterV1, GenderV1, RaceV1, VwCharacterAllMineV1TableAccess, create_character_v_1, select_character_v_1,
+};
+use spacetimedb_sdk::{DbContext, Table};
 
 pub struct CharacterSelectPlugin;
 
@@ -27,6 +30,10 @@ impl Plugin for CharacterSelectPlugin {
         app.add_systems(
             Update,
             sync_character_creation_visuals.run_if(in_state(AppState::CharacterSelect)),
+        );
+        app.add_systems(
+            Update,
+            rebuild_on_character_change.run_if(in_state(AppState::CharacterSelect)),
         );
         app.add_systems(OnExit(AppState::CharacterSelect), cleanup_character_select);
     }
@@ -57,6 +64,12 @@ pub(super) struct CharacterGenderButton {
     pub(super) gender: Gender,
 }
 
+/// Component for character race selection
+#[derive(Component)]
+pub(super) struct CharacterRaceButton {
+    pub(super) race: Race,
+}
+
 #[derive(Component)]
 pub(super) struct CreateCharacterButton;
 
@@ -72,15 +85,20 @@ pub(super) struct ShowCharacterCreationButton;
 #[derive(Component)]
 pub(super) struct CharacterCreationForm;
 
+#[derive(Component)]
+pub(super) struct CharacterListSection;
+
 /// Character creation input state
 #[derive(Resource)]
 struct CharacterCreationState {
     name: String,
     gender: Option<Gender>,
+    race: Option<Race>,
     name_input_active: bool,
     show_creation_form: bool,
     create_requested: bool,
     status_message: String,
+    character_count: usize,
 }
 
 impl Default for CharacterCreationState {
@@ -88,10 +106,12 @@ impl Default for CharacterCreationState {
         Self {
             name: String::new(),
             gender: None,
+            race: None,
             name_input_active: true,
             show_creation_form: false,
             create_requested: false,
             status_message: character_ui::STATUS_DEFAULT_TEXT.to_string(),
+            character_count: 0,
         }
     }
 }
@@ -109,14 +129,40 @@ impl Gender {
             Self::Female => character_ui::GENDER_FEMALE_TEXT,
         }
     }
+
+    fn to_autogen(self) -> GenderV1 {
+        match self {
+            Self::Male => GenderV1::Male,
+            Self::Female => GenderV1::Female,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum Race {
+    Human,
+    Elf,
+}
+
+impl Race {
+    pub(super) fn label(self) -> &'static str {
+        match self {
+            Self::Human => character_ui::RACE_HUMAN_TEXT,
+            Self::Elf => character_ui::RACE_ELF_TEXT,
+        }
+    }
+
+    fn to_autogen(self) -> RaceV1 {
+        match self {
+            Self::Human => RaceV1::Human,
+            Self::Elf => RaceV1::Elf,
+        }
+    }
 }
 
 fn setup_character_select(mut commands: Commands, session: Res<SessionResource>) {
     let world_name = session.world.name.as_str();
     info!("Entering CharacterSelect view for world '{}'", world_name);
-
-    // Initialize character creation state
-    commands.init_resource::<CharacterCreationState>();
 
     // Get characters for this user
     let characters: Vec<CharacterV1> = session
@@ -128,6 +174,13 @@ fn setup_character_select(mut commands: Commands, session: Res<SessionResource>)
         .collect();
 
     info!("Found {} characters for user", characters.len());
+
+    // Initialize character creation state with current count
+    let creation_state = CharacterCreationState {
+        character_count: characters.len(),
+        ..Default::default()
+    };
+    commands.insert_resource(creation_state);
 
     super::character_select_screen_ui::spawn_character_select_ui(&mut commands, world_name, &characters);
 }
@@ -147,6 +200,7 @@ fn handle_character_selected(
         (Changed<Interaction>, With<Button>),
     >,
     mut next_state: ResMut<NextState<AppState>>,
+    session: Res<SessionResource>,
 ) {
     for (interaction, character, mut color) in interaction_query.iter_mut() {
         *color = ui_helpers::interaction_background(*interaction, CHARACTER_BUTTON);
@@ -156,6 +210,10 @@ fn handle_character_selected(
         }
 
         info!("Selected character: {} ({})", character.name, character.character_id);
+
+        if let Err(e) = session.connection.reducers().select_character_v_1(character.character_id) {
+            warn!("Failed to call select_character reducer: {}", e);
+        }
 
         commands.insert_resource(SelectedCharacterResource {
             character_id: character.character_id,
@@ -177,25 +235,16 @@ fn handle_character_creation_interactions(
             Has<ShowCharacterCreationButton>,
             Has<CharacterNameInputButton>,
             Option<&CharacterGenderButton>,
+            Option<&CharacterRaceButton>,
             Has<CreateCharacterButton>,
         ),
         (Changed<Interaction>, With<Button>),
     >,
     session: Res<SessionResource>,
 ) {
-    // Only process input if we're in character creation mode (no existing characters)
-    let has_characters = session
-        .connection
-        .db
-        .vw_character_all_mine_v_1()
-        .iter()
-        .any(|c| c.user_id == session.identity);
-
-    if has_characters {
-        return;
-    }
-
-    for (interaction, is_show_form_button, is_name_input_button, gender_button, is_create_button) in button_query.iter() {
+    for (interaction, is_show_form_button, is_name_input_button, gender_button, race_button, is_create_button) in
+        button_query.iter()
+    {
         if *interaction != Interaction::Pressed {
             continue;
         }
@@ -217,6 +266,11 @@ fn handle_character_creation_interactions(
 
         if let Some(button) = gender_button {
             creation_state.gender = Some(button.gender);
+            continue;
+        }
+
+        if let Some(button) = race_button {
+            creation_state.race = Some(button.race);
             continue;
         }
 
@@ -269,33 +323,53 @@ fn handle_character_creation_interactions(
         return;
     }
 
+    if creation_state.race.is_none() {
+        creation_state.status_message = character_ui::STATUS_RACE_REQUIRED_TEXT.to_string();
+        info!("Race not selected");
+        return;
+    }
+
     let gender = creation_state.gender.expect("checked is_some above");
+    let race = creation_state.race.expect("checked is_some above");
     info!(
-        "Attempting to create character: name='{}', gender='{}'",
+        "Creating character: name='{}', gender='{}', race='{}'",
         display_name,
-        gender.label()
+        gender.label(),
+        race.label()
     );
 
-    // TODO: Call backend reducer when available
-    // For now, we'll just log a message explaining what would happen
-    warn!("Backend reducer for character creation is not yet implemented");
-    warn!(
-        "Would create character with name='{}', gender='{}'",
-        display_name,
-        gender.label()
-    );
-    warn!("Please implement a 'create_character' reducer in the ikariadb module");
-
-    creation_state.status_message = character_ui::STATUS_BACKEND_PENDING_TEXT.to_string();
+    match session
+        .connection
+        .reducers()
+        .create_character_v_1(display_name, gender.to_autogen(), race.to_autogen())
+    {
+        Ok(()) => {
+            creation_state.status_message = character_ui::STATUS_CREATING_TEXT.to_string();
+        },
+        Err(e) => {
+            warn!("Failed to call create_character reducer: {}", e);
+            creation_state.status_message = format!("Error: {}", e);
+        },
+    }
 }
 
-#[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn sync_character_creation_visuals(
     creation_state: Res<CharacterCreationState>,
-    session: Res<SessionResource>,
     mut creation_view_query: Query<
-        (&mut Node, Has<EmptyCharacterListPrompt>, Has<CharacterCreationForm>),
-        (Or<(With<EmptyCharacterListPrompt>, With<CharacterCreationForm>)>,),
+        (
+            &mut Node,
+            Has<EmptyCharacterListPrompt>,
+            Has<CharacterCreationForm>,
+            Has<CharacterListSection>,
+        ),
+        (
+            Or<(
+                With<EmptyCharacterListPrompt>,
+                With<CharacterCreationForm>,
+                With<CharacterListSection>,
+            )>,
+        ),
     >,
     mut primary_button_query: Query<
         (
@@ -309,6 +383,7 @@ fn sync_character_creation_visuals(
             Or<(With<ShowCharacterCreationButton>, With<CreateCharacterButton>)>,
             Without<CharacterNameInputButton>,
             Without<CharacterGenderButton>,
+            Without<CharacterRaceButton>,
         ),
     >,
     mut form_text_query: Query<
@@ -322,6 +397,7 @@ fn sync_character_creation_visuals(
             With<CharacterNameInputButton>,
             Without<CreateCharacterButton>,
             Without<CharacterGenderButton>,
+            Without<CharacterRaceButton>,
         ),
     >,
     mut gender_button_query: Query<
@@ -330,22 +406,21 @@ fn sync_character_creation_visuals(
             With<Button>,
             Without<CharacterNameInputButton>,
             Without<CreateCharacterButton>,
+            Without<CharacterRaceButton>,
+        ),
+    >,
+    mut race_button_query: Query<
+        (&Interaction, &CharacterRaceButton, &mut BackgroundColor),
+        (
+            With<Button>,
+            Without<CharacterNameInputButton>,
+            Without<CreateCharacterButton>,
+            Without<CharacterGenderButton>,
         ),
     >,
 ) {
-    let has_characters = session
-        .connection
-        .db
-        .vw_character_all_mine_v_1()
-        .iter()
-        .any(|c| c.user_id == session.identity);
-
-    if has_characters {
-        return;
-    }
-
-    for (mut node, is_empty_prompt, is_creation_form) in creation_view_query.iter_mut() {
-        if is_empty_prompt {
+    for (mut node, is_empty_prompt, is_creation_form, is_list_section) in creation_view_query.iter_mut() {
+        if is_empty_prompt || is_list_section {
             node.display = if creation_state.show_creation_form {
                 Display::None
             } else {
@@ -395,6 +470,55 @@ fn sync_character_creation_visuals(
             ui_helpers::interaction_background(*interaction, GENDER_BUTTON)
         };
     }
+
+    for (interaction, button, mut color) in race_button_query.iter_mut() {
+        *color = if Some(button.race) == creation_state.race {
+            ui_helpers::interaction_background(*interaction, RACE_SELECTED_BUTTON)
+        } else {
+            ui_helpers::interaction_background(*interaction, RACE_BUTTON)
+        };
+    }
+}
+
+/// Rebuild UI when new characters appear from subscription updates
+fn rebuild_on_character_change(
+    mut commands: Commands,
+    session: Res<SessionResource>,
+    mut creation_state: ResMut<CharacterCreationState>,
+    ui_query: Query<Entity, With<CharacterSelectUi>>,
+) {
+    let characters: Vec<CharacterV1> = session
+        .connection
+        .db
+        .vw_character_all_mine_v_1()
+        .iter()
+        .filter(|c| c.user_id == session.identity)
+        .collect();
+
+    if characters.len() == creation_state.character_count {
+        return;
+    }
+
+    info!(
+        "Character count changed ({} -> {}), rebuilding UI",
+        creation_state.character_count,
+        characters.len()
+    );
+    creation_state.character_count = characters.len();
+    creation_state.show_creation_form = false;
+    creation_state.name.clear();
+    creation_state.gender = None;
+    creation_state.race = None;
+    creation_state.status_message = character_ui::STATUS_DEFAULT_TEXT.to_string();
+
+    // Despawn old UI
+    for entity in ui_query.iter() {
+        commands.entity(entity).despawn();
+    }
+
+    // Rebuild with updated character list
+    let world_name = session.world.name.as_str();
+    super::character_select_screen_ui::spawn_character_select_ui(&mut commands, world_name, &characters);
 }
 
 fn cleanup_character_select(mut commands: Commands, query: Query<Entity, With<CharacterSelectUi>>) {

@@ -44,6 +44,12 @@ pub mod palette {
     pub const BUTTON_GENDER_SELECTED_HOVER: Rgb = (0.5, 0.78, 0.5);
     pub const BUTTON_GENDER_PRESSED: Rgb = (0.36, 0.62, 0.36);
 
+    pub const BUTTON_RACE_DEFAULT: Rgb = (0.75, 0.75, 0.75);
+    pub const BUTTON_RACE_HOVER: Rgb = (0.82, 0.82, 0.82);
+    pub const BUTTON_RACE_SELECTED: Rgb = (0.46, 0.72, 0.46);
+    pub const BUTTON_RACE_SELECTED_HOVER: Rgb = (0.5, 0.78, 0.5);
+    pub const BUTTON_RACE_PRESSED: Rgb = (0.36, 0.62, 0.36);
+
     pub const BUTTON_CHARACTER_DEFAULT: Rgb = (0.84, 0.84, 0.84);
     pub const BUTTON_CHARACTER_HOVER: Rgb = (0.72, 0.82, 0.92);
     pub const BUTTON_CHARACTER_PRESSED: Rgb = (0.5, 0.7, 0.9);
@@ -111,8 +117,6 @@ pub mod character_select {
 
     pub const FORM_STATUS_FONT_SIZE: f32 = 13.0;
     pub const FORM_STATUS_MARGIN_TOP: f32 = 8.0;
-    pub const BACKEND_NOTE_FONT_SIZE: f32 = 12.0;
-    pub const BACKEND_NOTE_MARGIN_TOP: f32 = 6.0;
 
     pub const LIST_ROW_GAP: f32 = 10.0;
     pub const LIST_BUTTON_WIDTH: f32 = 380.0;
@@ -134,16 +138,29 @@ pub mod character_select {
     pub const GENDER_LABEL_TEXT: &str = "Gender";
     pub const GENDER_MALE_TEXT: &str = "Male";
     pub const GENDER_FEMALE_TEXT: &str = "Female";
+    pub const RACE_LABEL_TEXT: &str = "Race";
+    pub const RACE_LABEL_MARGIN_TOP: f32 = 8.0;
+    pub const RACE_ROW_GAP: f32 = 14.0;
+    pub const RACE_BUTTON_WIDTH: f32 = 120.0;
+    pub const RACE_BUTTON_HEIGHT: f32 = 40.0;
+    pub const RACE_BUTTON_FONT_SIZE: f32 = 16.0;
+    pub const RACE_HUMAN_TEXT: &str = "Human";
+    pub const RACE_ELF_TEXT: &str = "Elf";
     pub const CREATE_BUTTON_TEXT: &str = "Create Character";
-    pub const CREATE_HELP_TEXT: &str = "Type letters/spaces, choose gender, then click Create Character";
-    pub const BACKEND_NOTE_TEXT: &str = "Note: Backend reducer for character creation is not yet implemented";
+    pub const CREATE_HELP_TEXT: &str = "Type a name, choose gender and race, then click Create Character";
     pub const LIST_HINT_TEXT: &str = "Click a character to enter the game";
+    pub const LIST_CREATE_BUTTON_TEXT: &str = "Create New Character";
+    pub const LIST_CREATE_BUTTON_WIDTH: f32 = 220.0;
+    pub const LIST_CREATE_BUTTON_HEIGHT: f32 = 44.0;
+    pub const LIST_CREATE_BUTTON_FONT_SIZE: f32 = 16.0;
+    pub const LIST_CREATE_BUTTON_MARGIN_TOP: f32 = 8.0;
     pub const EMPTY_STATE_TEXT: &str = "You have no characters on this world.";
     pub const EMPTY_STATE_BUTTON_TEXT: &str = "Click here to create one";
-    pub const STATUS_DEFAULT_TEXT: &str = "Type a name, choose a gender, then click Create Character";
+    pub const STATUS_DEFAULT_TEXT: &str = "Type a name, choose gender and race, then click Create Character";
     pub const STATUS_NAME_REQUIRED_TEXT: &str = "Character name is required";
     pub const STATUS_GENDER_REQUIRED_TEXT: &str = "Please choose a gender";
-    pub const STATUS_BACKEND_PENDING_TEXT: &str = "Character creation reducer is still pending on backend; request prepared.";
+    pub const STATUS_RACE_REQUIRED_TEXT: &str = "Please choose a race";
+    pub const STATUS_CREATING_TEXT: &str = "Creating character...";
 }
 
 pub mod game {

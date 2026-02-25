@@ -52,6 +52,18 @@ pub const GENDER_SELECTED_BUTTON: InteractionPalette = InteractionPalette::new(
     palette::BUTTON_GENDER_PRESSED,
 );
 
+pub const RACE_BUTTON: InteractionPalette = InteractionPalette::new(
+    palette::BUTTON_RACE_DEFAULT,
+    palette::BUTTON_RACE_HOVER,
+    palette::BUTTON_RACE_PRESSED,
+);
+
+pub const RACE_SELECTED_BUTTON: InteractionPalette = InteractionPalette::new(
+    palette::BUTTON_RACE_SELECTED,
+    palette::BUTTON_RACE_SELECTED_HOVER,
+    palette::BUTTON_RACE_PRESSED,
+);
+
 pub const NAME_INPUT_ACTIVE: InteractionPalette =
     InteractionPalette::new(palette::SURFACE_DEFAULT, palette::INPUT_HOVER, palette::INPUT_FOCUS);
 
