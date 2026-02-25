@@ -128,7 +128,7 @@ impl CharacterServices<'_> {
     fn prepare_character_names(&self, display_name: String) -> ServiceResult<(String, String)> {
         self.validate_str(
             &display_name,
-            "name",
+            "display_name",
             CHARACTER_NAME_MIN_LEN as u64,
             CHARACTER_NAME_MAX_LEN as u64,
         )?;
@@ -154,6 +154,13 @@ impl CharacterServices<'_> {
         if canonical_name.is_empty() {
             return Err(CharacterError::name_without_letters());
         }
+
+        self.validate_str(
+            &canonical_name,
+            "canonical_name",
+            CHARACTER_NAME_MIN_LEN as u64,
+            CHARACTER_NAME_MAX_LEN as u64,
+        )?;
 
         Ok((display_name, canonical_name))
     }
@@ -242,6 +249,15 @@ mod tests {
         let services = CharacterServices { ctx: &dummy };
 
         assert!(services.prepare_character_names("Name123".to_string()).is_err());
+    }
+
+    #[test]
+    fn prepare_character_names_rejects_small_after_trimmed() {
+        let dummy = ReducerContext::__dummy();
+        let services = CharacterServices { ctx: &dummy };
+
+        assert!(services.prepare_character_names(" ab ".to_string()).is_err());
+        assert!(services.prepare_character_names("a b".to_string()).is_err());
     }
 
     #[test]
