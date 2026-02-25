@@ -9,12 +9,14 @@ type CharacterListViewProps = {
   world: World
   onCreateCharacter: () => void
   onLeaveWorld: () => void
+  onEnterGame: () => void
 }
 
 export function CharacterListView({
   world,
   onCreateCharacter,
   onLeaveWorld,
+  onEnterGame,
 }: CharacterListViewProps) {
   const { getConnection, token } = useSpacetimeDB()
   const [characterRows] = useTable(tables.vw_character_all_mine_v1)
@@ -64,6 +66,7 @@ export function CharacterListView({
     try {
       await runSelectCharacter({ characterId })
       setStatusMessage(`Selected '${displayName}'.`)
+      onEnterGame()
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
       setStatusMessage(`Selection failed: ${reason}`)
@@ -115,26 +118,33 @@ export function CharacterListView({
                 </small>
               </div>
               <Stack direction="horizontal" gap={2}>
-                {selectedCharacterId === character.characterId && (
-                  <Badge bg="success">Current</Badge>
+                {selectedCharacterId === character.characterId ? (
+                  <>
+                    <Badge bg="success">Current</Badge>
+                    <Button
+                      size="sm"
+                      variant="success"
+                      onClick={onEnterGame}
+                    >
+                      Play
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      selectCharacter(
+                        character.characterId,
+                        character.displayName,
+                      )
+                    }
+                    disabled={selectingCharacterId !== null}
+                  >
+                    {selectingCharacterId === character.characterId
+                      ? 'Selecting...'
+                      : 'Select'}
+                  </Button>
                 )}
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    selectCharacter(
-                      character.characterId,
-                      character.displayName,
-                    )
-                  }
-                  disabled={
-                    selectingCharacterId !== null ||
-                    selectedCharacterId === character.characterId
-                  }
-                >
-                  {selectingCharacterId === character.characterId
-                    ? 'Selecting...'
-                    : 'Select'}
-                </Button>
               </Stack>
             </ListGroup.Item>
           ))}

@@ -5,11 +5,12 @@ import { DbConnection } from './module_bindings'
 import type { World } from './worlds'
 import { CharacterCreationView } from './views/CharacterCreationView'
 import { CharacterListView } from './views/CharacterListView'
+import { GameView } from './views/GameView'
 import { WorldSelectionView } from './views/WorldSelectionView'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
 
-type AppView = 'world-selection' | 'character-list' | 'character-creation'
+type AppView = 'world-selection' | 'character-list' | 'character-creation' | 'game'
 type ConnectionBuilder = ReturnType<typeof DbConnection.builder>
 
 function App() {
@@ -42,6 +43,22 @@ function App() {
     setCurrentView('character-list')
   }
 
+  const handleEnterGame = () => {
+    setCurrentView('game')
+  }
+
+  const handleLeaveGame = () => {
+    setCurrentView('character-list')
+  }
+
+  if (currentView === 'game' && connectionBuilder && world) {
+    return (
+      <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
+        <GameView onLeaveGame={handleLeaveGame} />
+      </SpacetimeDBProvider>
+    )
+  }
+
   return (
     <Container className="app">
       <Card className="w-100 p-4">
@@ -55,6 +72,7 @@ function App() {
                   world={world}
                   onCreateCharacter={handleCreateCharacter}
                   onLeaveWorld={handleLeaveWorld}
+                  onEnterGame={handleEnterGame}
                 />
               ) : (
                 <CharacterCreationView
