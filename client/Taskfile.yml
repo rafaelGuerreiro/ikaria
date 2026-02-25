@@ -1,0 +1,23 @@
+version: '3'
+
+tasks:
+  dev:
+    desc: Start dev server
+    cmds:
+      - npm run dev
+
+  build:
+    desc: Build for production
+    cmds:
+      - npm run build
+
+  lint:
+    desc: Lint code
+    cmds:
+      - npm run lint
+
+  sdk-ts:
+    desc: Generate TypeScript bindings from server module
+    cmds:
+      - rm -rf src/module_bindings
+      - spacetime generate --lang typescript --out-dir src/module_bindings --project-path ../server/bins/world-draconis-ikariadb

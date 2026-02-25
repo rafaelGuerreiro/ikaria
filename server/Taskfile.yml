@@ -27,38 +27,10 @@ tasks:
       - cargo test --workspace
 
   build:
-    desc: Build server wasm target and host workspace targets
+    desc: Build server wasm targets
     cmds:
       - task sdk-rust
       - task check
       - cargo build -p world-alpha-ikariadb --target wasm32-unknown-unknown
       - cargo build -p world-draconis-ikariadb --target wasm32-unknown-unknown
       - cargo build --workspace --exclude world-alpha-ikariadb --exclude world-draconis-ikariadb
-
-  run:
-    desc: Run the ikaria client
-    cmds:
-      - cargo run -p ikaria
-
-  login:
-    desc: Login to Spacetime using .env token
-    cmds:
-      - bash tools/spacetime_login.sh
-
-  publish:
-    desc: Publish world-alpha-ikariadb to maincloud
-    deps: [login, build]
-    cmds:
-      - spacetime publish -p bins/world-alpha-ikariadb -s maincloud -y world-alpha-ikariadb
-
-  unsafe-overwrite:
-    desc: Publish world-alpha-ikariadb to maincloud and delete data
-    deps: [login, build]
-    cmds:
-      - spacetime publish -p bins/world-alpha-ikariadb -s maincloud -y world-alpha-ikariadb --delete-data
-
-  publish-prod:
-    desc: Publish world-draconis-ikariadb to maincloud
-    deps: [login, build]
-    cmds:
-      - spacetime publish -p bins/world-draconis-ikariadb -s maincloud -y world-draconis-ikariadb
