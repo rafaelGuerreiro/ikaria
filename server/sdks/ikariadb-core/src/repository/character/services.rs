@@ -128,7 +128,7 @@ impl CharacterServices<'_> {
     fn prepare_character_names(&self, display_name: String) -> ServiceResult<(String, String)> {
         self.validate_str(
             &display_name,
-            "display_name",
+            "Name",
             CHARACTER_NAME_MIN_LEN as u64,
             CHARACTER_NAME_MAX_LEN as u64,
         )?;
@@ -138,18 +138,28 @@ impl CharacterServices<'_> {
             display_name = display_name.replace("  ", " ");
         }
 
+        let is_separator = |c: char| c == ' ' || c == '-' || c == '\'';
+
         if display_name
             .chars()
-            .any(|character| !character.is_ascii_alphabetic() && character != ' ')
+            .any(|character| !character.is_ascii_alphabetic() && !is_separator(character))
         {
             return Err(CharacterError::name_invalid_characters());
         }
 
-        let canonical_name: String = display_name
+        if display_name
             .chars()
-            .filter(|character| !character.is_whitespace())
-            .map(|character| character.to_ascii_lowercase())
-            .collect();
+            .zip(display_name.chars().skip(1))
+            .any(|(a, b)| is_separator(a) && is_separator(b))
+        {
+            return Err(CharacterError::name_consecutive_separators());
+        }
+
+        if display_name.starts_with(|c: char| is_separator(c)) || display_name.ends_with(|c: char| is_separator(c)) {
+            return Err(CharacterError::name_invalid_characters());
+        }
+
+        let canonical_name: String = display_name.chars().map(|character| character.to_ascii_lowercase()).collect();
 
         if canonical_name.is_empty() {
             return Err(CharacterError::name_without_letters());
@@ -157,7 +167,7 @@ impl CharacterServices<'_> {
 
         self.validate_str(
             &canonical_name,
-            "canonical_name",
+            "Name",
             CHARACTER_NAME_MIN_LEN as u64,
             CHARACTER_NAME_MAX_LEN as u64,
         )?;
@@ -194,8 +204,11 @@ enum CharacterError {
     #[error("Character name '{0}' is already taken")]
     NameTaken(String),
 
-    #[error("Character name must contain only letters and spaces")]
+    #[error("Character name must contain only letters, spaces, hyphens, and apostrophes")]
     NameInvalidCharacters,
+
+    #[error("Character name cannot have consecutive spaces, hyphens, or apostrophes")]
+    NameConsecutiveSeparators,
 
     #[error("Character name must contain at least one letter")]
     NameWithoutLetters,
@@ -222,6 +235,10 @@ impl CharacterError {
         Self::NameInvalidCharacters.map_validation_error()
     }
 
+    fn name_consecutive_separators() -> ServiceError {
+        Self::NameConsecutiveSeparators.map_validation_error()
+    }
+
     fn name_without_letters() -> ServiceError {
         Self::NameWithoutLetters.map_validation_error()
     }
@@ -239,7 +256,47 @@ mod tests {
 
         assert_eq!(
             services.prepare_character_names("  Sir     Galahad  ".to_string()).ok(),
-            Some(("Sir Galahad".to_string(), "sirgalahad".to_string()))
+            Some(("Sir Galahad".to_string(), "sir galahad".to_string()))
+        );
+    }
+
+    #[test]
+    fn prepare_character_names_keeps_spaces_in_canonical() {
+        let dummy = ReducerContext::__dummy();
+        let services = CharacterServices { ctx: &dummy };
+
+        let (_, canonical_with_space) = services.prepare_character_names("Assas Sin".to_string()).unwrap();
+        let (_, canonical_no_space) = services.prepare_character_names("Assassin".to_string()).unwrap();
+
+        assert_eq!(canonical_with_space, "assas sin");
+        assert_eq!(canonical_no_space, "assassin");
+        assert_ne!(canonical_with_space, canonical_no_space);
+    }
+
+    #[test]
+    fn prepare_character_names_allows_hyphens_and_apostrophes() {
+        let dummy = ReducerContext::__dummy();
+        let services = CharacterServices { ctx: &dummy };
+
+        assert_eq!(
+            services.prepare_character_names("O'Brien".to_string()).ok(),
+            Some(("O'Brien".to_string(), "o'brien".to_string()))
+        );
+        assert_eq!(
+            services.prepare_character_names("Dark-Knight".to_string()).ok(),
+            Some(("Dark-Knight".to_string(), "dark-knight".to_string()))
+        );
+        assert_eq!(
+            services.prepare_character_names("Good ol'day-dreamer".to_string()).ok(),
+            Some(("Good ol'day-dreamer".to_string(), "good ol'day-dreamer".to_string()))
+        );
+        assert_eq!(
+            services.prepare_character_names("Jean-Luc O'Neill".to_string()).ok(),
+            Some(("Jean-Luc O'Neill".to_string(), "jean-luc o'neill".to_string()))
+        );
+        assert_eq!(
+            services.prepare_character_names("Ana-Maria".to_string()).ok(),
+            Some(("Ana-Maria".to_string(), "ana-maria".to_string()))
         );
     }
 
@@ -257,7 +314,8 @@ mod tests {
         let services = CharacterServices { ctx: &dummy };
 
         assert!(services.prepare_character_names(" ab ".to_string()).is_err());
-        assert!(services.prepare_character_names("a b".to_string()).is_err());
+        // "a bc" canonical is now "a bc" (4 chars), which meets the minimum length
+        assert!(services.prepare_character_names("a bc".to_string()).is_ok());
     }
 
     #[test]
@@ -266,5 +324,27 @@ mod tests {
         let services = CharacterServices { ctx: &dummy };
 
         assert!(services.prepare_character_names("   ".to_string()).is_err());
+    }
+
+    #[test]
+    fn prepare_character_names_rejects_consecutive_separators() {
+        let dummy = ReducerContext::__dummy();
+        let services = CharacterServices { ctx: &dummy };
+
+        assert!(services.prepare_character_names("Dark--Knight".to_string()).is_err());
+        assert!(services.prepare_character_names("Dark -Knight".to_string()).is_err());
+        assert!(services.prepare_character_names("O''Brien".to_string()).is_err());
+        assert!(services.prepare_character_names("Dark- Knight".to_string()).is_err());
+    }
+
+    #[test]
+    fn prepare_character_names_rejects_leading_or_trailing_separators() {
+        let dummy = ReducerContext::__dummy();
+        let services = CharacterServices { ctx: &dummy };
+
+        assert!(services.prepare_character_names("-Knight".to_string()).is_err());
+        assert!(services.prepare_character_names("Knight-".to_string()).is_err());
+        assert!(services.prepare_character_names("'Knight".to_string()).is_err());
+        assert!(services.prepare_character_names("---".to_string()).is_err());
     }
 }

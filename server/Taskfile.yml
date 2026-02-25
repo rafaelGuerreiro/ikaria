@@ -31,7 +31,7 @@ tasks:
   build:
     desc: Build server wasm targets
     cmds:
-      - task sdk-rust
+      - task sdk-ts
       - task check
       - cargo build -p world-alpha-ikariadb --target wasm32-unknown-unknown
       - cargo build -p world-draconis-ikariadb --target wasm32-unknown-unknown

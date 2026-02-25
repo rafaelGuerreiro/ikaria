@@ -1,95 +1,72 @@
 import { useState } from 'react'
+import { Card, Container } from 'react-bootstrap'
 import { SpacetimeDBProvider } from 'spacetimedb/react'
-import { CharacterFlow } from './components/CharacterFlow'
-import { SignIn } from './components/SignIn'
 import { DbConnection } from './module_bindings'
+import type { World } from './worlds'
+import { CharacterCreationView } from './views/CharacterCreationView'
+import { CharacterListView } from './views/CharacterListView'
+import { WorldSelectionView } from './views/WorldSelectionView'
+import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
 
-const SPACETIME_URI = 'https://maincloud.spacetimedb.com'
-const ALPHA_WORLD_DATABASE = 'world-alpha-ikariadb'
-const TOKEN_STORAGE_KEY = 'ikaria.auth.token'
-
-type AppView = 'sign-in' | 'character-flow'
-type AlphaConnectionBuilder = ReturnType<typeof DbConnection.builder>
-
-function readSavedToken(): string | undefined {
-  const token = window.localStorage.getItem(TOKEN_STORAGE_KEY)?.trim()
-  return token ? token : undefined
-}
+type AppView = 'world-selection' | 'character-list' | 'character-creation'
+type ConnectionBuilder = ReturnType<typeof DbConnection.builder>
 
 function App() {
-  const [appView, setAppView] = useState<AppView>('sign-in')
+  const [currentView, setCurrentView] = useState<AppView>('world-selection')
   const [connectionBuilder, setConnectionBuilder] =
-    useState<AlphaConnectionBuilder | null>(null)
-  const [signInMessage, setSignInMessage] = useState(
-    'Ready to sign in to Alpha world.',
-  )
-  const [hasSavedToken, setHasSavedToken] = useState<boolean>(
-    () => Boolean(readSavedToken()),
-  )
+    useState<ConnectionBuilder | null>(null)
+  const [world, setWorld] = useState<World | null>(null)
 
-  const startSignIn = () => {
-    const token = readSavedToken()
-    const builder = DbConnection.builder()
-      .withUri(SPACETIME_URI)
-      .withDatabaseName(ALPHA_WORLD_DATABASE)
-      .withLightMode(true)
-
-    if (token) {
-      builder.withToken(token)
-      setSignInMessage('Connecting with saved token...')
-    } else {
-      setSignInMessage('Connecting...')
-    }
-
+  const handleConnect = (builder: ConnectionBuilder, selectedWorld: World) => {
     setConnectionBuilder(builder)
-    setAppView('character-flow')
+    setWorld(selectedWorld)
+    setCurrentView('character-list')
   }
 
-  const persistToken = (token: string) => {
-    if (!token) {
-      return
-    }
-
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, token)
-    setHasSavedToken(true)
-  }
-
-  const returnToSignIn = (message: string) => {
+  const handleLeaveWorld = () => {
     setConnectionBuilder(null)
-    setAppView('sign-in')
-    setSignInMessage(message)
+    setWorld(null)
+    setCurrentView('world-selection')
   }
 
-  const forgetSavedToken = () => {
-    window.localStorage.removeItem(TOKEN_STORAGE_KEY)
-    setHasSavedToken(false)
-    setSignInMessage('Saved token removed.')
+  const handleCreateCharacter = () => {
+    setCurrentView('character-creation')
+  }
+
+  const handleBack = () => {
+    setCurrentView('character-list')
+  }
+
+  const handleCharacterCreated = (_displayName: string) => {
+    setCurrentView('character-list')
   }
 
   return (
-    <main className="app">
-      <section className="card">
-        {appView === 'sign-in' || !connectionBuilder ? (
-          <SignIn
-            message={signInMessage}
-            hasSavedToken={hasSavedToken}
-            worldName="Alpha"
-            moduleName={ALPHA_WORLD_DATABASE}
-            serverUri={SPACETIME_URI}
-            onSignIn={startSignIn}
-            onForgetSavedToken={forgetSavedToken}
-          />
-        ) : (
-          <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
-            <CharacterFlow
-              onPersistToken={persistToken}
-              onSignOut={returnToSignIn}
-            />
-          </SpacetimeDBProvider>
-        )}
-      </section>
-    </main>
+    <Container className="app">
+      <Card className="w-100 p-4">
+        <Card.Body>
+          {currentView === 'world-selection' || !connectionBuilder || !world ? (
+            <WorldSelectionView onConnect={handleConnect} />
+          ) : (
+            <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
+              {currentView === 'character-list' ? (
+                <CharacterListView
+                  world={world}
+                  onCreateCharacter={handleCreateCharacter}
+                  onLeaveWorld={handleLeaveWorld}
+                />
+              ) : (
+                <CharacterCreationView
+                  onBack={handleBack}
+                  onCharacterCreated={handleCharacterCreated}
+                />
+              )}
+            </SpacetimeDBProvider>
+          )}
+        </Card.Body>
+      </Card>
+    </Container>
   )
 }
 
