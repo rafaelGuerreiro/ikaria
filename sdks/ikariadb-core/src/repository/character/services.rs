@@ -106,6 +106,11 @@ impl CharacterServices<'_> {
     }
 
     pub fn select_character(&self, user_id: Identity, character_id: u64) -> ServiceResult<()> {
+        let character = self.get(character_id)?;
+        if character.user_id != user_id {
+            return Err(CharacterError::character_ownership_mismatch(character_id, user_id));
+        }
+
         self.db.current_character_v1().user_id().insert_or_update(CurrentCharacterV1 {
             user_id,
             character_id,
@@ -133,7 +138,7 @@ impl CharacterServices<'_> {
             display_name = display_name.replace("  ", " ");
         }
 
-        if !display_name
+        if display_name
             .chars()
             .any(|character| !character.is_ascii_alphabetic() && character != ' ')
         {

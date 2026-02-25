@@ -78,6 +78,5 @@ Prefer rules that stay valid over time, not feature-by-feature notes.
 - Are new errors represented by typed domain enums instead of manual `ServiceError` formatting?
 - Did a schema/model split require corresponding service and view updates?
 - Are constants centralized (no new magic numbers)?
-- Did you run:
-  1. `task check`
-  2. `task test`
+- Did you run `task test` from the repository root? Prefer `task test` over crate-scoped
+  `cargo test -p …` so the whole workspace is validated together.

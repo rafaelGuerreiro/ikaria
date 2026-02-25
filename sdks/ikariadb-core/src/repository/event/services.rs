@@ -89,8 +89,8 @@ impl EventServices<'_> {
     }
 
     fn enqueue_deferred_event(&self, event: DeferredEventV1) {
-        // Schedule for 12 milliseconds later to allow sync handlers to complete
-        let scheduled_at = self.timestamp + Duration::from_millis(12);
+        // Schedule for 4 milliseconds later to allow sync handlers to complete, this is 250fps.
+        let scheduled_at = self.timestamp + Duration::from_millis(4);
 
         let job = self.db.oneshot_deferred_event_v1().insert(OneshotDeferredEventV1 {
             job_id: 0,
