@@ -1,8 +1,0 @@
-[package]
-name = "ikaria-types"
-version = { workspace = true }
-edition = { workspace = true }
-publish = { workspace = true }
-
-[dependencies]
-spacetimedb-sdk = { workspace = true }

@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 if [ ! -f .env ]; then
-  echo ".env not found in bins/server" >&2
+  echo ".env not found in project root" >&2
   exit 1
 fi
 
@@ -13,7 +13,7 @@ fi
 . ./.env
 
 if [ -z "${spacetimedb_token:-}" ]; then
-  echo "spacetimedb_token not set in bins/server/.env" >&2
+  echo "spacetimedb_token not set in project root .env" >&2
   exit 1
 fi
 
