@@ -134,16 +134,16 @@ impl TryFrom<__ws::v2::TransactionUpdate> for DbUpdate {
         let mut db_update = DbUpdate::default();
         for table_update in __sdk::transaction_update_iter_table_updates(raw) {
             match &table_update.table_name[..] {
-                "vw_character_all_mine_stats_v1" => db_update
+                "vw_character_all_mine_stats_v_1" => db_update
                     .vw_character_all_mine_stats_v_1
                     .append(vw_character_all_mine_stats_v_1_table::parse_table_update(table_update)?),
-                "vw_character_all_mine_v1" => db_update
+                "vw_character_all_mine_v_1" => db_update
                     .vw_character_all_mine_v_1
                     .append(vw_character_all_mine_v_1_table::parse_table_update(table_update)?),
-                "vw_character_me_stats_v1" => db_update
+                "vw_character_me_stats_v_1" => db_update
                     .vw_character_me_stats_v_1
                     .append(vw_character_me_stats_v_1_table::parse_table_update(table_update)?),
-                "vw_character_me_v1" => db_update
+                "vw_character_me_v_1" => db_update
                     .vw_character_me_v_1
                     .append(vw_character_me_v_1_table::parse_table_update(table_update)?),
                 "vw_nearby_characters_v_1" => db_update
@@ -177,12 +177,12 @@ impl __sdk::DbUpdate for DbUpdate {
         let mut diff = AppliedDiff::default();
 
         diff.vw_character_all_mine_stats_v_1 = cache
-            .apply_diff_to_table::<CharacterStatsV1>("vw_character_all_mine_stats_v1", &self.vw_character_all_mine_stats_v_1);
+            .apply_diff_to_table::<CharacterStatsV1>("vw_character_all_mine_stats_v_1", &self.vw_character_all_mine_stats_v_1);
         diff.vw_character_all_mine_v_1 =
-            cache.apply_diff_to_table::<CharacterV1>("vw_character_all_mine_v1", &self.vw_character_all_mine_v_1);
+            cache.apply_diff_to_table::<CharacterV1>("vw_character_all_mine_v_1", &self.vw_character_all_mine_v_1);
         diff.vw_character_me_stats_v_1 =
-            cache.apply_diff_to_table::<CharacterStatsV1>("vw_character_me_stats_v1", &self.vw_character_me_stats_v_1);
-        diff.vw_character_me_v_1 = cache.apply_diff_to_table::<CharacterV1>("vw_character_me_v1", &self.vw_character_me_v_1);
+            cache.apply_diff_to_table::<CharacterStatsV1>("vw_character_me_stats_v_1", &self.vw_character_me_stats_v_1);
+        diff.vw_character_me_v_1 = cache.apply_diff_to_table::<CharacterV1>("vw_character_me_v_1", &self.vw_character_me_v_1);
         diff.vw_nearby_characters_v_1 =
             cache.apply_diff_to_table::<CharacterV1>("vw_nearby_characters_v_1", &self.vw_nearby_characters_v_1);
         diff.vw_user_me_v_1 = cache.apply_diff_to_table::<UserV1>("vw_user_me_v_1", &self.vw_user_me_v_1);
@@ -198,16 +198,16 @@ impl __sdk::DbUpdate for DbUpdate {
         let mut db_update = DbUpdate::default();
         for table_rows in raw.tables {
             match &table_rows.table[..] {
-                "vw_character_all_mine_stats_v1" => db_update
+                "vw_character_all_mine_stats_v_1" => db_update
                     .vw_character_all_mine_stats_v_1
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
-                "vw_character_all_mine_v1" => db_update
+                "vw_character_all_mine_v_1" => db_update
                     .vw_character_all_mine_v_1
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
-                "vw_character_me_stats_v1" => db_update
+                "vw_character_me_stats_v_1" => db_update
                     .vw_character_me_stats_v_1
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
-                "vw_character_me_v1" => db_update
+                "vw_character_me_v_1" => db_update
                     .vw_character_me_v_1
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
                 "vw_nearby_characters_v_1" => db_update
@@ -233,16 +233,16 @@ impl __sdk::DbUpdate for DbUpdate {
         let mut db_update = DbUpdate::default();
         for table_rows in raw.tables {
             match &table_rows.table[..] {
-                "vw_character_all_mine_stats_v1" => db_update
+                "vw_character_all_mine_stats_v_1" => db_update
                     .vw_character_all_mine_stats_v_1
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
-                "vw_character_all_mine_v1" => db_update
+                "vw_character_all_mine_v_1" => db_update
                     .vw_character_all_mine_v_1
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
-                "vw_character_me_stats_v1" => db_update
+                "vw_character_me_stats_v_1" => db_update
                     .vw_character_me_stats_v_1
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
-                "vw_character_me_v1" => db_update
+                "vw_character_me_v_1" => db_update
                     .vw_character_me_v_1
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
                 "vw_nearby_characters_v_1" => db_update
@@ -288,17 +288,21 @@ impl __sdk::InModule for AppliedDiff<'_> {
 impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
     fn invoke_row_callbacks(&self, event: &EventContext, callbacks: &mut __sdk::DbCallbacks<RemoteModule>) {
         callbacks.invoke_table_row_callbacks::<CharacterStatsV1>(
-            "vw_character_all_mine_stats_v1",
+            "vw_character_all_mine_stats_v_1",
             &self.vw_character_all_mine_stats_v_1,
             event,
         );
-        callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_character_all_mine_v1", &self.vw_character_all_mine_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterV1>(
+            "vw_character_all_mine_v_1",
+            &self.vw_character_all_mine_v_1,
+            event,
+        );
         callbacks.invoke_table_row_callbacks::<CharacterStatsV1>(
-            "vw_character_me_stats_v1",
+            "vw_character_me_stats_v_1",
             &self.vw_character_me_stats_v_1,
             event,
         );
-        callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_character_me_v1", &self.vw_character_me_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_character_me_v_1", &self.vw_character_me_v_1, event);
         callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_nearby_characters_v_1", &self.vw_nearby_characters_v_1, event);
         callbacks.invoke_table_row_callbacks::<UserV1>("vw_user_me_v_1", &self.vw_user_me_v_1, event);
         callbacks.invoke_table_row_callbacks::<MapV1>("vw_world_map_v_1", &self.vw_world_map_v_1, event);
@@ -961,10 +965,10 @@ impl __sdk::SpacetimeModule for RemoteModule {
         vw_world_my_character_positions_v_1_table::register_table(client_cache);
     }
     const ALL_TABLE_NAMES: &'static [&'static str] = &[
-        "vw_character_all_mine_stats_v1",
-        "vw_character_all_mine_v1",
-        "vw_character_me_stats_v1",
-        "vw_character_me_v1",
+        "vw_character_all_mine_stats_v_1",
+        "vw_character_all_mine_v_1",
+        "vw_character_me_stats_v_1",
+        "vw_character_me_v_1",
         "vw_nearby_characters_v_1",
         "vw_user_me_v_1",
         "vw_world_map_v_1",

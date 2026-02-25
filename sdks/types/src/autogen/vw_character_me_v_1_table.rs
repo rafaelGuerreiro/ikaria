@@ -5,7 +5,7 @@
 use super::{character_v_1_type::CharacterV1, class_v_1_type::ClassV1, gender_v_1_type::GenderV1, race_v_1_type::RaceV1};
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
-/// Table handle for the table `vw_character_me_v1`.
+/// Table handle for the table `vw_character_me_v_1`.
 ///
 /// Obtain a handle from the [`VwCharacterMeV1TableAccess::vw_character_me_v_1`] method on [`super::RemoteTables`],
 /// like `ctx.db.vw_character_me_v_1()`.
@@ -19,19 +19,19 @@ pub struct VwCharacterMeV1TableHandle<'ctx> {
 }
 
 #[allow(non_camel_case_types)]
-/// Extension trait for access to the table `vw_character_me_v1`.
+/// Extension trait for access to the table `vw_character_me_v_1`.
 ///
 /// Implemented for [`super::RemoteTables`].
 pub trait VwCharacterMeV1TableAccess {
     #[allow(non_snake_case)]
-    /// Obtain a [`VwCharacterMeV1TableHandle`], which mediates access to the table `vw_character_me_v1`.
+    /// Obtain a [`VwCharacterMeV1TableHandle`], which mediates access to the table `vw_character_me_v_1`.
     fn vw_character_me_v_1(&self) -> VwCharacterMeV1TableHandle<'_>;
 }
 
 impl VwCharacterMeV1TableAccess for super::RemoteTables {
     fn vw_character_me_v_1(&self) -> VwCharacterMeV1TableHandle<'_> {
         VwCharacterMeV1TableHandle {
-            imp: self.imp.get_table::<CharacterV1>("vw_character_me_v1"),
+            imp: self.imp.get_table::<CharacterV1>("vw_character_me_v_1"),
             ctx: std::marker::PhantomData,
         }
     }
@@ -80,7 +80,7 @@ impl<'ctx> __sdk::Table for VwCharacterMeV1TableHandle<'ctx> {
 
 #[doc(hidden)]
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
-    let _table = client_cache.get_or_make_table::<CharacterV1>("vw_character_me_v1");
+    let _table = client_cache.get_or_make_table::<CharacterV1>("vw_character_me_v_1");
 }
 
 #[doc(hidden)]
@@ -104,6 +104,6 @@ pub trait vw_character_me_v_1QueryTableAccess {
 
 impl vw_character_me_v_1QueryTableAccess for __sdk::QueryTableAccessor {
     fn vw_character_me_v_1(&self) -> __sdk::__query_builder::Table<CharacterV1> {
-        __sdk::__query_builder::Table::new("vw_character_me_v1")
+        __sdk::__query_builder::Table::new("vw_character_me_v_1")
     }
 }
