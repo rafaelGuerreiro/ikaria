@@ -15,9 +15,3 @@ tasks:
     desc: Lint code
     cmds:
       - npm run lint
-
-  sdk-ts:
-    desc: Generate TypeScript bindings from server module
-    cmds:
-      - rm -rf src/module_bindings
-      - spacetime generate --lang typescript --out-dir src/module_bindings --project-path ../server/bins/world-draconis-ikariadb

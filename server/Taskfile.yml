@@ -1,12 +1,14 @@
 version: '3'
 
 tasks:
-  sdk-rust:
-    desc: Generate Rust types into sdks/types/src/autogen
+  sdk-ts:
+    desc: Generate TypeScript bindings from server module
     cmds:
-      - rm -rf sdks/types/src/autogen
-      - mkdir -p sdks/types/src/autogen
-      - spacetime generate --lang rust --out-dir sdks/types/src/autogen --module-path bins/world-draconis-ikariadb
+      - spacetime generate --lang typescript --out-dir client_module_bindings --module-path bins/world-draconis-ikariadb
+      - rm -rf ../client/src/module_bindings
+      - mkdir -p ../client/src/module_bindings
+      - mv client_module_bindings/* ../client/src/module_bindings/
+      - rm -rf client_module_bindings
 
   fmt:
     desc: Format all workspace code
