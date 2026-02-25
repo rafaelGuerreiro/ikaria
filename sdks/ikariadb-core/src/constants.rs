@@ -1,0 +1,14 @@
+pub const KG_TO_G: u32 = 1000;
+
+pub const CHARACTER_NAME_MIN_LEN: usize = 3;
+pub const CHARACTER_NAME_MAX_LEN: usize = 20;
+
+pub const DEFAULT_CHARACTER_LEVEL: u16 = 1;
+pub const DEFAULT_CHARACTER_EXPERIENCE: u64 = 0;
+pub const DEFAULT_CHARACTER_HEALTH: u32 = 120;
+pub const DEFAULT_CHARACTER_MANA: u32 = 60;
+pub const DEFAULT_CHARACTER_CAPACITY: u32 = 15 * KG_TO_G;
+
+pub const INITIAL_MAP_EDGE: u16 = 100;
+pub const DEFAULT_SPAWN_X: u16 = 24;
+pub const DEFAULT_SPAWN_Y: u16 = 24;

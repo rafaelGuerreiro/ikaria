@@ -10,10 +10,17 @@ pub mod character_position_v_1_table;
 pub mod character_position_v_1_type;
 pub mod character_skill_v_1_table;
 pub mod character_skill_v_1_type;
+pub mod character_stats_v_1_table;
+pub mod character_stats_v_1_type;
 pub mod character_v_1_table;
 pub mod character_v_1_type;
+pub mod class_v_1_type;
+pub mod create_character_v_1_reducer;
+pub mod current_character_v_1_table;
+pub mod current_character_v_1_type;
 pub mod deferred_event_v_1_type;
 pub mod direction_v_1_type;
+pub mod gender_v_1_type;
 pub mod identity_connected_reducer;
 pub mod identity_disconnected_reducer;
 pub mod item_definition_v_1_table;
@@ -24,23 +31,37 @@ pub mod map_v_1_type;
 pub mod oneshot_deferred_event_scheduled_v_1_reducer;
 pub mod oneshot_deferred_event_v_1_table;
 pub mod oneshot_deferred_event_v_1_type;
+pub mod race_v_1_type;
+pub mod select_character_v_1_reducer;
 pub mod skill_v_1_type;
 pub mod town_temple_v_1_table;
 pub mod town_temple_v_1_type;
 pub mod user_v_1_table;
 pub mod user_v_1_type;
+pub mod vw_my_character_v_1_table;
+pub mod vw_my_user_v_1_table;
+pub mod vw_nearby_characters_v_1_table;
+pub mod vw_world_map_v_1_table;
+pub mod vw_world_my_character_positions_v_1_table;
 
 pub use character_position_v_1_table::*;
 pub use character_position_v_1_type::CharacterPositionV1;
 pub use character_skill_v_1_table::*;
 pub use character_skill_v_1_type::CharacterSkillV1;
+pub use character_stats_v_1_table::*;
+pub use character_stats_v_1_type::CharacterStatsV1;
 pub use character_v_1_table::*;
 pub use character_v_1_type::CharacterV1;
+pub use class_v_1_type::ClassV1;
+pub use create_character_v_1_reducer::{create_character_v_1, set_flags_for_create_character_v_1, CreateCharacterV1CallbackId};
+pub use current_character_v_1_table::*;
+pub use current_character_v_1_type::CurrentCharacterV1;
 pub use deferred_event_v_1_type::DeferredEventV1;
 pub use direction_v_1_type::DirectionV1;
-pub use identity_connected_reducer::{IdentityConnectedCallbackId, identity_connected, set_flags_for_identity_connected};
+pub use gender_v_1_type::GenderV1;
+pub use identity_connected_reducer::{identity_connected, set_flags_for_identity_connected, IdentityConnectedCallbackId};
 pub use identity_disconnected_reducer::{
-    IdentityDisconnectedCallbackId, identity_disconnected, set_flags_for_identity_disconnected,
+    identity_disconnected, set_flags_for_identity_disconnected, IdentityDisconnectedCallbackId,
 };
 pub use item_definition_v_1_table::*;
 pub use item_definition_v_1_type::ItemDefinitionV1;
@@ -48,16 +69,23 @@ pub use map_tile_v_1_type::MapTileV1;
 pub use map_v_1_table::*;
 pub use map_v_1_type::MapV1;
 pub use oneshot_deferred_event_scheduled_v_1_reducer::{
-    OneshotDeferredEventScheduledV1CallbackId, oneshot_deferred_event_scheduled_v_1,
-    set_flags_for_oneshot_deferred_event_scheduled_v_1,
+    oneshot_deferred_event_scheduled_v_1, set_flags_for_oneshot_deferred_event_scheduled_v_1,
+    OneshotDeferredEventScheduledV1CallbackId,
 };
 pub use oneshot_deferred_event_v_1_table::*;
 pub use oneshot_deferred_event_v_1_type::OneshotDeferredEventV1;
+pub use race_v_1_type::RaceV1;
+pub use select_character_v_1_reducer::{select_character_v_1, set_flags_for_select_character_v_1, SelectCharacterV1CallbackId};
 pub use skill_v_1_type::SkillV1;
 pub use town_temple_v_1_table::*;
 pub use town_temple_v_1_type::TownTempleV1;
 pub use user_v_1_table::*;
 pub use user_v_1_type::UserV1;
+pub use vw_my_character_v_1_table::*;
+pub use vw_my_user_v_1_table::*;
+pub use vw_nearby_characters_v_1_table::*;
+pub use vw_world_map_v_1_table::*;
+pub use vw_world_my_character_positions_v_1_table::*;
 
 #[derive(Clone, PartialEq, Debug)]
 
@@ -67,9 +95,19 @@ pub use user_v_1_type::UserV1;
 /// to indicate which reducer caused the event.
 
 pub enum Reducer {
+    CreateCharacterV1 {
+        display_name: String,
+        gender: GenderV1,
+        race: RaceV1,
+    },
     IdentityConnected,
     IdentityDisconnected,
-    OneshotDeferredEventScheduledV1 { timer: OneshotDeferredEventV1 },
+    OneshotDeferredEventScheduledV1 {
+        timer: OneshotDeferredEventV1,
+    },
+    SelectCharacterV1 {
+        character_id: u64,
+    },
 }
 
 impl __sdk::InModule for Reducer {
@@ -79,9 +117,11 @@ impl __sdk::InModule for Reducer {
 impl __sdk::Reducer for Reducer {
     fn reducer_name(&self) -> &'static str {
         match self {
+            Reducer::CreateCharacterV1 { .. } => "create_character_v1",
             Reducer::IdentityConnected => "identity_connected",
             Reducer::IdentityDisconnected => "identity_disconnected",
             Reducer::OneshotDeferredEventScheduledV1 { .. } => "oneshot_deferred_event_scheduled_v1",
+            Reducer::SelectCharacterV1 { .. } => "select_character_v1",
             _ => unreachable!(),
         }
     }
@@ -90,6 +130,13 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
     type Error = __sdk::Error;
     fn try_from(value: __ws::ReducerCallInfo<__ws::BsatnFormat>) -> __sdk::Result<Self> {
         match &value.reducer_name[..] {
+            "create_character_v1" => Ok(
+                __sdk::parse_reducer_args::<create_character_v_1_reducer::CreateCharacterV1Args>(
+                    "create_character_v1",
+                    &value.args,
+                )?
+                .into(),
+            ),
             "identity_connected" => Ok(
                 __sdk::parse_reducer_args::<identity_connected_reducer::IdentityConnectedArgs>(
                     "identity_connected",
@@ -108,6 +155,13 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
                 oneshot_deferred_event_scheduled_v_1_reducer::OneshotDeferredEventScheduledV1Args,
             >("oneshot_deferred_event_scheduled_v1", &value.args)?
             .into()),
+            "select_character_v1" => Ok(
+                __sdk::parse_reducer_args::<select_character_v_1_reducer::SelectCharacterV1Args>(
+                    "select_character_v1",
+                    &value.args,
+                )?
+                .into(),
+            ),
             unknown => Err(__sdk::InternalError::unknown_name("reducer", unknown, "ReducerCallInfo").into()),
         }
     }
@@ -119,12 +173,19 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
 pub struct DbUpdate {
     character_position_v_1: __sdk::TableUpdate<CharacterPositionV1>,
     character_skill_v_1: __sdk::TableUpdate<CharacterSkillV1>,
+    character_stats_v_1: __sdk::TableUpdate<CharacterStatsV1>,
     character_v_1: __sdk::TableUpdate<CharacterV1>,
+    current_character_v_1: __sdk::TableUpdate<CurrentCharacterV1>,
     item_definition_v_1: __sdk::TableUpdate<ItemDefinitionV1>,
     map_v_1: __sdk::TableUpdate<MapV1>,
     oneshot_deferred_event_v_1: __sdk::TableUpdate<OneshotDeferredEventV1>,
     town_temple_v_1: __sdk::TableUpdate<TownTempleV1>,
     user_v_1: __sdk::TableUpdate<UserV1>,
+    vw_my_character_v_1: __sdk::TableUpdate<CharacterV1>,
+    vw_my_user_v_1: __sdk::TableUpdate<UserV1>,
+    vw_nearby_characters_v_1: __sdk::TableUpdate<CharacterV1>,
+    vw_world_map_v_1: __sdk::TableUpdate<MapV1>,
+    vw_world_my_character_positions_v_1: __sdk::TableUpdate<CharacterPositionV1>,
 }
 
 impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
@@ -139,9 +200,15 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
                 "character_skill_v1" => db_update
                     .character_skill_v_1
                     .append(character_skill_v_1_table::parse_table_update(table_update)?),
+                "character_stats_v1" => db_update
+                    .character_stats_v_1
+                    .append(character_stats_v_1_table::parse_table_update(table_update)?),
                 "character_v1" => db_update
                     .character_v_1
                     .append(character_v_1_table::parse_table_update(table_update)?),
+                "current_character_v1" => db_update
+                    .current_character_v_1
+                    .append(current_character_v_1_table::parse_table_update(table_update)?),
                 "item_definition_v1" => db_update
                     .item_definition_v_1
                     .append(item_definition_v_1_table::parse_table_update(table_update)?),
@@ -153,6 +220,21 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
                     .town_temple_v_1
                     .append(town_temple_v_1_table::parse_table_update(table_update)?),
                 "user_v1" => db_update.user_v_1.append(user_v_1_table::parse_table_update(table_update)?),
+                "vw_my_character_v1" => db_update
+                    .vw_my_character_v_1
+                    .append(vw_my_character_v_1_table::parse_table_update(table_update)?),
+                "vw_my_user_v1" => db_update
+                    .vw_my_user_v_1
+                    .append(vw_my_user_v_1_table::parse_table_update(table_update)?),
+                "vw_nearby_characters_v1" => db_update
+                    .vw_nearby_characters_v_1
+                    .append(vw_nearby_characters_v_1_table::parse_table_update(table_update)?),
+                "vw_world_map_v1" => db_update
+                    .vw_world_map_v_1
+                    .append(vw_world_map_v_1_table::parse_table_update(table_update)?),
+                "vw_world_my_character_positions_v1" => db_update
+                    .vw_world_my_character_positions_v_1
+                    .append(vw_world_my_character_positions_v_1_table::parse_table_update(table_update)?),
 
                 unknown => {
                     return Err(__sdk::InternalError::unknown_name("table", unknown, "DatabaseUpdate").into());
@@ -173,13 +255,19 @@ impl __sdk::DbUpdate for DbUpdate {
 
         diff.character_position_v_1 = cache
             .apply_diff_to_table::<CharacterPositionV1>("character_position_v1", &self.character_position_v_1)
-            .with_updates_by_pk(|row| &row.character_position_id);
+            .with_updates_by_pk(|row| &row.character_id);
         diff.character_skill_v_1 = cache
             .apply_diff_to_table::<CharacterSkillV1>("character_skill_v1", &self.character_skill_v_1)
             .with_updates_by_pk(|row| &row.skill_entry_id);
+        diff.character_stats_v_1 = cache
+            .apply_diff_to_table::<CharacterStatsV1>("character_stats_v1", &self.character_stats_v_1)
+            .with_updates_by_pk(|row| &row.character_id);
         diff.character_v_1 = cache
             .apply_diff_to_table::<CharacterV1>("character_v1", &self.character_v_1)
             .with_updates_by_pk(|row| &row.character_id);
+        diff.current_character_v_1 = cache
+            .apply_diff_to_table::<CurrentCharacterV1>("current_character_v1", &self.current_character_v_1)
+            .with_updates_by_pk(|row| &row.user_id);
         diff.item_definition_v_1 = cache
             .apply_diff_to_table::<ItemDefinitionV1>("item_definition_v1", &self.item_definition_v_1)
             .with_updates_by_pk(|row| &row.item_id);
@@ -195,6 +283,15 @@ impl __sdk::DbUpdate for DbUpdate {
         diff.user_v_1 = cache
             .apply_diff_to_table::<UserV1>("user_v1", &self.user_v_1)
             .with_updates_by_pk(|row| &row.user_id);
+        diff.vw_my_character_v_1 = cache.apply_diff_to_table::<CharacterV1>("vw_my_character_v1", &self.vw_my_character_v_1);
+        diff.vw_my_user_v_1 = cache.apply_diff_to_table::<UserV1>("vw_my_user_v1", &self.vw_my_user_v_1);
+        diff.vw_nearby_characters_v_1 =
+            cache.apply_diff_to_table::<CharacterV1>("vw_nearby_characters_v1", &self.vw_nearby_characters_v_1);
+        diff.vw_world_map_v_1 = cache.apply_diff_to_table::<MapV1>("vw_world_map_v1", &self.vw_world_map_v_1);
+        diff.vw_world_my_character_positions_v_1 = cache.apply_diff_to_table::<CharacterPositionV1>(
+            "vw_world_my_character_positions_v1",
+            &self.vw_world_my_character_positions_v_1,
+        );
 
         diff
     }
@@ -206,12 +303,19 @@ impl __sdk::DbUpdate for DbUpdate {
 pub struct AppliedDiff<'r> {
     character_position_v_1: __sdk::TableAppliedDiff<'r, CharacterPositionV1>,
     character_skill_v_1: __sdk::TableAppliedDiff<'r, CharacterSkillV1>,
+    character_stats_v_1: __sdk::TableAppliedDiff<'r, CharacterStatsV1>,
     character_v_1: __sdk::TableAppliedDiff<'r, CharacterV1>,
+    current_character_v_1: __sdk::TableAppliedDiff<'r, CurrentCharacterV1>,
     item_definition_v_1: __sdk::TableAppliedDiff<'r, ItemDefinitionV1>,
     map_v_1: __sdk::TableAppliedDiff<'r, MapV1>,
     oneshot_deferred_event_v_1: __sdk::TableAppliedDiff<'r, OneshotDeferredEventV1>,
     town_temple_v_1: __sdk::TableAppliedDiff<'r, TownTempleV1>,
     user_v_1: __sdk::TableAppliedDiff<'r, UserV1>,
+    vw_my_character_v_1: __sdk::TableAppliedDiff<'r, CharacterV1>,
+    vw_my_user_v_1: __sdk::TableAppliedDiff<'r, UserV1>,
+    vw_nearby_characters_v_1: __sdk::TableAppliedDiff<'r, CharacterV1>,
+    vw_world_map_v_1: __sdk::TableAppliedDiff<'r, MapV1>,
+    vw_world_my_character_positions_v_1: __sdk::TableAppliedDiff<'r, CharacterPositionV1>,
     __unused: std::marker::PhantomData<&'r ()>,
 }
 
@@ -227,7 +331,9 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
             event,
         );
         callbacks.invoke_table_row_callbacks::<CharacterSkillV1>("character_skill_v1", &self.character_skill_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterStatsV1>("character_stats_v1", &self.character_stats_v_1, event);
         callbacks.invoke_table_row_callbacks::<CharacterV1>("character_v1", &self.character_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CurrentCharacterV1>("current_character_v1", &self.current_character_v_1, event);
         callbacks.invoke_table_row_callbacks::<ItemDefinitionV1>("item_definition_v1", &self.item_definition_v_1, event);
         callbacks.invoke_table_row_callbacks::<MapV1>("map_v1", &self.map_v_1, event);
         callbacks.invoke_table_row_callbacks::<OneshotDeferredEventV1>(
@@ -237,6 +343,15 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
         );
         callbacks.invoke_table_row_callbacks::<TownTempleV1>("town_temple_v1", &self.town_temple_v_1, event);
         callbacks.invoke_table_row_callbacks::<UserV1>("user_v1", &self.user_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_my_character_v1", &self.vw_my_character_v_1, event);
+        callbacks.invoke_table_row_callbacks::<UserV1>("vw_my_user_v1", &self.vw_my_user_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterV1>("vw_nearby_characters_v1", &self.vw_nearby_characters_v_1, event);
+        callbacks.invoke_table_row_callbacks::<MapV1>("vw_world_map_v1", &self.vw_world_map_v_1, event);
+        callbacks.invoke_table_row_callbacks::<CharacterPositionV1>(
+            "vw_world_my_character_positions_v1",
+            &self.vw_world_my_character_positions_v_1,
+            event,
+        );
     }
 }
 
@@ -500,21 +615,21 @@ impl __sdk::SubscriptionHandle for SubscriptionHandle {
 /// either a [`DbConnection`] or an [`EventContext`] and operate on either.
 pub trait RemoteDbContext:
     __sdk::DbContext<
-        DbView = RemoteTables,
-        Reducers = RemoteReducers,
-        SetReducerFlags = SetReducerFlags,
-        SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
-    >
+    DbView = RemoteTables,
+    Reducers = RemoteReducers,
+    SetReducerFlags = SetReducerFlags,
+    SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
+>
 {
 }
 impl<
-    Ctx: __sdk::DbContext<
+        Ctx: __sdk::DbContext<
             DbView = RemoteTables,
             Reducers = RemoteReducers,
             SetReducerFlags = SetReducerFlags,
             SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
         >,
-> RemoteDbContext for Ctx
+    > RemoteDbContext for Ctx
 {
 }
 
@@ -959,11 +1074,18 @@ impl __sdk::SpacetimeModule for RemoteModule {
     fn register_tables(client_cache: &mut __sdk::ClientCache<Self>) {
         character_position_v_1_table::register_table(client_cache);
         character_skill_v_1_table::register_table(client_cache);
+        character_stats_v_1_table::register_table(client_cache);
         character_v_1_table::register_table(client_cache);
+        current_character_v_1_table::register_table(client_cache);
         item_definition_v_1_table::register_table(client_cache);
         map_v_1_table::register_table(client_cache);
         oneshot_deferred_event_v_1_table::register_table(client_cache);
         town_temple_v_1_table::register_table(client_cache);
         user_v_1_table::register_table(client_cache);
+        vw_my_character_v_1_table::register_table(client_cache);
+        vw_my_user_v_1_table::register_table(client_cache);
+        vw_nearby_characters_v_1_table::register_table(client_cache);
+        vw_world_map_v_1_table::register_table(client_cache);
+        vw_world_my_character_positions_v_1_table::register_table(client_cache);
     }
 }

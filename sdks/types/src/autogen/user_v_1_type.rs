@@ -8,8 +8,6 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 #[sats(crate = __lib)]
 pub struct UserV1 {
     pub user_id: __sdk::Identity,
-    pub username: String,
-    pub is_online: bool,
     pub created_at: __sdk::Timestamp,
     pub last_active_at: __sdk::Timestamp,
 }
@@ -23,8 +21,6 @@ impl __sdk::InModule for UserV1 {
 /// Provides typed access to columns for query building.
 pub struct UserV1Cols {
     pub user_id: __sdk::__query_builder::Col<UserV1, __sdk::Identity>,
-    pub username: __sdk::__query_builder::Col<UserV1, String>,
-    pub is_online: __sdk::__query_builder::Col<UserV1, bool>,
     pub created_at: __sdk::__query_builder::Col<UserV1, __sdk::Timestamp>,
     pub last_active_at: __sdk::__query_builder::Col<UserV1, __sdk::Timestamp>,
 }
@@ -34,8 +30,6 @@ impl __sdk::__query_builder::HasCols for UserV1 {
     fn cols(table_name: &'static str) -> Self::Cols {
         UserV1Cols {
             user_id: __sdk::__query_builder::Col::new(table_name, "user_id"),
-            username: __sdk::__query_builder::Col::new(table_name, "username"),
-            is_online: __sdk::__query_builder::Col::new(table_name, "is_online"),
             created_at: __sdk::__query_builder::Col::new(table_name, "created_at"),
             last_active_at: __sdk::__query_builder::Col::new(table_name, "last_active_at"),
         }
@@ -47,7 +41,6 @@ impl __sdk::__query_builder::HasCols for UserV1 {
 /// Provides typed access to indexed columns for query building.
 pub struct UserV1IxCols {
     pub user_id: __sdk::__query_builder::IxCol<UserV1, __sdk::Identity>,
-    pub username: __sdk::__query_builder::IxCol<UserV1, String>,
 }
 
 impl __sdk::__query_builder::HasIxCols for UserV1 {
@@ -55,7 +48,6 @@ impl __sdk::__query_builder::HasIxCols for UserV1 {
     fn ix_cols(table_name: &'static str) -> Self::IxCols {
         UserV1IxCols {
             user_id: __sdk::__query_builder::IxCol::new(table_name, "user_id"),
-            username: __sdk::__query_builder::IxCol::new(table_name, "username"),
         }
     }
 }

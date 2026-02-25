@@ -2,7 +2,7 @@
 // WILL NOT BE SAVED. MODIFY TABLES IN YOUR MODULE SOURCE CODE INSTEAD.
 
 #![allow(unused, clippy::all)]
-use super::character_v_1_type::CharacterV1;
+use super::{character_v_1_type::CharacterV1, class_v_1_type::ClassV1, gender_v_1_type::GenderV1, race_v_1_type::RaceV1};
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 /// Table handle for the table `character_v1`.
@@ -76,6 +76,7 @@ impl<'ctx> __sdk::Table for CharacterV1TableHandle<'ctx> {
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
     let _table = client_cache.get_or_make_table::<CharacterV1>("character_v1");
     _table.add_unique_constraint::<u64>("character_id", |row| &row.character_id);
+    _table.add_unique_constraint::<String>("name", |row| &row.name);
 }
 pub struct CharacterV1UpdateCallbackId(__sdk::CallbackId);
 
@@ -131,6 +132,36 @@ impl<'ctx> CharacterV1CharacterIdUnique<'ctx> {
     /// Find the subscribed row whose `character_id` column value is equal to `col_val`,
     /// if such a row is present in the client cache.
     pub fn find(&self, col_val: &u64) -> Option<CharacterV1> {
+        self.imp.find(col_val)
+    }
+}
+
+/// Access to the `name` unique index on the table `character_v1`,
+/// which allows point queries on the field of the same name
+/// via the [`CharacterV1NameUnique::find`] method.
+///
+/// Users are encouraged not to explicitly reference this type,
+/// but to directly chain method calls,
+/// like `ctx.db.character_v_1().name().find(...)`.
+pub struct CharacterV1NameUnique<'ctx> {
+    imp: __sdk::UniqueConstraintHandle<CharacterV1, String>,
+    phantom: std::marker::PhantomData<&'ctx super::RemoteTables>,
+}
+
+impl<'ctx> CharacterV1TableHandle<'ctx> {
+    /// Get a handle on the `name` unique index on the table `character_v1`.
+    pub fn name(&self) -> CharacterV1NameUnique<'ctx> {
+        CharacterV1NameUnique {
+            imp: self.imp.get_unique_constraint::<String>("name"),
+            phantom: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<'ctx> CharacterV1NameUnique<'ctx> {
+    /// Find the subscribed row whose `name` column value is equal to `col_val`,
+    /// if such a row is present in the client cache.
+    pub fn find(&self, col_val: &String) -> Option<CharacterV1> {
         self.imp.find(col_val)
     }
 }

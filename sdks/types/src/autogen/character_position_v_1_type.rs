@@ -9,9 +9,7 @@ use super::direction_v_1_type::DirectionV1;
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
 pub struct CharacterPositionV1 {
-    pub character_position_id: u64,
     pub character_id: u64,
-    pub town_id: u64,
     pub x: u16,
     pub y: u16,
     pub z: u16,
@@ -27,9 +25,7 @@ impl __sdk::InModule for CharacterPositionV1 {
 ///
 /// Provides typed access to columns for query building.
 pub struct CharacterPositionV1Cols {
-    pub character_position_id: __sdk::__query_builder::Col<CharacterPositionV1, u64>,
     pub character_id: __sdk::__query_builder::Col<CharacterPositionV1, u64>,
-    pub town_id: __sdk::__query_builder::Col<CharacterPositionV1, u64>,
     pub x: __sdk::__query_builder::Col<CharacterPositionV1, u16>,
     pub y: __sdk::__query_builder::Col<CharacterPositionV1, u16>,
     pub z: __sdk::__query_builder::Col<CharacterPositionV1, u16>,
@@ -41,9 +37,7 @@ impl __sdk::__query_builder::HasCols for CharacterPositionV1 {
     type Cols = CharacterPositionV1Cols;
     fn cols(table_name: &'static str) -> Self::Cols {
         CharacterPositionV1Cols {
-            character_position_id: __sdk::__query_builder::Col::new(table_name, "character_position_id"),
             character_id: __sdk::__query_builder::Col::new(table_name, "character_id"),
-            town_id: __sdk::__query_builder::Col::new(table_name, "town_id"),
             x: __sdk::__query_builder::Col::new(table_name, "x"),
             y: __sdk::__query_builder::Col::new(table_name, "y"),
             z: __sdk::__query_builder::Col::new(table_name, "z"),
@@ -58,8 +52,6 @@ impl __sdk::__query_builder::HasCols for CharacterPositionV1 {
 /// Provides typed access to indexed columns for query building.
 pub struct CharacterPositionV1IxCols {
     pub character_id: __sdk::__query_builder::IxCol<CharacterPositionV1, u64>,
-    pub character_position_id: __sdk::__query_builder::IxCol<CharacterPositionV1, u64>,
-    pub town_id: __sdk::__query_builder::IxCol<CharacterPositionV1, u64>,
 }
 
 impl __sdk::__query_builder::HasIxCols for CharacterPositionV1 {
@@ -67,8 +59,6 @@ impl __sdk::__query_builder::HasIxCols for CharacterPositionV1 {
     fn ix_cols(table_name: &'static str) -> Self::IxCols {
         CharacterPositionV1IxCols {
             character_id: __sdk::__query_builder::IxCol::new(table_name, "character_id"),
-            character_position_id: __sdk::__query_builder::IxCol::new(table_name, "character_position_id"),
-            town_id: __sdk::__query_builder::IxCol::new(table_name, "town_id"),
         }
     }
 }

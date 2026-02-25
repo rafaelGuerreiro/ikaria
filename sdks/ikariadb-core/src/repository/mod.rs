@@ -1,10 +1,11 @@
 use crate::{error::ServiceResult, repository::event::services::EventReducerContext};
 use spacetimedb::ReducerContext;
 
-pub mod account;
+pub mod character;
 pub mod event;
 pub mod item;
 pub mod progression;
+pub mod user;
 pub mod world;
 
 pub fn init(ctx: &ReducerContext) {

@@ -8,5 +8,5 @@ publish = { workspace = true }
 ikaria-shared = { workspace = true }
 
 log = { workspace = true, features = ["max_level_info", "release_max_level_info"] }
-spacetimedb = { workspace = true }
+spacetimedb = { workspace = true, features = ["unstable"] }
 thiserror = { workspace = true }

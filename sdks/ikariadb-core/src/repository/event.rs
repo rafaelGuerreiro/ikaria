@@ -9,6 +9,7 @@ pub mod services;
 pub mod types;
 
 #[table(name = oneshot_deferred_event_v1, private, scheduled(oneshot_deferred_event_scheduled_v1))]
+#[derive(Debug)]
 pub struct OneshotDeferredEventV1 {
     #[auto_inc]
     #[primary_key]

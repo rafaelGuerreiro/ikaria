@@ -81,7 +81,7 @@ impl<'ctx> __sdk::Table for CharacterPositionV1TableHandle<'ctx> {
 #[doc(hidden)]
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
     let _table = client_cache.get_or_make_table::<CharacterPositionV1>("character_position_v1");
-    _table.add_unique_constraint::<u64>("character_position_id", |row| &row.character_position_id);
+    _table.add_unique_constraint::<u64>("character_id", |row| &row.character_id);
 }
 pub struct CharacterPositionV1UpdateCallbackId(__sdk::CallbackId);
 
@@ -111,30 +111,30 @@ pub(super) fn parse_table_update(
     })
 }
 
-/// Access to the `character_position_id` unique index on the table `character_position_v1`,
+/// Access to the `character_id` unique index on the table `character_position_v1`,
 /// which allows point queries on the field of the same name
-/// via the [`CharacterPositionV1CharacterPositionIdUnique::find`] method.
+/// via the [`CharacterPositionV1CharacterIdUnique::find`] method.
 ///
 /// Users are encouraged not to explicitly reference this type,
 /// but to directly chain method calls,
-/// like `ctx.db.character_position_v_1().character_position_id().find(...)`.
-pub struct CharacterPositionV1CharacterPositionIdUnique<'ctx> {
+/// like `ctx.db.character_position_v_1().character_id().find(...)`.
+pub struct CharacterPositionV1CharacterIdUnique<'ctx> {
     imp: __sdk::UniqueConstraintHandle<CharacterPositionV1, u64>,
     phantom: std::marker::PhantomData<&'ctx super::RemoteTables>,
 }
 
 impl<'ctx> CharacterPositionV1TableHandle<'ctx> {
-    /// Get a handle on the `character_position_id` unique index on the table `character_position_v1`.
-    pub fn character_position_id(&self) -> CharacterPositionV1CharacterPositionIdUnique<'ctx> {
-        CharacterPositionV1CharacterPositionIdUnique {
-            imp: self.imp.get_unique_constraint::<u64>("character_position_id"),
+    /// Get a handle on the `character_id` unique index on the table `character_position_v1`.
+    pub fn character_id(&self) -> CharacterPositionV1CharacterIdUnique<'ctx> {
+        CharacterPositionV1CharacterIdUnique {
+            imp: self.imp.get_unique_constraint::<u64>("character_id"),
             phantom: std::marker::PhantomData,
         }
     }
 }
 
-impl<'ctx> CharacterPositionV1CharacterPositionIdUnique<'ctx> {
-    /// Find the subscribed row whose `character_position_id` column value is equal to `col_val`,
+impl<'ctx> CharacterPositionV1CharacterIdUnique<'ctx> {
+    /// Find the subscribed row whose `character_id` column value is equal to `col_val`,
     /// if such a row is present in the client cache.
     pub fn find(&self, col_val: &u64) -> Option<CharacterPositionV1> {
         self.imp.find(col_val)

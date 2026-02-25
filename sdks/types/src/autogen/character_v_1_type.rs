@@ -4,20 +4,19 @@
 #![allow(unused, clippy::all)]
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
+use super::{class_v_1_type::ClassV1, gender_v_1_type::GenderV1, race_v_1_type::RaceV1};
+
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
 pub struct CharacterV1 {
     pub character_id: u64,
     pub user_id: __sdk::Identity,
     pub name: String,
-    pub vocation: String,
-    pub level: u16,
-    pub experience: u64,
-    pub health: u32,
-    pub mana: u32,
-    pub capacity: u16,
+    pub display_name: String,
+    pub race: RaceV1,
+    pub class: ClassV1,
+    pub gender: GenderV1,
     pub created_at: __sdk::Timestamp,
-    pub last_login_at: __sdk::Timestamp,
 }
 
 impl __sdk::InModule for CharacterV1 {
@@ -31,14 +30,11 @@ pub struct CharacterV1Cols {
     pub character_id: __sdk::__query_builder::Col<CharacterV1, u64>,
     pub user_id: __sdk::__query_builder::Col<CharacterV1, __sdk::Identity>,
     pub name: __sdk::__query_builder::Col<CharacterV1, String>,
-    pub vocation: __sdk::__query_builder::Col<CharacterV1, String>,
-    pub level: __sdk::__query_builder::Col<CharacterV1, u16>,
-    pub experience: __sdk::__query_builder::Col<CharacterV1, u64>,
-    pub health: __sdk::__query_builder::Col<CharacterV1, u32>,
-    pub mana: __sdk::__query_builder::Col<CharacterV1, u32>,
-    pub capacity: __sdk::__query_builder::Col<CharacterV1, u16>,
+    pub display_name: __sdk::__query_builder::Col<CharacterV1, String>,
+    pub race: __sdk::__query_builder::Col<CharacterV1, RaceV1>,
+    pub class: __sdk::__query_builder::Col<CharacterV1, ClassV1>,
+    pub gender: __sdk::__query_builder::Col<CharacterV1, GenderV1>,
     pub created_at: __sdk::__query_builder::Col<CharacterV1, __sdk::Timestamp>,
-    pub last_login_at: __sdk::__query_builder::Col<CharacterV1, __sdk::Timestamp>,
 }
 
 impl __sdk::__query_builder::HasCols for CharacterV1 {
@@ -48,14 +44,11 @@ impl __sdk::__query_builder::HasCols for CharacterV1 {
             character_id: __sdk::__query_builder::Col::new(table_name, "character_id"),
             user_id: __sdk::__query_builder::Col::new(table_name, "user_id"),
             name: __sdk::__query_builder::Col::new(table_name, "name"),
-            vocation: __sdk::__query_builder::Col::new(table_name, "vocation"),
-            level: __sdk::__query_builder::Col::new(table_name, "level"),
-            experience: __sdk::__query_builder::Col::new(table_name, "experience"),
-            health: __sdk::__query_builder::Col::new(table_name, "health"),
-            mana: __sdk::__query_builder::Col::new(table_name, "mana"),
-            capacity: __sdk::__query_builder::Col::new(table_name, "capacity"),
+            display_name: __sdk::__query_builder::Col::new(table_name, "display_name"),
+            race: __sdk::__query_builder::Col::new(table_name, "race"),
+            class: __sdk::__query_builder::Col::new(table_name, "class"),
+            gender: __sdk::__query_builder::Col::new(table_name, "gender"),
             created_at: __sdk::__query_builder::Col::new(table_name, "created_at"),
-            last_login_at: __sdk::__query_builder::Col::new(table_name, "last_login_at"),
         }
     }
 }
