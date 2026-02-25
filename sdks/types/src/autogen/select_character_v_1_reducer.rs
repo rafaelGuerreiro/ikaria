@@ -23,11 +23,11 @@ impl __sdk::InModule for SelectCharacterV1Args {
 }
 
 #[allow(non_camel_case_types)]
-/// Extension trait for access to the reducer `select_character_v_1`.
+/// Extension trait for access to the reducer `select_character_v1`.
 ///
 /// Implemented for [`super::RemoteReducers`].
 pub trait select_character_v_1 {
-    /// Request that the remote module invoke the reducer `select_character_v_1` to run as soon as possible.
+    /// Request that the remote module invoke the reducer `select_character_v1` to run as soon as possible.
     ///
     /// This method returns immediately, and errors only if we are unable to send the request.
     /// The reducer will run asynchronously in the future,
@@ -37,7 +37,7 @@ pub trait select_character_v_1 {
         self.select_character_v_1_then(character_id, |_, _| {})
     }
 
-    /// Request that the remote module invoke the reducer `select_character_v_1` to run as soon as possible,
+    /// Request that the remote module invoke the reducer `select_character_v1` to run as soon as possible,
     /// registering `callback` to run when we are notified that the reducer completed.
     ///
     /// This method returns immediately, and errors only if we are unable to send the request.

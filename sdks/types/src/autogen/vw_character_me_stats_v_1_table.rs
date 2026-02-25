@@ -5,7 +5,7 @@
 use super::character_stats_v_1_type::CharacterStatsV1;
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
-/// Table handle for the table `vw_character_me_stats_v_1`.
+/// Table handle for the table `vw_character_me_stats_v1`.
 ///
 /// Obtain a handle from the [`VwCharacterMeStatsV1TableAccess::vw_character_me_stats_v_1`] method on [`super::RemoteTables`],
 /// like `ctx.db.vw_character_me_stats_v_1()`.
@@ -19,19 +19,19 @@ pub struct VwCharacterMeStatsV1TableHandle<'ctx> {
 }
 
 #[allow(non_camel_case_types)]
-/// Extension trait for access to the table `vw_character_me_stats_v_1`.
+/// Extension trait for access to the table `vw_character_me_stats_v1`.
 ///
 /// Implemented for [`super::RemoteTables`].
 pub trait VwCharacterMeStatsV1TableAccess {
     #[allow(non_snake_case)]
-    /// Obtain a [`VwCharacterMeStatsV1TableHandle`], which mediates access to the table `vw_character_me_stats_v_1`.
+    /// Obtain a [`VwCharacterMeStatsV1TableHandle`], which mediates access to the table `vw_character_me_stats_v1`.
     fn vw_character_me_stats_v_1(&self) -> VwCharacterMeStatsV1TableHandle<'_>;
 }
 
 impl VwCharacterMeStatsV1TableAccess for super::RemoteTables {
     fn vw_character_me_stats_v_1(&self) -> VwCharacterMeStatsV1TableHandle<'_> {
         VwCharacterMeStatsV1TableHandle {
-            imp: self.imp.get_table::<CharacterStatsV1>("vw_character_me_stats_v_1"),
+            imp: self.imp.get_table::<CharacterStatsV1>("vw_character_me_stats_v1"),
             ctx: std::marker::PhantomData,
         }
     }
@@ -80,7 +80,7 @@ impl<'ctx> __sdk::Table for VwCharacterMeStatsV1TableHandle<'ctx> {
 
 #[doc(hidden)]
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
-    let _table = client_cache.get_or_make_table::<CharacterStatsV1>("vw_character_me_stats_v_1");
+    let _table = client_cache.get_or_make_table::<CharacterStatsV1>("vw_character_me_stats_v1");
 }
 
 #[doc(hidden)]
@@ -104,6 +104,6 @@ pub trait vw_character_me_stats_v_1QueryTableAccess {
 
 impl vw_character_me_stats_v_1QueryTableAccess for __sdk::QueryTableAccessor {
     fn vw_character_me_stats_v_1(&self) -> __sdk::__query_builder::Table<CharacterStatsV1> {
-        __sdk::__query_builder::Table::new("vw_character_me_stats_v_1")
+        __sdk::__query_builder::Table::new("vw_character_me_stats_v1")
     }
 }

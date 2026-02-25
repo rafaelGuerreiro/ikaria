@@ -5,7 +5,7 @@
 use super::user_v_1_type::UserV1;
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
-/// Table handle for the table `vw_user_me_v_1`.
+/// Table handle for the table `vw_user_me_v1`.
 ///
 /// Obtain a handle from the [`VwUserMeV1TableAccess::vw_user_me_v_1`] method on [`super::RemoteTables`],
 /// like `ctx.db.vw_user_me_v_1()`.
@@ -19,19 +19,19 @@ pub struct VwUserMeV1TableHandle<'ctx> {
 }
 
 #[allow(non_camel_case_types)]
-/// Extension trait for access to the table `vw_user_me_v_1`.
+/// Extension trait for access to the table `vw_user_me_v1`.
 ///
 /// Implemented for [`super::RemoteTables`].
 pub trait VwUserMeV1TableAccess {
     #[allow(non_snake_case)]
-    /// Obtain a [`VwUserMeV1TableHandle`], which mediates access to the table `vw_user_me_v_1`.
+    /// Obtain a [`VwUserMeV1TableHandle`], which mediates access to the table `vw_user_me_v1`.
     fn vw_user_me_v_1(&self) -> VwUserMeV1TableHandle<'_>;
 }
 
 impl VwUserMeV1TableAccess for super::RemoteTables {
     fn vw_user_me_v_1(&self) -> VwUserMeV1TableHandle<'_> {
         VwUserMeV1TableHandle {
-            imp: self.imp.get_table::<UserV1>("vw_user_me_v_1"),
+            imp: self.imp.get_table::<UserV1>("vw_user_me_v1"),
             ctx: std::marker::PhantomData,
         }
     }
@@ -74,7 +74,7 @@ impl<'ctx> __sdk::Table for VwUserMeV1TableHandle<'ctx> {
 
 #[doc(hidden)]
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
-    let _table = client_cache.get_or_make_table::<UserV1>("vw_user_me_v_1");
+    let _table = client_cache.get_or_make_table::<UserV1>("vw_user_me_v1");
 }
 
 #[doc(hidden)]
@@ -98,6 +98,6 @@ pub trait vw_user_me_v_1QueryTableAccess {
 
 impl vw_user_me_v_1QueryTableAccess for __sdk::QueryTableAccessor {
     fn vw_user_me_v_1(&self) -> __sdk::__query_builder::Table<UserV1> {
-        __sdk::__query_builder::Table::new("vw_user_me_v_1")
+        __sdk::__query_builder::Table::new("vw_user_me_v1")
     }
 }
