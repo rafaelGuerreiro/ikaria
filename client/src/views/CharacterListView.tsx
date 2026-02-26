@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Alert, Badge, Button, ListGroup, Stack } from 'react-bootstrap'
-import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react'
-import { reducers, tables } from '../module_bindings'
-import { type World, tokenStorageKey } from '../worlds'
-import type { CharacterSummary } from './types'
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Badge, Button, ListGroup, Stack } from 'react-bootstrap';
+import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react';
+import { reducers, tables } from '../module_bindings';
+import { type World, tokenStorageKey } from '../worlds';
+import type { CharacterSummary } from './types';
 
 type CharacterListViewProps = {
-  world: World
-  onCreateCharacter: () => void
-  onLeaveWorld: () => void
-  onEnterGame: () => void
-}
+  world: World;
+  onCreateCharacter: () => void;
+  onLeaveWorld: () => void;
+  onEnterGame: () => void;
+};
 
 export function CharacterListView({
   world,
@@ -18,16 +18,13 @@ export function CharacterListView({
   onLeaveWorld,
   onEnterGame,
 }: CharacterListViewProps) {
-  const { getConnection, token } = useSpacetimeDB()
-  const [characterRows] = useTable(tables.vw_character_all_mine_v1)
-  const [selectedRows] = useTable(tables.vw_character_me_v1)
-  const runSelectCharacter = useReducer(reducers.selectCharacterV1)
+  const { getConnection, token } = useSpacetimeDB();
+  const [characterRows] = useTable(tables.vw_character_all_mine_v1);
+  const [selectedRows] = useTable(tables.vw_character_me_v1);
+  const runSelectCharacter = useReducer(reducers.selectCharacterV1);
 
-  const [statusMessage, setStatusMessage] = useState(
-    `Welcome to ${world.name}.`,
-  )
-  const [selectingCharacterId, setSelectingCharacterId] =
-    useState<bigint | null>(null)
+  const [statusMessage, setStatusMessage] = useState(`Welcome to ${world.name}.`);
+  const [selectingCharacterId, setSelectingCharacterId] = useState<bigint | null>(null);
 
   const characters = useMemo<CharacterSummary[]>(
     () =>
@@ -39,46 +36,39 @@ export function CharacterListView({
           raceTag: character.race.tag,
         }))
         .sort((left, right) =>
-          left.characterId < right.characterId
-            ? -1
-            : left.characterId > right.characterId
-              ? 1
-              : 0,
+          left.characterId < right.characterId ? -1 : left.characterId > right.characterId ? 1 : 0,
         ),
     [characterRows],
-  )
+  );
 
-  const selectedCharacterId = selectedRows[0]?.characterId ?? null
+  const selectedCharacterId = selectedRows[0]?.characterId ?? null;
 
   useEffect(() => {
     if (token) {
-      window.localStorage.setItem(tokenStorageKey(world), token)
+      window.localStorage.setItem(tokenStorageKey(world), token);
     }
-  }, [token, world])
+  }, [token, world]);
 
-  const selectCharacter = async (
-    characterId: bigint,
-    displayName: string,
-  ) => {
-    setSelectingCharacterId(characterId)
-    setStatusMessage(`Selecting '${displayName}'...`)
+  const selectCharacter = async (characterId: bigint, displayName: string) => {
+    setSelectingCharacterId(characterId);
+    setStatusMessage(`Selecting '${displayName}'...`);
 
     try {
-      await runSelectCharacter({ characterId })
-      setStatusMessage(`Selected '${displayName}'.`)
-      onEnterGame()
+      await runSelectCharacter({ characterId });
+      setStatusMessage(`Selected '${displayName}'.`);
+      onEnterGame();
     } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error)
-      setStatusMessage(`Selection failed: ${reason}`)
+      const reason = error instanceof Error ? error.message : String(error);
+      setStatusMessage(`Selection failed: ${reason}`);
     } finally {
-      setSelectingCharacterId(null)
+      setSelectingCharacterId(null);
     }
-  }
+  };
 
   const handleLeaveWorld = () => {
-    getConnection()?.disconnect()
-    onLeaveWorld()
-  }
+    getConnection()?.disconnect();
+    onLeaveWorld();
+  };
 
   return (
     <>
@@ -90,10 +80,7 @@ export function CharacterListView({
       </Alert>
 
       <Stack direction="horizontal" gap={2} className="mb-3">
-        <Button
-          onClick={onCreateCharacter}
-          disabled={selectingCharacterId !== null}
-        >
+        <Button onClick={onCreateCharacter} disabled={selectingCharacterId !== null}>
           Create new character
         </Button>
         <Button variant="secondary" onClick={handleLeaveWorld}>
@@ -121,28 +108,17 @@ export function CharacterListView({
                 {selectedCharacterId === character.characterId ? (
                   <>
                     <Badge bg="success">Current</Badge>
-                    <Button
-                      size="sm"
-                      variant="success"
-                      onClick={onEnterGame}
-                    >
+                    <Button size="sm" variant="success" onClick={onEnterGame}>
                       Play
                     </Button>
                   </>
                 ) : (
                   <Button
                     size="sm"
-                    onClick={() =>
-                      selectCharacter(
-                        character.characterId,
-                        character.displayName,
-                      )
-                    }
+                    onClick={() => selectCharacter(character.characterId, character.displayName)}
                     disabled={selectingCharacterId !== null}
                   >
-                    {selectingCharacterId === character.characterId
-                      ? 'Selecting...'
-                      : 'Select'}
+                    {selectingCharacterId === character.characterId ? 'Selecting...' : 'Select'}
                   </Button>
                 )}
               </Stack>
@@ -151,5 +127,5 @@ export function CharacterListView({
         </ListGroup>
       )}
     </>
-  )
+  );
 }

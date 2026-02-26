@@ -8,19 +8,14 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  RaceV1,
-  ClassV1,
-  GenderV1,
-} from "./types";
-
+} from 'spacetimedb';
+import { RaceV1, ClassV1, GenderV1 } from './types';
 
 export default __t.row({
-  characterId: __t.u64().name("character_id"),
-  userId: __t.identity().name("user_id"),
+  characterId: __t.u64().name('character_id'),
+  userId: __t.identity().name('user_id'),
   name: __t.string(),
-  displayName: __t.string().name("display_name"),
+  displayName: __t.string().name('display_name'),
   get race() {
     return RaceV1;
   },
@@ -30,5 +25,5 @@ export default __t.row({
   get gender() {
     return GenderV1;
   },
-  createdAt: __t.timestamp().name("created_at"),
+  createdAt: __t.timestamp().name('created_at'),
 });

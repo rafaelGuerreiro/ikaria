@@ -8,14 +8,11 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  MapTileV1,
-} from "./types";
-
+} from 'spacetimedb';
+import { MapTileV1 } from './types';
 
 export default __t.row({
-  mapId: __t.u64().name("map_id"),
+  mapId: __t.u64().name('map_id'),
   x: __t.u16(),
   y: __t.u16(),
   z: __t.u16(),

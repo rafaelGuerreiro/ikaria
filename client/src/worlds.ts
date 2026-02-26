@@ -1,11 +1,11 @@
 export type World = {
-  id: string
-  name: string
-  database: string
-  description: string
-}
+  id: string;
+  name: string;
+  database: string;
+  description: string;
+};
 
-export const SPACETIME_URI = 'https://maincloud.spacetimedb.com'
+export const SPACETIME_URI = 'https://maincloud.spacetimedb.com';
 
 export const WORLDS: World[] = [
   {
@@ -20,8 +20,8 @@ export const WORLDS: World[] = [
     database: 'world-draconis-ikariadb',
     description: 'The dragon realm.',
   },
-]
+];
 
 export function tokenStorageKey(world: World): string {
-  return `ikaria.auth.token.${world.id}`
+  return `ikaria.auth.token.${world.id}`;
 }

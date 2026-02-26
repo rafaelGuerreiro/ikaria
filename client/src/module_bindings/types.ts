@@ -8,9 +8,9 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb';
 
-export const CharacterPositionV1 = __t.object("CharacterPositionV1", {
+export const CharacterPositionV1 = __t.object('CharacterPositionV1', {
   characterId: __t.u64(),
   mapId: __t.u64(),
   x: __t.u16(),
@@ -25,7 +25,7 @@ export const CharacterPositionV1 = __t.object("CharacterPositionV1", {
 });
 export type CharacterPositionV1 = __Infer<typeof CharacterPositionV1>;
 
-export const CharacterSkillV1 = __t.object("CharacterSkillV1", {
+export const CharacterSkillV1 = __t.object('CharacterSkillV1', {
   skillEntryId: __t.u64(),
   characterId: __t.u64(),
   get skill() {
@@ -36,7 +36,7 @@ export const CharacterSkillV1 = __t.object("CharacterSkillV1", {
 });
 export type CharacterSkillV1 = __Infer<typeof CharacterSkillV1>;
 
-export const CharacterStatsV1 = __t.object("CharacterStatsV1", {
+export const CharacterStatsV1 = __t.object('CharacterStatsV1', {
   characterId: __t.u64(),
   userId: __t.identity(),
   level: __t.u16(),
@@ -49,7 +49,7 @@ export const CharacterStatsV1 = __t.object("CharacterStatsV1", {
 });
 export type CharacterStatsV1 = __Infer<typeof CharacterStatsV1>;
 
-export const CharacterV1 = __t.object("CharacterV1", {
+export const CharacterV1 = __t.object('CharacterV1', {
   characterId: __t.u64(),
   userId: __t.identity(),
   name: __t.string(),
@@ -68,7 +68,7 @@ export const CharacterV1 = __t.object("CharacterV1", {
 export type CharacterV1 = __Infer<typeof CharacterV1>;
 
 // The tagged union or sum type for the algebraic type `ClassV1`.
-export const ClassV1 = __t.enum("ClassV1", {
+export const ClassV1 = __t.enum('ClassV1', {
   None: __t.unit(),
   Warrior: __t.unit(),
   Rogue: __t.unit(),
@@ -83,13 +83,13 @@ export const ClassV1 = __t.enum("ClassV1", {
 export type ClassV1 = __Infer<typeof ClassV1>;
 
 // The tagged union or sum type for the algebraic type `DeferredEventV1`.
-export const DeferredEventV1 = __t.enum("DeferredEventV1", {
+export const DeferredEventV1 = __t.enum('DeferredEventV1', {
   SignedOut: __t.identity(),
 });
 export type DeferredEventV1 = __Infer<typeof DeferredEventV1>;
 
 // The tagged union or sum type for the algebraic type `DirectionV1`.
-export const DirectionV1 = __t.enum("DirectionV1", {
+export const DirectionV1 = __t.enum('DirectionV1', {
   North: __t.unit(),
   East: __t.unit(),
   South: __t.unit(),
@@ -98,13 +98,13 @@ export const DirectionV1 = __t.enum("DirectionV1", {
 export type DirectionV1 = __Infer<typeof DirectionV1>;
 
 // The tagged union or sum type for the algebraic type `GenderV1`.
-export const GenderV1 = __t.enum("GenderV1", {
+export const GenderV1 = __t.enum('GenderV1', {
   Male: __t.unit(),
   Female: __t.unit(),
 });
 export type GenderV1 = __Infer<typeof GenderV1>;
 
-export const ItemDefinitionV1 = __t.object("ItemDefinitionV1", {
+export const ItemDefinitionV1 = __t.object('ItemDefinitionV1', {
   itemId: __t.u64(),
   name: __t.string(),
   kind: __t.string(),
@@ -115,13 +115,13 @@ export const ItemDefinitionV1 = __t.object("ItemDefinitionV1", {
 export type ItemDefinitionV1 = __Infer<typeof ItemDefinitionV1>;
 
 // The tagged union or sum type for the algebraic type `MapTileV1`.
-export const MapTileV1 = __t.enum("MapTileV1", {
+export const MapTileV1 = __t.enum('MapTileV1', {
   Water: __t.unit(),
   Grass: __t.unit(),
 });
 export type MapTileV1 = __Infer<typeof MapTileV1>;
 
-export const MapV1 = __t.object("MapV1", {
+export const MapV1 = __t.object('MapV1', {
   mapId: __t.u64(),
   x: __t.u16(),
   y: __t.u16(),
@@ -132,14 +132,14 @@ export const MapV1 = __t.object("MapV1", {
 });
 export type MapV1 = __Infer<typeof MapV1>;
 
-export const MovementCooldownV1 = __t.object("MovementCooldownV1", {
+export const MovementCooldownV1 = __t.object('MovementCooldownV1', {
   characterId: __t.u64(),
   canMoveAt: __t.timestamp(),
 });
 export type MovementCooldownV1 = __Infer<typeof MovementCooldownV1>;
 
 // The tagged union or sum type for the algebraic type `MovementV1`.
-export const MovementV1 = __t.enum("MovementV1", {
+export const MovementV1 = __t.enum('MovementV1', {
   North: __t.unit(),
   NorthEast: __t.unit(),
   East: __t.unit(),
@@ -151,7 +151,7 @@ export const MovementV1 = __t.enum("MovementV1", {
 });
 export type MovementV1 = __Infer<typeof MovementV1>;
 
-export const OneshotDeferredEventV1 = __t.object("OneshotDeferredEventV1", {
+export const OneshotDeferredEventV1 = __t.object('OneshotDeferredEventV1', {
   jobId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
   get event() {
@@ -162,7 +162,7 @@ export const OneshotDeferredEventV1 = __t.object("OneshotDeferredEventV1", {
 });
 export type OneshotDeferredEventV1 = __Infer<typeof OneshotDeferredEventV1>;
 
-export const OnlineCharacterV1 = __t.object("OnlineCharacterV1", {
+export const OnlineCharacterV1 = __t.object('OnlineCharacterV1', {
   userId: __t.identity(),
   characterId: __t.u64(),
   signedInAt: __t.timestamp(),
@@ -170,14 +170,14 @@ export const OnlineCharacterV1 = __t.object("OnlineCharacterV1", {
 export type OnlineCharacterV1 = __Infer<typeof OnlineCharacterV1>;
 
 // The tagged union or sum type for the algebraic type `RaceV1`.
-export const RaceV1 = __t.enum("RaceV1", {
+export const RaceV1 = __t.enum('RaceV1', {
   Human: __t.unit(),
   Elf: __t.unit(),
 });
 export type RaceV1 = __Infer<typeof RaceV1>;
 
 // The tagged union or sum type for the algebraic type `SkillV1`.
-export const SkillV1 = __t.enum("SkillV1", {
+export const SkillV1 = __t.enum('SkillV1', {
   Melee: __t.unit(),
   Magic: __t.unit(),
   Shield: __t.unit(),
@@ -185,7 +185,7 @@ export const SkillV1 = __t.enum("SkillV1", {
 });
 export type SkillV1 = __Infer<typeof SkillV1>;
 
-export const TownTempleV1 = __t.object("TownTempleV1", {
+export const TownTempleV1 = __t.object('TownTempleV1', {
   townTempleId: __t.u64(),
   name: __t.string(),
   x: __t.u16(),
@@ -194,10 +194,9 @@ export const TownTempleV1 = __t.object("TownTempleV1", {
 });
 export type TownTempleV1 = __Infer<typeof TownTempleV1>;
 
-export const UserV1 = __t.object("UserV1", {
+export const UserV1 = __t.object('UserV1', {
   userId: __t.identity(),
   createdAt: __t.timestamp(),
   lastActiveAt: __t.timestamp(),
 });
 export type UserV1 = __Infer<typeof UserV1>;
-

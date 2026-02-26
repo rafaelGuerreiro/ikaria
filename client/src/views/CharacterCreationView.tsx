@@ -1,60 +1,57 @@
-import React, { useState } from 'react'
-import { Alert, Button, ButtonGroup, Form, Stack, ToggleButton } from 'react-bootstrap'
-import { useReducer } from 'spacetimedb/react'
-import { reducers } from '../module_bindings'
-import type { CharacterGenderTag, CharacterRaceTag } from './types'
+import React, { useState } from 'react';
+import { Alert, Button, ButtonGroup, Form, Stack, ToggleButton } from 'react-bootstrap';
+import { useReducer } from 'spacetimedb/react';
+import { reducers } from '../module_bindings';
+import type { CharacterGenderTag, CharacterRaceTag } from './types';
 
 type CharacterCreationViewProps = {
-  onBack: () => void
-  onCharacterCreated: (displayName: string) => void
-}
+  onBack: () => void;
+  onCharacterCreated: (displayName: string) => void;
+};
 
-export function CharacterCreationView({
-  onBack,
-  onCharacterCreated,
-}: CharacterCreationViewProps) {
-  const runCreateCharacter = useReducer(reducers.createCharacterV1)
+export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterCreationViewProps) {
+  const runCreateCharacter = useReducer(reducers.createCharacterV1);
 
-  const [displayName, setDisplayName] = useState('')
-  const [gender, setGender] = useState<CharacterGenderTag | null>(null)
-  const [race, setRace] = useState<CharacterRaceTag | null>(null)
-  const [validated, setValidated] = useState(false)
-  const [creatingCharacter, setCreatingCharacter] = useState(false)
-  const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState('');
+  const [gender, setGender] = useState<CharacterGenderTag | null>(null);
+  const [race, setRace] = useState<CharacterRaceTag | null>(null);
+  const [validated, setValidated] = useState(false);
+  const [creatingCharacter, setCreatingCharacter] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+    event.preventDefault();
 
-    const form = event.currentTarget
+    const form = event.currentTarget;
     if (!form.checkValidity() || !gender || !race) {
-      setValidated(true)
-      return
+      setValidated(true);
+      return;
     }
 
-    const trimmedName = displayName.trim()
+    const trimmedName = displayName.trim();
     if (!trimmedName) {
-      setValidated(true)
-      return
+      setValidated(true);
+      return;
     }
 
-    setCreatingCharacter(true)
-    setStatusMessage('Creating character...')
+    setCreatingCharacter(true);
+    setStatusMessage('Creating character...');
 
     try {
       await runCreateCharacter({
         displayName: trimmedName,
         gender: { tag: gender },
         race: { tag: race },
-      })
+      });
 
-      onCharacterCreated(trimmedName)
+      onCharacterCreated(trimmedName);
     } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error)
-      setStatusMessage(`Failed to create character: ${reason}`)
+      const reason = error instanceof Error ? error.message : String(error);
+      setStatusMessage(`Failed to create character: ${reason}`);
     } finally {
-      setCreatingCharacter(false)
+      setCreatingCharacter(false);
     }
-  }
+  };
 
   return (
     <>
@@ -164,5 +161,5 @@ export function CharacterCreationView({
         </Button>
       </Form>
     </>
-  )
+  );
 }

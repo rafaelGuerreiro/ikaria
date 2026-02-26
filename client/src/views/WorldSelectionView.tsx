@@ -1,50 +1,47 @@
-import { useState } from 'react'
-import { Card, Stack } from 'react-bootstrap'
-import { DbConnection } from '../module_bindings'
-import { type World, SPACETIME_URI, WORLDS, tokenStorageKey } from '../worlds'
+import { useState } from 'react';
+import { Card, Stack } from 'react-bootstrap';
+import { DbConnection } from '../module_bindings';
+import { type World, SPACETIME_URI, WORLDS, tokenStorageKey } from '../worlds';
 
-type ConnectionBuilder = ReturnType<typeof DbConnection.builder>
+type ConnectionBuilder = ReturnType<typeof DbConnection.builder>;
 
 type WorldSelectionViewProps = {
-  onConnect: (connectionBuilder: ConnectionBuilder, world: World) => void
-}
+  onConnect: (connectionBuilder: ConnectionBuilder, world: World) => void;
+};
 
 function readSavedToken(world: World): string | undefined {
-  const token = window.localStorage.getItem(tokenStorageKey(world))?.trim()
-  return token ? token : undefined
+  const token = window.localStorage.getItem(tokenStorageKey(world))?.trim();
+  return token ? token : undefined;
 }
 
 function forgetSavedToken(world: World): void {
-  window.localStorage.removeItem(tokenStorageKey(world))
+  window.localStorage.removeItem(tokenStorageKey(world));
 }
 
 export function WorldSelectionView({ onConnect }: WorldSelectionViewProps) {
   const [tokenState, setTokenState] = useState(() =>
     Object.fromEntries(WORLDS.map((w) => [w.id, Boolean(readSavedToken(w))])),
-  )
+  );
 
   const handleWorldClick = (world: World) => {
-    const token = readSavedToken(world)
+    const token = readSavedToken(world);
     const builder = DbConnection.builder()
       .withUri(SPACETIME_URI)
       .withDatabaseName(world.database)
-      .withLightMode(true)
+      .withLightMode(true);
 
     if (token) {
-      builder.withToken(token)
+      builder.withToken(token);
     }
 
-    onConnect(builder, world)
-  }
+    onConnect(builder, world);
+  };
 
-  const handleForgetToken = (
-    event: React.MouseEvent,
-    world: World,
-  ) => {
-    event.stopPropagation()
-    forgetSavedToken(world)
-    setTokenState((prev) => ({ ...prev, [world.id]: false }))
-  }
+  const handleForgetToken = (event: React.MouseEvent, world: World) => {
+    event.stopPropagation();
+    forgetSavedToken(world);
+    setTokenState((prev) => ({ ...prev, [world.id]: false }));
+  };
 
   return (
     <>
@@ -70,10 +67,7 @@ export function WorldSelectionView({ onConnect }: WorldSelectionViewProps) {
                   onClick={(e) => handleForgetToken(e, world)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
-                      handleForgetToken(
-                        e as unknown as React.MouseEvent,
-                        world,
-                      )
+                      handleForgetToken(e as unknown as React.MouseEvent, world);
                     }
                   }}
                 >
@@ -85,5 +79,5 @@ export function WorldSelectionView({ onConnect }: WorldSelectionViewProps) {
         ))}
       </Stack>
     </>
-  )
+  );
 }
