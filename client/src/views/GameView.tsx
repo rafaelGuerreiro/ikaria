@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { useEffect, useRef } from 'react'
 import { Button, Spinner, Stack } from 'react-bootstrap'
 import { useReducer, useTable } from 'spacetimedb/react'
-import { GameScene, type Direction, type MapTile } from '../game/GameScene'
+import { GameScene, type Movement, type MapTile } from '../game/GameScene'
 import { reducers, tables } from '../module_bindings'
 
 type GameViewProps = {
@@ -14,7 +14,7 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   const gameRef = useRef<Phaser.Game | null>(null)
   const sceneRef = useRef<GameScene | null>(null)
   const [mapRows] = useTable(tables.vw_world_map_v1)
-  const [positions] = useTable(tables.vw_world_my_character_positions_v1)
+  const [positions] = useTable(tables.vw_world_my_character_position_v1)
   const runMoveCharacter = useReducer(reducers.moveCharacterV1)
 
   useEffect(() => {
@@ -49,8 +49,8 @@ export function GameView({ onLeaveGame }: GameViewProps) {
     const scene = sceneRef.current
     if (!scene) return
 
-    const handleMove = (direction: Direction) => {
-      runMoveCharacter({ direction: { tag: direction } })
+    const handleMove = (movement: Movement) => {
+      runMoveCharacter({ movement: { tag: movement } })
     }
 
     scene.setMoveCallback(handleMove)

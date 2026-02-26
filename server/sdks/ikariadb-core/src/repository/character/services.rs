@@ -1,7 +1,8 @@
 use crate::{
     constants::{
-        CHARACTER_NAME_MAX_LEN, CHARACTER_NAME_MIN_LEN, DEFAULT_CHARACTER_CAPACITY, DEFAULT_CHARACTER_EXPERIENCE,
-        DEFAULT_CHARACTER_HEALTH, DEFAULT_CHARACTER_LEVEL, DEFAULT_CHARACTER_MANA,
+        CHARACTER_NAME_MAX_LEN, CHARACTER_NAME_MIN_LEN, DEFAULT_CHARACTER_ATTACK_SPEED, DEFAULT_CHARACTER_CAPACITY,
+        DEFAULT_CHARACTER_EXPERIENCE, DEFAULT_CHARACTER_HEALTH, DEFAULT_CHARACTER_LEVEL, DEFAULT_CHARACTER_MANA,
+        DEFAULT_CHARACTER_SPEED,
     },
     error::{ErrorMapper, ResultExt, ServiceError, ServiceResult},
     extend::validate::ReducerContextRequirements,
@@ -61,6 +62,10 @@ impl CharacterServices<'_> {
     pub fn find_current(&self, user_id: Identity) -> Option<CharacterV1> {
         let current = self.db.online_character_v1().user_id().find(user_id)?;
         self.find_offline(current.character_id)
+    }
+
+    pub fn find_stats(&self, character_id: u64) -> Option<CharacterStatsV1> {
+        self.db.character_stats_v1().character_id().find(character_id)
     }
 
     /// Gets a character by ID, ensuring it exists regardless of selection status.
@@ -198,6 +203,8 @@ impl CharacterStatsV1 {
             health: DEFAULT_CHARACTER_HEALTH,
             mana: DEFAULT_CHARACTER_MANA,
             capacity: DEFAULT_CHARACTER_CAPACITY,
+            speed: DEFAULT_CHARACTER_SPEED,
+            attack_speed: DEFAULT_CHARACTER_ATTACK_SPEED,
         }
     }
 }

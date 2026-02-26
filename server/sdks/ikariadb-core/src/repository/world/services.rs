@@ -1,19 +1,19 @@
 use crate::{
-    constants::{DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y},
+    constants::{DEFAULT_CHARACTER_SPEED, DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, MOVEMENT_COOLDOWN_FACTOR},
     error::{ErrorMapper, ServiceError, ServiceResult},
     repository::{
         character::{character_v1, services::CharacterReducerContext},
         world::{
-            CharacterPositionV1, MapV1, map_v1,
+            CharacterPositionV1, MapV1, MovementCooldownV1, map_v1,
             math::into_map_id,
-            offline_character_position_v1, online_character_position_v1,
+            movement_cooldown_v1, offline_character_position_v1, online_character_position_v1,
             types::{DirectionV1, MapTileV1, MovementV1},
         },
     },
 };
 use ikaria_shared::constants::GROUND_LEVEL;
 use spacetimedb::{Identity, ReducerContext, Table};
-use std::ops::Deref;
+use std::{ops::Deref, time::Duration};
 use thiserror::Error;
 
 pub trait WorldReducerContext {
@@ -45,6 +45,18 @@ impl WorldServices<'_> {
 
     pub fn find_offline_position(&self, character_id: u64) -> Option<CharacterPositionV1> {
         self.db.offline_character_position_v1().character_id().find(character_id)
+    }
+
+    pub fn find_cooldown(&self, character_id: u64) -> Option<MovementCooldownV1> {
+        self.db.movement_cooldown_v1().character_id().find(character_id)
+    }
+
+    pub fn is_movement_allowed(&self, character_id: u64) -> bool {
+        if let Some(cooldown) = self.find_cooldown(character_id) {
+            self.timestamp >= cooldown.can_move_at
+        } else {
+            true
+        }
     }
 
     pub fn find_map_tile(&self, x: u16, y: u16, z: u16) -> Option<MapV1> {
@@ -108,6 +120,7 @@ impl WorldServices<'_> {
                     .insert_or_update(position);
             }
             self.db.online_character_position_v1().character_id().delete(character_id);
+            self.db.movement_cooldown_v1().character_id().delete(character_id);
         }
     }
 
@@ -145,6 +158,10 @@ impl WorldServices<'_> {
     }
 
     pub fn move_character(&self, character_id: u64, movement: MovementV1) -> ServiceResult<()> {
+        if !self.is_movement_allowed(character_id) {
+            return Ok(());
+        }
+
         let character = self.character_services().get_online(character_id)?;
         let Ok(position) = self.get_online_position(character.character_id) else {
             return Ok(()); // No position, cannot move, but also no need to error
@@ -173,7 +190,25 @@ impl WorldServices<'_> {
                 ..position
             });
 
+        self.set_movement_cooldown(character.character_id);
         Ok(())
+    }
+
+    fn set_movement_cooldown(&self, character_id: u64) {
+        let speed = self
+            .character_services()
+            .find_stats(character_id)
+            .map(|s| s.speed as u64)
+            .unwrap_or(DEFAULT_CHARACTER_SPEED as u64);
+
+        let cooldown_ms = MOVEMENT_COOLDOWN_FACTOR / speed;
+        self.db
+            .movement_cooldown_v1()
+            .character_id()
+            .insert_or_update(MovementCooldownV1 {
+                character_id,
+                can_move_at: self.timestamp + Duration::from_millis(cooldown_ms),
+            });
     }
 }
 

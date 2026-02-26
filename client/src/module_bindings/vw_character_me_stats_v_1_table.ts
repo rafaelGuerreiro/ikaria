@@ -18,4 +18,6 @@ export default __t.row({
   health: __t.u32(),
   mana: __t.u32(),
   capacity: __t.u32(),
+  speed: __t.u16(),
+  attackSpeed: __t.u16().name("attack_speed"),
 });

@@ -34,6 +34,8 @@ pub struct CharacterStatsV1 {
     pub health: u32,
     pub mana: u32,
     pub capacity: u32,
+    pub speed: u16,
+    pub attack_speed: u16,
 }
 
 #[table(accessor = online_character_v1, private)]

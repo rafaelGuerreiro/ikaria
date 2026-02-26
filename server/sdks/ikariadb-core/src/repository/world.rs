@@ -1,6 +1,6 @@
 use self::types::{DirectionV1, MapTileV1};
 use crate::repository::world::types::MovementV1;
-use spacetimedb::table;
+use spacetimedb::{Timestamp, table};
 
 pub mod math;
 pub mod reducers;
@@ -27,6 +27,13 @@ pub struct TownTempleV1 {
     pub x: u16,
     pub y: u16,
     pub z: u16,
+}
+
+#[table(accessor = movement_cooldown_v1, private)]
+pub struct MovementCooldownV1 {
+    #[primary_key]
+    pub character_id: u64,
+    pub can_move_at: Timestamp,
 }
 
 #[table(accessor = online_character_position_v1, private)]

@@ -44,6 +44,8 @@ export const CharacterStatsV1 = __t.object("CharacterStatsV1", {
   health: __t.u32(),
   mana: __t.u32(),
   capacity: __t.u32(),
+  speed: __t.u16(),
+  attackSpeed: __t.u16(),
 });
 export type CharacterStatsV1 = __Infer<typeof CharacterStatsV1>;
 
@@ -129,6 +131,12 @@ export const MapV1 = __t.object("MapV1", {
   },
 });
 export type MapV1 = __Infer<typeof MapV1>;
+
+export const MovementCooldownV1 = __t.object("MovementCooldownV1", {
+  characterId: __t.u64(),
+  canMoveAt: __t.timestamp(),
+});
+export type MovementCooldownV1 = __Infer<typeof MovementCooldownV1>;
 
 // The tagged union or sum type for the algebraic type `MovementV1`.
 export const MovementV1 = __t.enum("MovementV1", {

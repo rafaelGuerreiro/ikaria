@@ -13,7 +13,15 @@ export type MapTile = {
   tag: string
 }
 
-export type Direction = 'North' | 'South' | 'East' | 'West'
+export type Movement =
+  | 'North'
+  | 'NorthEast'
+  | 'East'
+  | 'SouthEast'
+  | 'South'
+  | 'SouthWest'
+  | 'West'
+  | 'NorthWest'
 
 function tileKey(x: number, y: number): string {
   return `${x},${y}`
@@ -28,7 +36,7 @@ export class GameScene extends Phaser.Scene {
   private tiles = new Map<string, PlacedTile>()
   private playerSprite: Phaser.GameObjects.Image | null = null
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null
-  private moveCallback: ((direction: Direction) => void) | null = null
+  private moveCallback: ((movement: Movement) => void) | null = null
   private keyLock = false
 
   constructor() {
@@ -50,22 +58,31 @@ export class GameScene extends Phaser.Scene {
   update() {
     if (!this.cursors || this.keyLock) return
 
-    let direction: Direction | null = null
-    if (this.cursors.up.isDown) direction = 'North'
-    else if (this.cursors.down.isDown) direction = 'South'
-    else if (this.cursors.left.isDown) direction = 'West'
-    else if (this.cursors.right.isDown) direction = 'East'
+    const up = this.cursors.up.isDown
+    const down = this.cursors.down.isDown
+    const left = this.cursors.left.isDown
+    const right = this.cursors.right.isDown
 
-    if (direction && this.moveCallback) {
+    let movement: Movement | null = null
+    if (up && left) movement = 'NorthWest'
+    else if (up && right) movement = 'NorthEast'
+    else if (down && left) movement = 'SouthWest'
+    else if (down && right) movement = 'SouthEast'
+    else if (up) movement = 'North'
+    else if (down) movement = 'South'
+    else if (left) movement = 'West'
+    else if (right) movement = 'East'
+
+    if (movement && this.moveCallback) {
       this.keyLock = true
-      this.moveCallback(direction)
+      this.moveCallback(movement)
       this.time.delayedCall(150, () => {
         this.keyLock = false
       })
     }
   }
 
-  setMoveCallback(callback: (direction: Direction) => void) {
+  setMoveCallback(callback: (movement: Movement) => void) {
     this.moveCallback = callback
   }
 
