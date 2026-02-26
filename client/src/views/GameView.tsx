@@ -1,46 +1,58 @@
-import { useMemo } from 'react'
+import Phaser from 'phaser'
+import { useEffect, useRef } from 'react'
 import { Button, Spinner, Stack } from 'react-bootstrap'
 import { useTable } from 'spacetimedb/react'
+import { GameScene, type MapTile } from '../game/GameScene'
 import { tables } from '../module_bindings'
-
-const TILE_SIZE = 16
-
-const TILE_IMAGES: Record<string, string> = {
-  Grass: '/assets/tiny_town/tile_0000.png',
-  Water: '/assets/tiny_town/tile_0018.png',
-}
 
 type GameViewProps = {
   onLeaveGame: () => void
 }
 
 export function GameView({ onLeaveGame }: GameViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const gameRef = useRef<Phaser.Game | null>(null)
+  const sceneRef = useRef<GameScene | null>(null)
   const [mapRows] = useTable(tables.vw_world_map_v1)
 
-  const { grid, width, height } = useMemo(() => {
-    if (mapRows.length === 0) {
-      return { grid: [], width: 0, height: 0 }
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const scene = new GameScene()
+    sceneRef.current = scene
+
+    const game = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: containerRef.current,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      pixelArt: true,
+      scene,
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+      },
+    })
+
+    gameRef.current = game
+
+    return () => {
+      game.destroy(true)
+      gameRef.current = null
+      sceneRef.current = null
     }
+  }, [])
 
-    let maxX = 0
-    let maxY = 0
-    for (const row of mapRows) {
-      if (row.x > maxX) maxX = row.x
-      if (row.y > maxY) maxY = row.y
-    }
+  useEffect(() => {
+    if (!sceneRef.current || mapRows.length === 0) return
 
-    const w = maxX + 1
-    const h = maxY + 1
+    const tiles: MapTile[] = mapRows.map((row) => ({
+      x: row.x,
+      y: row.y,
+      tag: row.tile.tag,
+    }))
 
-    const tiles: (string | null)[][] = Array.from({ length: h }, () =>
-      Array.from<string | null>({ length: w }).fill(null),
-    )
-
-    for (const row of mapRows) {
-      tiles[row.y][row.x] = row.tile.tag
-    }
-
-    return { grid: tiles, width: w, height: h }
+    sceneRef.current.updateMap(tiles)
   }, [mapRows])
 
   if (mapRows.length === 0) {
@@ -65,43 +77,7 @@ export function GameView({ onLeaveGame }: GameViewProps) {
           Back to characters
         </Button>
       </div>
-
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          overflow: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${width}, ${TILE_SIZE}px)`,
-            gridTemplateRows: `repeat(${height}, ${TILE_SIZE}px)`,
-            width: width * TILE_SIZE,
-            height: height * TILE_SIZE,
-          }}
-        >
-          {grid.flatMap((row, y) =>
-            row.map((tileTag, x) => {
-              const src = TILE_IMAGES[tileTag ?? 'Grass'] ?? TILE_IMAGES.Grass
-              return (
-                <img
-                  key={`${x}-${y}`}
-                  src={src}
-                  alt={tileTag ?? 'unknown'}
-                  width={TILE_SIZE}
-                  height={TILE_SIZE}
-                  style={{ display: 'block', imageRendering: 'pixelated' }}
-                />
-              )
-            }),
-          )}
-        </div>
-      </div>
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
     </div>
   )
 }
