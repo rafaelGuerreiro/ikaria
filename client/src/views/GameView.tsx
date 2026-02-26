@@ -75,23 +75,22 @@ export function GameView({ onLeaveGame }: GameViewProps) {
     sceneRef.current.updatePlayerPosition(pos.x, pos.y)
   }, [positions])
 
-  if (mapRows.length === 0) {
-    return (
-      <Stack
-        className="align-items-center justify-content-center"
-        style={{ minHeight: '100vh' }}
-      >
-        <Spinner animation="border" role="status" className="mb-3" />
-        <p className="text-muted">Loading map...</p>
-        <Button variant="outline-secondary" size="sm" onClick={onLeaveGame}>
-          Back to characters
-        </Button>
-      </Stack>
-    )
-  }
+  const isLoading = mapRows.length === 0
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#000', position: 'relative' }}>
+      {isLoading && (
+        <Stack
+          className="align-items-center justify-content-center"
+          style={{ position: 'absolute', inset: 0, zIndex: 20 }}
+        >
+          <Spinner animation="border" role="status" className="mb-3" />
+          <p className="text-muted">Loading map...</p>
+          <Button variant="outline-secondary" size="sm" onClick={onLeaveGame}>
+            Back to characters
+          </Button>
+        </Stack>
+      )}
       <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 10 }}>
         <Button variant="outline-light" size="sm" onClick={onLeaveGame}>
           Back to characters

@@ -131,9 +131,9 @@ impl WorldServices<'_> {
             return;
         }
 
-        let water_margin = 32;
+        let water_margin = 16;
         let grass_start = 1024;
-        let grass_end = 2048;
+        let grass_end = grass_start + 256;
         let edge_start = grass_start - water_margin;
         let edge_end = grass_end + water_margin;
 
