@@ -1,16 +1,20 @@
 use crate::{
-    constants::{DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, INITIAL_MAP_EDGE},
+    constants::{DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y},
+    error::{ErrorMapper, ServiceError, ServiceResult},
     repository::{
-        character::services::CharacterReducerContext,
+        character::{character_v1, services::CharacterReducerContext},
         world::{
-            CharacterPositionV1, MapV1, character_position_v1, map_v1, math,
-            types::{DirectionV1, MapTileV1},
+            CharacterPositionV1, MapV1, map_v1,
+            math::into_map_id,
+            offline_character_position_v1, online_character_position_v1,
+            types::{DirectionV1, MapTileV1, MovementV1},
         },
     },
 };
 use ikaria_shared::constants::GROUND_LEVEL;
 use spacetimedb::{Identity, ReducerContext, Table};
 use std::ops::Deref;
+use thiserror::Error;
 
 pub trait WorldReducerContext {
     fn world_services(&self) -> WorldServices<'_>;
@@ -35,31 +39,76 @@ impl Deref for WorldServices<'_> {
 }
 
 impl WorldServices<'_> {
-    pub fn initial_spawn_character(&self, user_id: Identity) {
+    pub fn find_online_position(&self, character_id: u64) -> Option<CharacterPositionV1> {
+        self.db.online_character_position_v1().character_id().find(character_id)
+    }
+
+    pub fn find_offline_position(&self, character_id: u64) -> Option<CharacterPositionV1> {
+        self.db.offline_character_position_v1().character_id().find(character_id)
+    }
+
+    pub fn find_map_tile(&self, x: u16, y: u16, z: u16) -> Option<MapV1> {
+        self.db.map_v1().map_id().find(into_map_id(x, y, z))
+    }
+
+    pub fn get_online_position(&self, character_id: u64) -> ServiceResult<CharacterPositionV1> {
+        self.find_online_position(character_id)
+            .ok_or_else(|| WorldError::character_position_not_found(character_id))
+    }
+
+    pub fn get_offline_position(&self, character_id: u64) -> ServiceResult<CharacterPositionV1> {
+        self.find_offline_position(character_id)
+            .ok_or_else(|| WorldError::character_position_not_found(character_id))
+    }
+
+    pub fn get_map_tile(&self, x: u16, y: u16, z: u16) -> ServiceResult<MapV1> {
+        self.find_map_tile(x, y, z)
+            .ok_or_else(|| WorldError::map_tile_not_found(x, y, z))
+    }
+
+    pub fn spawn_character(&self, user_id: Identity) {
+        // Ensure any existing character is despawned for this user.
+        self.despawn_character(user_id);
+
         let Ok(character) = self.character_services().get_current(user_id) else {
             return;
         };
 
-        let existing = self.db.character_position_v1().character_id().find(character.character_id);
-        if existing.is_some() {
-            return;
-        }
+        let character_id = character.character_id;
+        let position = self
+            .find_offline_position(character_id)
+            .or_else(|| self.find_online_position(character_id))
+            .unwrap_or_else(|| {
+                let (x, y, z) = (DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, GROUND_LEVEL);
+                CharacterPositionV1 {
+                    character_id,
+                    map_id: into_map_id(x, y, z),
+                    x,
+                    y,
+                    z,
+                    movement: MovementV1::default(),
+                    direction: DirectionV1::default(),
+                }
+            });
 
-        let (x, y, z) = self.default_spawn_position();
-        let map_id = math::into_map_id(x, y, z);
-        if self.db.map_v1().map_id().find(map_id).is_none() {
-            return;
-        }
+        self.db.offline_character_position_v1().character_id().delete(character_id);
+        self.db
+            .online_character_position_v1()
+            .character_id()
+            .insert_or_update(position);
+    }
 
-        let position = CharacterPositionV1 {
-            character_id: character.character_id,
-            x,
-            y,
-            z,
-            direction: DirectionV1::South,
-            updated_at: self.timestamp,
-        };
-        self.db.character_position_v1().insert(position);
+    pub fn despawn_character(&self, user_id: Identity) {
+        for character in self.db.character_v1().user_id().filter(user_id) {
+            let character_id = character.character_id;
+            if let Some(position) = self.find_online_position(character_id) {
+                self.db
+                    .offline_character_position_v1()
+                    .character_id()
+                    .insert_or_update(position);
+            }
+            self.db.online_character_position_v1().character_id().delete(character_id);
+        }
     }
 
     pub fn seed_initial_map(&self) {
@@ -69,22 +118,80 @@ impl WorldServices<'_> {
             return;
         }
 
-        for x in 0..INITIAL_MAP_EDGE {
-            for y in 0..INITIAL_MAP_EDGE {
-                let z = GROUND_LEVEL;
+        let water_margin = 32;
+        let grass_start = 1024;
+        let grass_end = 2048;
+        let edge_start = grass_start - water_margin;
+        let edge_end = grass_end + water_margin;
+
+        for x in edge_start..edge_end {
+            for y in edge_start..edge_end {
+                let tile = if x < grass_start || x > grass_end || y < grass_start || y > grass_end {
+                    MapTileV1::Water
+                } else {
+                    MapTileV1::Grass
+                };
+
                 let tile = MapV1 {
-                    map_id: math::into_map_id(x, y, z),
+                    map_id: into_map_id(x, y, GROUND_LEVEL),
                     x,
                     y,
-                    z,
-                    tile: MapTileV1::Grass,
+                    z: GROUND_LEVEL,
+                    tile,
                 };
                 self.db.map_v1().insert(tile);
             }
         }
     }
 
-    fn default_spawn_position(&self) -> (u16, u16, u16) {
-        (DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, GROUND_LEVEL)
+    pub fn move_character(&self, character_id: u64, movement: MovementV1) -> ServiceResult<()> {
+        let character = self.character_services().get_online(character_id)?;
+        let Ok(position) = self.get_online_position(character.character_id) else {
+            return Ok(()); // No position, cannot move, but also no need to error
+        };
+
+        let (target_x, target_y) = movement.translate(position.x, position.y);
+        if target_x == position.x && target_y == position.y {
+            return Ok(()); // No movement, stay in place
+        }
+
+        let target_tile = self.get_map_tile(target_x, target_y, position.z)?;
+
+        if !target_tile.tile.is_walkable() {
+            return Err(ServiceError::BadRequest("Target tile is not walkable".into()));
+        }
+
+        self.db
+            .online_character_position_v1()
+            .character_id()
+            .update(CharacterPositionV1 {
+                x: target_x,
+                y: target_y,
+                z: position.z,
+                movement,
+                direction: movement.into(),
+                ..position
+            });
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Error)]
+enum WorldError {
+    #[error("Map tile does not exist: ({0}, {1}, {2})")]
+    MapTileNotFound(u16, u16, u16),
+
+    #[error("Character {0} has no position")]
+    CharacterPositionNotFound(u64),
+}
+
+impl WorldError {
+    fn map_tile_not_found(x: u16, y: u16, z: u16) -> ServiceError {
+        Self::MapTileNotFound(x, y, z).map_not_found_error()
+    }
+
+    fn character_position_not_found(character_id: u64) -> ServiceError {
+        Self::CharacterPositionNotFound(character_id).map_not_found_error()
     }
 }

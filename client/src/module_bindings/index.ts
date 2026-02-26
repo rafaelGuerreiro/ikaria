@@ -35,6 +35,7 @@ import {
 
 // Import all reducer arg schemas
 import CreateCharacterV1Reducer from "./create_character_v_1_reducer";
+import MoveCharacterV1Reducer from "./move_character_v_1_reducer";
 import SelectCharacterV1Reducer from "./select_character_v_1_reducer";
 
 // Import all procedure arg schemas
@@ -47,7 +48,7 @@ import VwCharacterMeV1Row from "./vw_character_me_v_1_table";
 import VwNearbyCharactersV1Row from "./vw_nearby_characters_v_1_table";
 import VwUserMeV1Row from "./vw_user_me_v_1_table";
 import VwWorldMapV1Row from "./vw_world_map_v_1_table";
-import VwWorldMyCharacterPositionsV1Row from "./vw_world_my_character_positions_v_1_table";
+import VwWorldMyCharacterPositionV1Row from "./vw_world_my_character_position_v_1_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -102,18 +103,19 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, VwWorldMapV1Row),
-  vw_world_my_character_positions_v1: __table({
-    name: 'vw_world_my_character_positions_v1',
+  vw_world_my_character_position_v1: __table({
+    name: 'vw_world_my_character_position_v1',
     indexes: [
     ],
     constraints: [
     ],
-  }, VwWorldMyCharacterPositionsV1Row),
+  }, VwWorldMyCharacterPositionV1Row),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
   __reducerSchema("create_character_v1", CreateCharacterV1Reducer),
+  __reducerSchema("move_character_v1", MoveCharacterV1Reducer),
   __reducerSchema("select_character_v1", SelectCharacterV1Reducer),
 );
 

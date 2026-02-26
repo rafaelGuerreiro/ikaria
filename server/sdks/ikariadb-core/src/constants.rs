@@ -9,6 +9,7 @@ pub const DEFAULT_CHARACTER_HEALTH: u32 = 120;
 pub const DEFAULT_CHARACTER_MANA: u32 = 60;
 pub const DEFAULT_CHARACTER_CAPACITY: u32 = 15 * KG_TO_G;
 
-pub const INITIAL_MAP_EDGE: u16 = 100;
-pub const DEFAULT_SPAWN_X: u16 = 24;
-pub const DEFAULT_SPAWN_Y: u16 = 24;
+pub const DEFAULT_SPAWN_X: u16 = 1152;
+pub const DEFAULT_SPAWN_Y: u16 = 1152;
+
+pub const MAP_VIEW_RADIUS: u16 = 11;

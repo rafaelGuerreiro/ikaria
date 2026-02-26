@@ -28,7 +28,7 @@ pub trait ReducerContextRequirements {
 
     fn require_internal_access(&self) -> ServiceResult<()>;
 
-    fn require_character(&self) -> ServiceResult<CharacterV1>;
+    fn require_online(&self) -> ServiceResult<CharacterV1>;
 }
 
 impl ReducerContextRequirements for ReducerContext {
@@ -39,7 +39,7 @@ impl ReducerContextRequirements for ReducerContext {
         Ok(())
     }
 
-    fn require_character(&self) -> ServiceResult<CharacterV1> {
+    fn require_online(&self) -> ServiceResult<CharacterV1> {
         self.character_services().get_current(self.sender())
     }
 }

@@ -1,9 +1,9 @@
 import Phaser from 'phaser'
 import { useEffect, useRef } from 'react'
 import { Button, Spinner, Stack } from 'react-bootstrap'
-import { useTable } from 'spacetimedb/react'
-import { GameScene, type MapTile } from '../game/GameScene'
-import { tables } from '../module_bindings'
+import { useReducer, useTable } from 'spacetimedb/react'
+import { GameScene, type Direction, type MapTile } from '../game/GameScene'
+import { reducers, tables } from '../module_bindings'
 
 type GameViewProps = {
   onLeaveGame: () => void
@@ -14,6 +14,8 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   const gameRef = useRef<Phaser.Game | null>(null)
   const sceneRef = useRef<GameScene | null>(null)
   const [mapRows] = useTable(tables.vw_world_map_v1)
+  const [positions] = useTable(tables.vw_world_my_character_positions_v1)
+  const runMoveCharacter = useReducer(reducers.moveCharacterV1)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -44,6 +46,17 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   }, [])
 
   useEffect(() => {
+    const scene = sceneRef.current
+    if (!scene) return
+
+    const handleMove = (direction: Direction) => {
+      runMoveCharacter({ direction: { tag: direction } })
+    }
+
+    scene.setMoveCallback(handleMove)
+  }, [runMoveCharacter])
+
+  useEffect(() => {
     if (!sceneRef.current || mapRows.length === 0) return
 
     const tiles: MapTile[] = mapRows.map((row) => ({
@@ -54,6 +67,13 @@ export function GameView({ onLeaveGame }: GameViewProps) {
 
     sceneRef.current.updateMap(tiles)
   }, [mapRows])
+
+  useEffect(() => {
+    if (!sceneRef.current || positions.length === 0) return
+
+    const pos = positions[0]
+    sceneRef.current.updatePlayerPosition(pos.x, pos.y)
+  }, [positions])
 
   if (mapRows.length === 0) {
     return (

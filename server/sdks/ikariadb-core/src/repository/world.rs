@@ -1,12 +1,14 @@
 use self::types::{DirectionV1, MapTileV1};
-use spacetimedb::{Timestamp, table};
+use crate::repository::world::types::MovementV1;
+use spacetimedb::table;
 
 pub mod math;
+pub mod reducers;
 pub mod services;
 pub mod types;
 pub mod views;
 
-#[table(accessor = map_v1, private, index(accessor = position_ix, btree(columns = [x, y, z])))]
+#[table(accessor = map_v1, private)]
 pub struct MapV1 {
     #[primary_key]
     pub map_id: u64,
@@ -27,13 +29,16 @@ pub struct TownTempleV1 {
     pub z: u16,
 }
 
-#[table(accessor = character_position_v1, private)]
+#[table(accessor = online_character_position_v1, private)]
+#[table(accessor = offline_character_position_v1, private)]
 pub struct CharacterPositionV1 {
     #[primary_key]
     pub character_id: u64,
+    #[index(btree)]
+    pub map_id: u64,
     pub x: u16,
     pub y: u16,
     pub z: u16,
+    pub movement: MovementV1,
     pub direction: DirectionV1,
-    pub updated_at: Timestamp,
 }

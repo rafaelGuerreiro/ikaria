@@ -36,8 +36,8 @@ pub struct CharacterStatsV1 {
     pub capacity: u32,
 }
 
-#[table(accessor = current_character_v1, private)]
-pub struct CurrentCharacterV1 {
+#[table(accessor = online_character_v1, private)]
+pub struct OnlineCharacterV1 {
     #[primary_key]
     pub user_id: Identity,
     pub character_id: u64,

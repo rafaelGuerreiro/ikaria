@@ -7,7 +7,7 @@ use crate::{
     extend::validate::ReducerContextRequirements,
     repository::{
         character::{
-            CharacterStatsV1, CharacterV1, CurrentCharacterV1, character_stats_v1, character_v1, current_character_v1,
+            CharacterStatsV1, CharacterV1, OnlineCharacterV1, character_stats_v1, character_v1, online_character_v1,
             types::{ClassV1, GenderV1, RaceV1},
         },
         event::services::EventReducerContext,
@@ -40,31 +40,43 @@ impl Deref for CharacterServices<'_> {
 }
 
 impl CharacterServices<'_> {
-    pub fn get(&self, character_id: u64) -> ServiceResult<CharacterV1> {
-        let character = self
-            .db
-            .character_v1()
-            .character_id()
-            .find(character_id)
-            .ok_or_else(|| CharacterError::character_not_found(character_id))?;
+    /// Finds a character by ID even if it's offline (not currently selected by the user).
+    pub fn find_offline(&self, character_id: u64) -> Option<CharacterV1> {
+        self.db.character_v1().character_id().find(character_id)
+    }
 
-        Ok(character)
+    /// Finds a character by ID and checks if it's online (currently selected by the user).
+    pub fn find_online(&self, character_id: u64) -> Option<CharacterV1> {
+        let character = self.find_offline(character_id)?;
+        let current = self.db.online_character_v1().user_id().find(character.user_id)?;
+
+        if current.character_id == character_id {
+            Some(character)
+        } else {
+            None
+        }
+    }
+
+    /// Finds the current online character for a user, if one is selected.
+    pub fn find_current(&self, user_id: Identity) -> Option<CharacterV1> {
+        let current = self.db.online_character_v1().user_id().find(user_id)?;
+        self.find_offline(current.character_id)
+    }
+
+    /// Gets a character by ID, ensuring it exists regardless of selection status.
+    pub fn get_offline(&self, character_id: u64) -> ServiceResult<CharacterV1> {
+        self.find_offline(character_id)
+            .ok_or_else(|| CharacterError::character_not_found(character_id))
+    }
+
+    pub fn get_online(&self, character_id: u64) -> ServiceResult<CharacterV1> {
+        self.find_online(character_id)
+            .ok_or_else(|| CharacterError::character_not_found(character_id))
     }
 
     pub fn get_current(&self, user_id: Identity) -> ServiceResult<CharacterV1> {
-        let current = self
-            .db
-            .current_character_v1()
-            .user_id()
-            .find(user_id)
-            .ok_or_else(|| CharacterError::character_not_selected(user_id))?;
-
-        let character = self.get(current.character_id)?;
-        if character.user_id != user_id {
-            return Err(CharacterError::character_ownership_mismatch(current.character_id, user_id));
-        }
-
-        Ok(character)
+        self.find_current(user_id)
+            .ok_or_else(|| CharacterError::character_not_selected(user_id))
     }
 
     pub fn create_character(
@@ -106,12 +118,12 @@ impl CharacterServices<'_> {
     }
 
     pub fn select_character(&self, user_id: Identity, character_id: u64) -> ServiceResult<()> {
-        let character = self.get(character_id)?;
+        let character = self.get_offline(character_id)?;
         if character.user_id != user_id {
             return Err(CharacterError::character_ownership_mismatch(character_id, user_id));
         }
 
-        self.db.current_character_v1().user_id().insert_or_update(CurrentCharacterV1 {
+        self.db.online_character_v1().user_id().insert_or_update(OnlineCharacterV1 {
             user_id,
             character_id,
             signed_in_at: self.timestamp,
@@ -121,8 +133,8 @@ impl CharacterServices<'_> {
         Ok(())
     }
 
-    pub fn clear_current_character(&self, user_id: Identity) {
-        self.db.current_character_v1().user_id().delete(user_id);
+    pub fn clear_online_character(&self, user_id: Identity) {
+        self.db.online_character_v1().user_id().delete(user_id);
     }
 
     fn prepare_character_names(&self, display_name: String) -> ServiceResult<(String, String)> {

@@ -9,18 +9,13 @@ import {
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
 } from "spacetimedb";
+
 import {
-  DirectionV1,
+  MovementV1,
 } from "./types";
 
-
-export default __t.row({
-  characterId: __t.u64().name("character_id"),
-  x: __t.u16(),
-  y: __t.u16(),
-  z: __t.u16(),
-  get direction() {
-    return DirectionV1;
+export default {
+  get movement() {
+    return MovementV1;
   },
-  updatedAt: __t.timestamp().name("updated_at"),
-});
+};

@@ -13,6 +13,8 @@ export type MapTile = {
   tag: string
 }
 
+export type Direction = 'North' | 'South' | 'East' | 'West'
+
 function tileKey(x: number, y: number): string {
   return `${x},${y}`
 }
@@ -24,6 +26,10 @@ type PlacedTile = {
 
 export class GameScene extends Phaser.Scene {
   private tiles = new Map<string, PlacedTile>()
+  private playerSprite: Phaser.GameObjects.Image | null = null
+  private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null
+  private moveCallback: ((direction: Direction) => void) | null = null
+  private keyLock = false
 
   constructor() {
     super({ key: 'GameScene' })
@@ -31,11 +37,36 @@ export class GameScene extends Phaser.Scene {
 
   preload() {
     this.load.image('grass', '/assets/tiny_town/tile_0000.png')
+    this.load.image('grass_alt', '/assets/tiny_town/tile_0001.png')
     this.load.image('water', '/assets/tiny_town/tile_0018.png')
+    this.load.image('player', '/assets/tiny_dungeon/tile_0085.png')
   }
 
   create() {
     this.cameras.main.setBackgroundColor('#000000')
+    this.cursors = this.input.keyboard!.createCursorKeys()
+  }
+
+  update() {
+    if (!this.cursors || this.keyLock) return
+
+    let direction: Direction | null = null
+    if (this.cursors.up.isDown) direction = 'North'
+    else if (this.cursors.down.isDown) direction = 'South'
+    else if (this.cursors.left.isDown) direction = 'West'
+    else if (this.cursors.right.isDown) direction = 'East'
+
+    if (direction && this.moveCallback) {
+      this.keyLock = true
+      this.moveCallback(direction)
+      this.time.delayedCall(150, () => {
+        this.keyLock = false
+      })
+    }
+  }
+
+  setMoveCallback(callback: (direction: Direction) => void) {
+    this.moveCallback = callback
   }
 
   updateMap(incoming: MapTile[]) {
@@ -55,7 +86,11 @@ export class GameScene extends Phaser.Scene {
         existing.image.destroy()
       }
 
-      const imageKey = TILE_KEYS[tile.tag] ?? TILE_KEYS.Grass
+      let imageKey = TILE_KEYS[tile.tag] ?? TILE_KEYS.Grass
+      if (imageKey === 'grass' && (tile.x + tile.y) % 2 === 1) {
+        imageKey = 'grass_alt'
+      }
+
       const image = this.add
         .image(
           tile.x * TILE_SIZE + TILE_SIZE / 2,
@@ -74,31 +109,21 @@ export class GameScene extends Phaser.Scene {
         this.tiles.delete(key)
       }
     }
-
-    this.updateCameraBounds()
   }
 
-  private updateCameraBounds() {
-    if (this.tiles.size === 0) return
+  updatePlayerPosition(x: number, y: number) {
+    const pixelX = x * TILE_SIZE + TILE_SIZE / 2
+    const pixelY = y * TILE_SIZE + TILE_SIZE / 2
 
-    let minX = Infinity
-    let minY = Infinity
-    let maxX = -Infinity
-    let maxY = -Infinity
-
-    for (const placed of this.tiles.values()) {
-      const x = placed.image.x - TILE_SIZE / 2
-      const y = placed.image.y - TILE_SIZE / 2
-      if (x < minX) minX = x
-      if (y < minY) minY = y
-      if (x + TILE_SIZE > maxX) maxX = x + TILE_SIZE
-      if (y + TILE_SIZE > maxY) maxY = y + TILE_SIZE
+    if (!this.playerSprite) {
+      this.playerSprite = this.add
+        .image(pixelX, pixelY, 'player')
+        .setDisplaySize(TILE_SIZE, TILE_SIZE)
+        .setDepth(1)
+    } else {
+      this.playerSprite.setPosition(pixelX, pixelY)
     }
 
-    this.cameras.main.setBounds(minX, minY, maxX - minX, maxY - minY)
-    this.cameras.main.centerOn(
-      minX + (maxX - minX) / 2,
-      minY + (maxY - minY) / 2,
-    )
+    this.cameras.main.startFollow(this.playerSprite, true)
   }
 }

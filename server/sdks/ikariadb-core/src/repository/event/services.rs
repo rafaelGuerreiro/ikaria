@@ -51,15 +51,17 @@ impl EventServices<'_> {
             EventV1::UserCreated { .. } => {},
             EventV1::UserSignedIn { user_id } => {
                 self.user_services().signed_in(user_id);
-                self.character_services().clear_current_character(user_id);
+                self.character_services().clear_online_character(user_id);
+                self.world_services().despawn_character(user_id);
             },
             EventV1::UserSignedOut { user_id } => {
-                self.character_services().clear_current_character(user_id);
+                self.world_services().despawn_character(user_id);
+                self.character_services().clear_online_character(user_id);
                 self.user_services().signed_out(user_id);
             },
             EventV1::CharacterCreated { .. } => {},
             EventV1::CharacterSelected { user_id, .. } => {
-                self.world_services().initial_spawn_character(user_id);
+                self.world_services().spawn_character(user_id);
             },
         }
 

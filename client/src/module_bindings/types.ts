@@ -12,13 +12,16 @@ import {
 
 export const CharacterPositionV1 = __t.object("CharacterPositionV1", {
   characterId: __t.u64(),
+  mapId: __t.u64(),
   x: __t.u16(),
   y: __t.u16(),
   z: __t.u16(),
+  get movement() {
+    return MovementV1;
+  },
   get direction() {
     return DirectionV1;
   },
-  updatedAt: __t.timestamp(),
 });
 export type CharacterPositionV1 = __Infer<typeof CharacterPositionV1>;
 
@@ -77,13 +80,6 @@ export const ClassV1 = __t.enum("ClassV1", {
 });
 export type ClassV1 = __Infer<typeof ClassV1>;
 
-export const CurrentCharacterV1 = __t.object("CurrentCharacterV1", {
-  userId: __t.identity(),
-  characterId: __t.u64(),
-  signedInAt: __t.timestamp(),
-});
-export type CurrentCharacterV1 = __Infer<typeof CurrentCharacterV1>;
-
 // The tagged union or sum type for the algebraic type `DeferredEventV1`.
 export const DeferredEventV1 = __t.enum("DeferredEventV1", {
   SignedOut: __t.identity(),
@@ -134,6 +130,19 @@ export const MapV1 = __t.object("MapV1", {
 });
 export type MapV1 = __Infer<typeof MapV1>;
 
+// The tagged union or sum type for the algebraic type `MovementV1`.
+export const MovementV1 = __t.enum("MovementV1", {
+  North: __t.unit(),
+  NorthEast: __t.unit(),
+  East: __t.unit(),
+  SouthEast: __t.unit(),
+  South: __t.unit(),
+  SouthWest: __t.unit(),
+  West: __t.unit(),
+  NorthWest: __t.unit(),
+});
+export type MovementV1 = __Infer<typeof MovementV1>;
+
 export const OneshotDeferredEventV1 = __t.object("OneshotDeferredEventV1", {
   jobId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
@@ -144,6 +153,13 @@ export const OneshotDeferredEventV1 = __t.object("OneshotDeferredEventV1", {
   createdAt: __t.timestamp(),
 });
 export type OneshotDeferredEventV1 = __Infer<typeof OneshotDeferredEventV1>;
+
+export const OnlineCharacterV1 = __t.object("OnlineCharacterV1", {
+  userId: __t.identity(),
+  characterId: __t.u64(),
+  signedInAt: __t.timestamp(),
+});
+export type OnlineCharacterV1 = __Infer<typeof OnlineCharacterV1>;
 
 // The tagged union or sum type for the algebraic type `RaceV1`.
 export const RaceV1 = __t.enum("RaceV1", {
