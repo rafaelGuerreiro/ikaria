@@ -81,10 +81,10 @@ export class GameScene extends Phaser.Scene {
   update() {
     if (!this.cursors || !this.movement || this.movement.moving) return;
 
-    const up = this.cursors.up.isDown;
-    const down = this.cursors.down.isDown;
-    const left = this.cursors.left.isDown;
-    const right = this.cursors.right.isDown;
+    const up = this.cursors.up.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W).isDown;
+    const down = this.cursors.down.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S).isDown;
+    const left = this.cursors.left.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A).isDown;
+    const right = this.cursors.right.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D).isDown;
 
     let dir: Movement | null = null;
     if (up && left) dir = 'NorthWest';
