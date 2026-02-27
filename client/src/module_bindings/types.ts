@@ -12,7 +12,6 @@ import {
 
 export const CharacterPositionV1 = __t.object("CharacterPositionV1", {
   characterId: __t.u64(),
-  mapId: __t.u64(),
   x: __t.u16(),
   y: __t.u16(),
   z: __t.u8(),
@@ -22,6 +21,7 @@ export const CharacterPositionV1 = __t.object("CharacterPositionV1", {
   get direction() {
     return DirectionV1;
   },
+  arrivesAt: __t.timestamp(),
 });
 export type CharacterPositionV1 = __Infer<typeof CharacterPositionV1>;
 
@@ -154,6 +154,12 @@ export const MovementV1 = __t.enum("MovementV1", {
 });
 export type MovementV1 = __Infer<typeof MovementV1>;
 
+export const OccupiedTileV1 = __t.object("OccupiedTileV1", {
+  mapId: __t.u64(),
+  characterIds: __t.array(__t.u64()),
+});
+export type OccupiedTileV1 = __Infer<typeof OccupiedTileV1>;
+
 export const OneshotDeferredEventV1 = __t.object("OneshotDeferredEventV1", {
   jobId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
@@ -212,4 +218,15 @@ export const UserV1 = __t.object("UserV1", {
   lastActiveAt: __t.timestamp(),
 });
 export type UserV1 = __Infer<typeof UserV1>;
+
+export const WalkedMapChunkV1 = __t.object("WalkedMapChunkV1", {
+  characterId: __t.u64(),
+  mapId: __t.u64(),
+  x1: __t.u16(),
+  y1: __t.u16(),
+  x2: __t.u16(),
+  y2: __t.u16(),
+  z: __t.u8(),
+});
+export type WalkedMapChunkV1 = __Infer<typeof WalkedMapChunkV1>;
 

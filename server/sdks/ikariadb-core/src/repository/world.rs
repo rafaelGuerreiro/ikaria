@@ -47,13 +47,31 @@ pub struct MovementCooldownV1 {
 pub struct CharacterPositionV1 {
     #[primary_key]
     pub character_id: u64,
-    #[index(btree)]
-    pub map_id: u64,
     pub x: u16,
     pub y: u16,
     pub z: u8,
     pub movement: MovementV1,
     pub direction: DirectionV1,
+    pub arrives_at: Timestamp,
+}
+
+#[table(accessor = walked_map_chunk_v1, private)]
+pub struct WalkedMapChunkV1 {
+    #[primary_key]
+    pub character_id: u64,
+    pub map_id: u64,
+    pub x1: u16,
+    pub y1: u16,
+    pub x2: u16,
+    pub y2: u16,
+    pub z: u8,
+}
+
+#[table(accessor = occupied_tile_v1, private)]
+pub struct OccupiedTileV1 {
+    #[primary_key]
+    pub map_id: u64,
+    pub character_ids: Vec<u64>,
 }
 
 #[table(accessor = oneshot_movement_intention_v1, private, scheduled(oneshot_movement_intention_scheduled_v1))]

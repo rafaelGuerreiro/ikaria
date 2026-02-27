@@ -3,7 +3,6 @@ import { PlayerMovement, tileToPixel, type Movement } from './PlayerMovement';
 
 const TILE_SIZE = 16;
 const VISIBLE_RADIUS = 11; // tiles visible from center; server sends 32 so rest is buffer
-
 const TILE_KEYS: Record<string, string> = {
   Grass: 'grass',
   Water: 'water',
@@ -13,6 +12,14 @@ export type MapTile = {
   x: number;
   y: number;
   tag: string;
+};
+
+export type NearbyPlayer = {
+  characterId: bigint;
+  x: number;
+  y: number;
+  displayName: string;
+  arrivesAtMs: number;
 };
 
 export type { Movement };
@@ -26,10 +33,18 @@ type PlacedTile = {
   image: Phaser.GameObjects.Image;
 };
 
+type PlacedPlayer = {
+  sprite: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Text;
+  tileX: number;
+  tileY: number;
+};
+
 export class GameScene extends Phaser.Scene {
   private mapContainer: Phaser.GameObjects.Container | null = null;
   private tiles = new Map<string, PlacedTile>();
   private tileTagsByCoord = new Map<string, string>();
+  private nearbyPlayers = new Map<bigint, PlacedPlayer>();
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
   private movement: PlayerMovement | null = null;
 
@@ -39,6 +54,8 @@ export class GameScene extends Phaser.Scene {
   private pendingPosition: { x: number; y: number } | null = null;
   private pendingMoveCallback: ((movement: Movement) => void) | null = null;
   private pendingSpeed: number | null = null;
+  private pendingDisplayName: string | null = null;
+  private pendingNearbyPlayers: NearbyPlayer[] | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -77,6 +94,10 @@ export class GameScene extends Phaser.Scene {
       this.movement.setSpeed(this.pendingSpeed);
       this.pendingSpeed = null;
     }
+    if (this.pendingDisplayName !== null) {
+      this.movement.setDisplayName(this.pendingDisplayName);
+      this.pendingDisplayName = null;
+    }
     if (this.pendingMap) {
       this.updateMap(this.pendingMap);
       this.pendingMap = null;
@@ -84,6 +105,10 @@ export class GameScene extends Phaser.Scene {
     if (this.pendingPosition) {
       this.updatePlayerPosition(this.pendingPosition.x, this.pendingPosition.y);
       this.pendingPosition = null;
+    }
+    if (this.pendingNearbyPlayers) {
+      this.updateNearbyPlayers(this.pendingNearbyPlayers);
+      this.pendingNearbyPlayers = null;
     }
   }
 
@@ -126,6 +151,14 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.movement.setSpeed(speed);
+  }
+
+  setDisplayName(name: string) {
+    if (!this.movement) {
+      this.pendingDisplayName = name;
+      return;
+    }
+    this.movement.setDisplayName(name);
   }
 
   updateMap(incoming: MapTile[]) {
@@ -177,5 +210,85 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.movement?.updateServerPosition(x, y);
+  }
+
+  updateNearbyPlayers(players: NearbyPlayer[]) {
+    if (!this.ready) {
+      this.pendingNearbyPlayers = players;
+      return;
+    }
+
+    const seen = new Set<bigint>();
+
+    for (const player of players) {
+      seen.add(player.characterId);
+      const px = tileToPixel(player.x);
+      const py = tileToPixel(player.y);
+
+      const existing = this.nearbyPlayers.get(player.characterId);
+      if (existing) {
+        existing.label.setText(player.displayName);
+
+        if (existing.tileX === player.x && existing.tileY === player.y) continue;
+
+        const dx = Math.abs(player.x - existing.tileX);
+        const dy = Math.abs(player.y - existing.tileY);
+        existing.tileX = player.x;
+        existing.tileY = player.y;
+
+        const remaining = player.arrivesAtMs - Date.now();
+
+        // teleport if moved more than 1 tile, no arrival time, or already arrived
+        if (dx > 1 || dy > 1 || remaining <= 0) {
+          existing.sprite.setPosition(px, py);
+          existing.label.setPosition(px, py - TILE_SIZE);
+          continue;
+        }
+
+        this.tweens.add({
+          targets: existing.sprite,
+          x: px,
+          y: py,
+          duration: remaining,
+          ease: 'Linear',
+        });
+        this.tweens.add({
+          targets: existing.label,
+          x: px,
+          y: py - TILE_SIZE,
+          duration: remaining,
+          ease: 'Linear',
+        });
+        continue;
+      }
+
+      const sprite = this.add
+        .image(px, py, 'player')
+        .setDisplaySize(TILE_SIZE, TILE_SIZE)
+        .setDepth(1);
+
+      const label = this.add
+        .text(px, py - TILE_SIZE, player.displayName, {
+          fontSize: '7px',
+          fontFamily: 'monospace',
+          color: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 2,
+          align: 'center',
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(2);
+
+      this.mapContainer!.add(sprite);
+      this.mapContainer!.add(label);
+      this.nearbyPlayers.set(player.characterId, { sprite, label, tileX: player.x, tileY: player.y });
+    }
+
+    for (const [id, placed] of this.nearbyPlayers) {
+      if (seen.has(id)) continue;
+      placed.sprite.destroy();
+      placed.label.destroy();
+      this.nearbyPlayers.delete(id);
+    }
   }
 }

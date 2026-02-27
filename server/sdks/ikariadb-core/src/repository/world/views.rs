@@ -2,7 +2,9 @@ use crate::{
     constants::{MAP_VIEW_RADIUS, SECTOR_SIZE},
     repository::{
         character::{CharacterV1, character_v1__view, online_character_v1__view},
-        world::{CharacterPositionV1, MapV1, map_v1__view, online_character_position_v1__view, types::Rect},
+        world::{
+            CharacterPositionV1, MapV1, map_v1__view, occupied_tile_v1__view, online_character_position_v1__view, types::Rect,
+        },
     },
 };
 use spacetimedb::{ViewContext, view};
@@ -15,11 +17,10 @@ pub fn vw_world_map_v1(ctx: &ViewContext) -> Vec<MapV1> {
 
     let mut chunks = Vec::new();
 
-    // Compute sector range, expanded by 1 for chunk overhang
-    let sec_min_x = (rect.min.x / SECTOR_SIZE).saturating_sub(1);
-    let sec_max_x = rect.max.x / SECTOR_SIZE + 1;
-    let sec_min_y = (rect.min.y / SECTOR_SIZE).saturating_sub(1);
-    let sec_max_y = rect.max.y / SECTOR_SIZE + 1;
+    let sec_min_x = rect.min.x / SECTOR_SIZE;
+    let sec_max_x = rect.max.x / SECTOR_SIZE;
+    let sec_min_y = rect.min.y / SECTOR_SIZE;
+    let sec_max_y = rect.max.y / SECTOR_SIZE;
 
     for z in min_z..=max_z {
         for sx in sec_min_x..=sec_max_x {
@@ -50,14 +51,32 @@ pub fn vw_world_my_character_position_v1(ctx: &ViewContext) -> Option<CharacterP
 pub fn vw_nearby_characters_v1(ctx: &ViewContext) -> Vec<CharacterV1> {
     let mut characters = Vec::with_capacity(12);
     for map_id in iter_map_ids(ctx) {
-        let positions = ctx.db.online_character_position_v1().map_id().filter(map_id);
-        for position in positions {
-            if let Some(character) = ctx.db.character_v1().character_id().find(position.character_id) {
+        let Some(occupied) = ctx.db.occupied_tile_v1().map_id().find(map_id) else {
+            continue;
+        };
+        for &character_id in &occupied.character_ids {
+            if let Some(character) = ctx.db.character_v1().character_id().find(character_id) {
                 characters.push(character);
             }
         }
     }
     characters
+}
+
+#[view(accessor = vw_nearby_character_positions_v1, public)]
+pub fn vw_nearby_character_positions_v1(ctx: &ViewContext) -> Vec<CharacterPositionV1> {
+    let mut positions = Vec::with_capacity(12);
+    for map_id in iter_map_ids(ctx) {
+        let Some(occupied) = ctx.db.occupied_tile_v1().map_id().find(map_id) else {
+            continue;
+        };
+        for &character_id in &occupied.character_ids {
+            if let Some(position) = ctx.db.online_character_position_v1().character_id().find(character_id) {
+                positions.push(position);
+            }
+        }
+    }
+    positions
 }
 
 type ZRange = (u8, u8);

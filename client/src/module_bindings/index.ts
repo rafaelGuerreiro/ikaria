@@ -45,6 +45,7 @@ import VwCharacterAllMineStatsV1Row from "./vw_character_all_mine_stats_v_1_tabl
 import VwCharacterAllMineV1Row from "./vw_character_all_mine_v_1_table";
 import VwCharacterMeStatsV1Row from "./vw_character_me_stats_v_1_table";
 import VwCharacterMeV1Row from "./vw_character_me_v_1_table";
+import VwNearbyCharacterPositionsV1Row from "./vw_nearby_character_positions_v_1_table";
 import VwNearbyCharactersV1Row from "./vw_nearby_characters_v_1_table";
 import VwUserMeV1Row from "./vw_user_me_v_1_table";
 import VwWorldMapV1Row from "./vw_world_map_v_1_table";
@@ -82,6 +83,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, VwCharacterMeV1Row),
+  vw_nearby_character_positions_v1: __table({
+    name: 'vw_nearby_character_positions_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwNearbyCharacterPositionsV1Row),
   vw_nearby_characters_v1: __table({
     name: 'vw_nearby_characters_v1',
     indexes: [

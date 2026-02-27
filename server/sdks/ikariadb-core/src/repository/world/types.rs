@@ -1,6 +1,8 @@
 use crate::constants::SECTOR_SIZE;
 use spacetimedb::SpacetimeType;
 
+use super::{MapV1, WalkedMapChunkV1};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vec2 {
     pub x: u16,
@@ -11,11 +13,21 @@ impl Vec2 {
     pub fn new(x: u16, y: u16) -> Self {
         Self { x, y }
     }
+
+    pub fn with_z(self, z: u8) -> Vec3 {
+        Vec3 { x: self.x, y: self.y, z }
+    }
 }
 
 impl From<(u16, u16)> for Vec2 {
     fn from((x, y): (u16, u16)) -> Self {
         Self { x, y }
+    }
+}
+
+impl From<Vec3> for Vec2 {
+    fn from(vec3: Vec3) -> Self {
+        Self { x: vec3.x, y: vec3.y }
     }
 }
 
@@ -48,25 +60,6 @@ impl Vec3 {
         let sector_y = self.y / SECTOR_SIZE;
         ((self.z as u64) << 32) | ((sector_x as u64) << 16) | (sector_y as u64)
     }
-
-    pub fn nearby_sector_keys(&self) -> Vec<u64> {
-        let sx = self.x / SECTOR_SIZE;
-        let sy = self.y / SECTOR_SIZE;
-        let mut keys = Vec::with_capacity(4);
-        for dx in 0..=1u16 {
-            for dy in 0..=1u16 {
-                let kx = sx.wrapping_sub(1).wrapping_add(dx);
-                let ky = sy.wrapping_sub(1).wrapping_add(dy);
-                if kx <= u16::MAX / SECTOR_SIZE && ky <= u16::MAX / SECTOR_SIZE {
-                    let key = ((self.z as u64) << 32) | ((kx as u64) << 16) | (ky as u64);
-                    if !keys.contains(&key) {
-                        keys.push(key);
-                    }
-                }
-            }
-        }
-        keys
-    }
 }
 
 impl From<(u16, u16, u8)> for Vec3 {
@@ -98,9 +91,15 @@ impl Rect {
     }
 }
 
-impl From<&super::MapV1> for Rect {
-    fn from(chunk: &super::MapV1) -> Self {
+impl From<&MapV1> for Rect {
+    fn from(chunk: &MapV1) -> Self {
         Self::new(chunk.x1, chunk.y1, chunk.x2, chunk.y2)
+    }
+}
+
+impl From<&WalkedMapChunkV1> for Rect {
+    fn from(cache: &WalkedMapChunkV1) -> Self {
+        Self::new(cache.x1, cache.y1, cache.x2, cache.y2)
     }
 }
 
@@ -245,34 +244,5 @@ mod tests {
     #[test]
     fn rect_overlaps_contained() {
         assert!(Rect::new(0, 0, 100, 100).overlaps(&Rect::new(25, 25, 75, 75)));
-    }
-
-    #[test]
-    fn nearby_sector_keys_mid_sector_returns_4() {
-        let keys = Vec3::new(300, 300, 127).nearby_sector_keys();
-        assert_eq!(keys.len(), 4);
-    }
-
-    #[test]
-    fn nearby_sector_keys_at_origin_excludes_underflow() {
-        let keys = Vec3::new(0, 0, 127).nearby_sector_keys();
-        assert!(keys.len() <= 4);
-        assert!(!keys.is_empty());
-    }
-
-    #[test]
-    fn nearby_sector_keys_contain_own_sector() {
-        let pos = Vec3::new(1152, 1152, 127);
-        let keys = pos.nearby_sector_keys();
-        assert!(keys.contains(&pos.sector_key()));
-    }
-
-    #[test]
-    fn nearby_sector_keys_no_duplicates() {
-        let keys = Vec3::new(256, 256, 127).nearby_sector_keys();
-        let mut sorted = keys.clone();
-        sorted.sort();
-        sorted.dedup();
-        assert_eq!(keys.len(), sorted.len());
     }
 }

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { useEffect, useRef } from 'react';
 import { Button, Spinner, Stack } from 'react-bootstrap';
 import { useReducer, useTable } from 'spacetimedb/react';
-import { GameScene, type Movement, type MapTile } from '../game/GameScene';
+import { GameScene, type Movement, type MapTile, type NearbyPlayer } from '../game/GameScene';
 import { reducers, tables } from '../module_bindings';
 
 type GameViewProps = {
@@ -16,6 +16,9 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   const [mapRows] = useTable(tables.vw_world_map_v1);
   const [positions] = useTable(tables.vw_world_my_character_position_v1);
   const [stats] = useTable(tables.vw_character_me_stats_v1);
+  const [characterMe] = useTable(tables.vw_character_me_v1);
+  const [nearbyCharacters] = useTable(tables.vw_nearby_characters_v1);
+  const [nearbyPositions] = useTable(tables.vw_nearby_character_positions_v1);
   const runMoveCharacter = useReducer(reducers.moveCharacterV1);
 
   useEffect(() => {
@@ -85,6 +88,30 @@ export function GameView({ onLeaveGame }: GameViewProps) {
 
     sceneRef.current.setSpeed(stats[0].speed);
   }, [stats]);
+
+  useEffect(() => {
+    if (!sceneRef.current || characterMe.length === 0) return;
+
+    sceneRef.current.setDisplayName(characterMe[0].displayName);
+  }, [characterMe]);
+
+  useEffect(() => {
+    if (!sceneRef.current) return;
+
+    const myCharacterId = positions.length > 0 ? positions[0].characterId : null;
+    const namesByCharacterId = new Map(
+      nearbyCharacters.map((c) => [c.characterId, c.displayName]),
+    );
+
+    const players: NearbyPlayer[] = [];
+    for (const pos of nearbyPositions) {
+      if (pos.characterId === myCharacterId) continue;
+      const displayName = namesByCharacterId.get(pos.characterId) ?? '???';
+      players.push({ characterId: pos.characterId, x: pos.x, y: pos.y, displayName, arrivesAtMs: Number(pos.arrivesAt.toMillis()) });
+    }
+
+    sceneRef.current.updateNearbyPlayers(players);
+  }, [nearbyCharacters, nearbyPositions, positions]);
 
   const isLoading = mapRows.length === 0;
 

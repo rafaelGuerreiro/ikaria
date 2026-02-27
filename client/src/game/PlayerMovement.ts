@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 const TILE_SIZE = 16;
 const SPEED_TO_MS = 40_000;
 // slightly slower than the server cooldown so held keys produce smooth continuous movement
-const ANIMATION_SLOWDOWN = 1;
+const ANIMATION_SLOWDOWN = 0.99;
 
 export type Movement =
   | 'North'
@@ -36,6 +36,8 @@ export class PlayerMovement {
   private scene: Phaser.Scene;
   private mapContainer: Phaser.GameObjects.Container;
   private playerSprite: Phaser.GameObjects.Image | null = null;
+  private playerLabel: Phaser.GameObjects.Text | null = null;
+  private displayName: string | null = null;
   private moveCallback: ((movement: Movement) => void) | null = null;
   private tileLookup: TileLookup | null = null;
 
@@ -63,6 +65,13 @@ export class PlayerMovement {
 
   setSpeed(speed: number) {
     this.speed = speed;
+  }
+
+  setDisplayName(name: string) {
+    this.displayName = name;
+    if (this.playerLabel) {
+      this.playerLabel.setText(name);
+    }
   }
 
   get moving(): boolean {
@@ -130,6 +139,18 @@ export class PlayerMovement {
         .image(0, 0, 'player')
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setDepth(1);
+
+      this.playerLabel = this.scene.add
+        .text(0, -TILE_SIZE, this.displayName ?? '', {
+          fontSize: '7px',
+          fontFamily: 'monospace',
+          color: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 2,
+          align: 'center',
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(2);
 
       this.scene.cameras.main.startFollow(this.playerSprite, true);
 

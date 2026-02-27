@@ -7,9 +7,11 @@ use crate::{
     repository::{
         character::{character_v1, services::CharacterReducerContext},
         world::{
-            CharacterPositionV1, MapV1, MovementCooldownV1, OneshotMovementIntentionV1, map_v1, movement_cooldown_v1,
-            offline_character_position_v1, oneshot_movement_intention_v1, online_character_position_v1,
+            CharacterPositionV1, MapV1, MovementCooldownV1, OccupiedTileV1, OneshotMovementIntentionV1, WalkedMapChunkV1,
+            map_v1, movement_cooldown_v1, occupied_tile_v1, offline_character_position_v1, oneshot_movement_intention_v1,
+            online_character_position_v1,
             types::{DirectionV1, MapTileV1, MovementV1, Rect, Vec2, Vec3},
+            walked_map_chunk_v1,
         },
     },
 };
@@ -61,20 +63,75 @@ impl WorldServices<'_> {
         }
     }
 
-    pub fn find_tile_at(&self, pos: Vec3) -> Option<MapTileV1> {
+    pub fn find_map_at(&self, pos: Vec3) -> Option<MapV1> {
         let point = Vec2::new(pos.x, pos.y);
-        for sector_key in pos.nearby_sector_keys() {
-            for chunk in self.db.map_v1().sector_key().filter(sector_key) {
-                if chunk.z == pos.z && Rect::from(&chunk).contains(point) {
-                    return Some(chunk.tile);
-                }
-            }
-        }
-        None
+        self.db
+            .map_v1()
+            .sector_key()
+            .filter(pos.sector_key())
+            .find(|chunk| chunk.z == pos.z && Rect::from(chunk).contains(point))
     }
 
-    pub fn is_walkable(&self, pos: Vec3) -> bool {
-        self.find_tile_at(pos).map(|t| t.is_walkable()).unwrap_or(false)
+    pub fn is_walkable(&self, position: &CharacterPositionV1, target: Vec3) -> bool {
+        if let Some(cache) = self.db.walked_map_chunk_v1().character_id().find(position.character_id)
+            && cache.z == target.z
+            && Rect::from(&cache).contains(target.into())
+        {
+            return true;
+        }
+
+        let Some(chunk) = self.find_map_at(target) else {
+            return false;
+        };
+
+        if !chunk.tile.is_walkable() {
+            return false;
+        }
+
+        self.db
+            .walked_map_chunk_v1()
+            .character_id()
+            .insert_or_update(WalkedMapChunkV1 {
+                character_id: position.character_id,
+                map_id: chunk.map_id,
+                x1: chunk.x1,
+                y1: chunk.y1,
+                x2: chunk.x2,
+                y2: chunk.y2,
+                z: chunk.z,
+            });
+
+        true
+    }
+
+    pub fn is_occupied(&self, pos: Vec3) -> bool {
+        self.db.occupied_tile_v1().map_id().find(pos.map_id()).is_some()
+    }
+
+    fn occupy_tile(&self, map_id: u64, character_id: u64) {
+        if let Some(mut tile) = self.db.occupied_tile_v1().map_id().find(map_id) {
+            if !tile.character_ids.contains(&character_id) {
+                tile.character_ids.push(character_id);
+                self.db.occupied_tile_v1().map_id().update(tile);
+            }
+        } else {
+            self.db.occupied_tile_v1().insert(OccupiedTileV1 {
+                map_id,
+                character_ids: vec![character_id],
+            });
+        }
+    }
+
+    fn vacate_tile(&self, map_id: u64, character_id: u64) {
+        let Some(mut tile) = self.db.occupied_tile_v1().map_id().find(map_id) else {
+            return;
+        };
+        tile.character_ids.retain(|&id| id != character_id);
+        if tile.character_ids.is_empty() {
+            self.db.occupied_tile_v1().map_id().delete(map_id);
+        } else {
+            self.db.occupied_tile_v1().map_id().update(tile);
+        }
     }
 
     pub fn get_online_position(&self, character_id: u64) -> ServiceResult<CharacterPositionV1> {
@@ -102,16 +159,18 @@ impl WorldServices<'_> {
                 let spawn = Vec3::new(DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, GROUND_LEVEL);
                 CharacterPositionV1 {
                     character_id,
-                    map_id: spawn.map_id(),
                     x: spawn.x,
                     y: spawn.y,
                     z: spawn.z,
                     movement: MovementV1::default(),
                     direction: DirectionV1::default(),
+                    arrives_at: Timestamp::UNIX_EPOCH,
                 }
             });
 
+        let map_id = Vec3::new(position.x, position.y, position.z).map_id();
         self.db.offline_character_position_v1().character_id().delete(character_id);
+        self.occupy_tile(map_id, character_id);
         self.db
             .online_character_position_v1()
             .character_id()
@@ -122,6 +181,8 @@ impl WorldServices<'_> {
         for character in self.db.character_v1().user_id().filter(user_id) {
             let character_id = character.character_id;
             if let Some(position) = self.find_online_position(character_id) {
+                let map_id = Vec3::new(position.x, position.y, position.z).map_id();
+                self.vacate_tile(map_id, character_id);
                 self.db
                     .offline_character_position_v1()
                     .character_id()
@@ -130,6 +191,7 @@ impl WorldServices<'_> {
             self.db.online_character_position_v1().character_id().delete(character_id);
             self.db.movement_cooldown_v1().character_id().delete(character_id);
             self.db.oneshot_movement_intention_v1().character_id().delete(character_id);
+            self.db.walked_map_chunk_v1().character_id().delete(character_id);
         }
     }
 
@@ -183,13 +245,14 @@ impl WorldServices<'_> {
             return;
         }
 
-        let max_chunk = SECTOR_SIZE;
         let mut cx = rect.min.x;
         while cx <= rect.max.x {
-            let chunk_x2 = (cx + max_chunk - 1).min(rect.max.x);
+            let sector_end_x = ((cx / SECTOR_SIZE) + 1) * SECTOR_SIZE - 1;
+            let chunk_x2 = sector_end_x.min(rect.max.x);
             let mut cy = rect.min.y;
             while cy <= rect.max.y {
-                let chunk_y2 = (cy + max_chunk - 1).min(rect.max.y);
+                let sector_end_y = ((cy / SECTOR_SIZE) + 1) * SECTOR_SIZE - 1;
+                let chunk_y2 = sector_end_y.min(rect.max.y);
                 let pos = Vec3::new(cx, cy, z);
                 self.db.map_v1().insert(MapV1 {
                     map_id: pos.map_id(),
@@ -241,24 +304,34 @@ impl WorldServices<'_> {
         }
 
         let target = Vec3::new(target_x, target_y, position.z);
-        if !self.is_walkable(target) {
+        if self.is_occupied(target) {
+            return Err(WorldError::tile_occupied());
+        }
+
+        if !self.is_walkable(&position, target) {
             return Err(WorldError::tile_not_walkable());
         }
+
+        let arrives_at = self.compute_movement_arrives_at(character.character_id, movement);
+
+        let current_map_id = Vec3::new(position.x, position.y, position.z).map_id();
+        self.vacate_tile(current_map_id, position.character_id);
+        self.occupy_tile(target.map_id(), position.character_id);
 
         self.db
             .online_character_position_v1()
             .character_id()
             .update(CharacterPositionV1 {
                 character_id: position.character_id,
-                map_id: target.map_id(),
                 x: target.x,
                 y: target.y,
                 z: target.z,
                 movement,
                 direction: movement.into(),
+                arrives_at,
             });
 
-        self.set_movement_cooldown(character.character_id, movement);
+        self.set_movement_cooldown(character.character_id, arrives_at);
         Ok(())
     }
 
@@ -273,7 +346,7 @@ impl WorldServices<'_> {
             });
     }
 
-    fn set_movement_cooldown(&self, character_id: u64, movement: MovementV1) {
+    fn compute_movement_arrives_at(&self, character_id: u64, movement: MovementV1) -> Timestamp {
         let speed = self
             .character_services()
             .find_stats(character_id)
@@ -284,13 +357,16 @@ impl WorldServices<'_> {
         if movement.is_diagonal() {
             cooldown_ms = cooldown_ms * 1_414_213 / 1_000_000;
         }
+        self.timestamp + Duration::from_millis(cooldown_ms)
+    }
 
+    fn set_movement_cooldown(&self, character_id: u64, can_move_at: Timestamp) {
         self.db
             .movement_cooldown_v1()
             .character_id()
             .insert_or_update(MovementCooldownV1 {
                 character_id,
-                can_move_at: self.timestamp + Duration::from_millis(cooldown_ms),
+                can_move_at,
             });
     }
 }
@@ -302,6 +378,9 @@ enum WorldError {
 
     #[error("Tile is not walkable")]
     TileNotWalkable,
+
+    #[error("Tile is occupied by another player")]
+    TileOccupied,
 }
 
 impl WorldError {
@@ -311,5 +390,9 @@ impl WorldError {
 
     fn tile_not_walkable() -> ServiceError {
         Self::TileNotWalkable.map_validation_error()
+    }
+
+    fn tile_occupied() -> ServiceError {
+        Self::TileOccupied.map_validation_error()
     }
 }
