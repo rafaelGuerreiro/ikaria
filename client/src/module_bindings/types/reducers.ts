@@ -9,8 +9,10 @@ import { type Infer as __Infer } from "spacetimedb";
 import CreateCharacterV1Reducer from "../create_character_v_1_reducer";
 import MoveCharacterV1Reducer from "../move_character_v_1_reducer";
 import SelectCharacterV1Reducer from "../select_character_v_1_reducer";
+import UnselectCharacterV1Reducer from "../unselect_character_v_1_reducer";
 
 export type CreateCharacterV1Params = __Infer<typeof CreateCharacterV1Reducer>;
 export type MoveCharacterV1Params = __Infer<typeof MoveCharacterV1Reducer>;
 export type SelectCharacterV1Params = __Infer<typeof SelectCharacterV1Reducer>;
+export type UnselectCharacterV1Params = __Infer<typeof UnselectCharacterV1Reducer>;
 

@@ -37,6 +37,7 @@ import {
 import CreateCharacterV1Reducer from "./create_character_v_1_reducer";
 import MoveCharacterV1Reducer from "./move_character_v_1_reducer";
 import SelectCharacterV1Reducer from "./select_character_v_1_reducer";
+import UnselectCharacterV1Reducer from "./unselect_character_v_1_reducer";
 
 // Import all procedure arg schemas
 
@@ -125,6 +126,7 @@ const reducersSchema = __reducers(
   __reducerSchema("create_character_v1", CreateCharacterV1Reducer),
   __reducerSchema("move_character_v1", MoveCharacterV1Reducer),
   __reducerSchema("select_character_v1", SelectCharacterV1Reducer),
+  __reducerSchema("unselect_character_v1", UnselectCharacterV1Reducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

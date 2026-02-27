@@ -138,6 +138,12 @@ impl CharacterServices<'_> {
         Ok(())
     }
 
+    pub fn unselect_character(&self, user_id: Identity) -> ServiceResult<()> {
+        self.get_current(user_id)?;
+        self.publish().character_unselected(user_id)?;
+        Ok(())
+    }
+
     pub fn clear_online_character(&self, user_id: Identity) {
         self.db.online_character_v1().user_id().delete(user_id);
     }

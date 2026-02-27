@@ -44,6 +44,12 @@ export function CharacterListView({
   const selectedCharacterId = selectedRows[0]?.characterId ?? null;
 
   useEffect(() => {
+    if (selectedCharacterId !== null) {
+      onEnterGame();
+    }
+  }, [selectedCharacterId, onEnterGame]);
+
+  useEffect(() => {
     if (token) {
       window.localStorage.setItem(tokenStorageKey(world), token);
     }
@@ -56,7 +62,6 @@ export function CharacterListView({
     try {
       await runSelectCharacter({ characterId });
       setStatusMessage(`Selected '${displayName}'.`);
-      onEnterGame();
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       setStatusMessage(`Selection failed: ${reason}`);

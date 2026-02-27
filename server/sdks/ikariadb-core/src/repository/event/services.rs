@@ -63,6 +63,10 @@ impl EventServices<'_> {
             EventV1::CharacterSelected { user_id, .. } => {
                 self.world_services().spawn_character(user_id);
             },
+            EventV1::CharacterUnselected { user_id } => {
+                self.world_services().despawn_character(user_id);
+                self.character_services().clear_online_character(user_id);
+            },
         }
 
         Ok(())

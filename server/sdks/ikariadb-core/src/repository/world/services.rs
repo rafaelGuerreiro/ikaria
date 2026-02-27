@@ -278,9 +278,10 @@ impl WorldServices<'_> {
             let remaining = cooldown.can_move_at.duration_since(self.timestamp).unwrap_or_default();
             if remaining <= Duration::from_millis(MOVEMENT_INTENTION_WINDOW_MS) {
                 self.schedule_movement_intention(character_id, movement, cooldown.can_move_at);
+                return Ok(());
             }
 
-            return Ok(());
+            return Err(WorldError::movement_on_cooldown());
         }
 
         self.execute_movement(character_id, movement)
@@ -295,13 +296,11 @@ impl WorldServices<'_> {
 
     fn execute_movement(&self, character_id: u64, movement: MovementV1) -> ServiceResult<()> {
         let character = self.character_services().get_online(character_id)?;
-        let Ok(position) = self.get_online_position(character.character_id) else {
-            return Ok(());
-        };
+        let position = self.get_online_position(character.character_id)?;
 
         let (target_x, target_y) = movement.translate(position.x, position.y);
         if target_x == position.x && target_y == position.y {
-            return Ok(());
+            return Err(WorldError::movement_out_of_bounds());
         }
 
         let target = Vec3::new(target_x, target_y, position.z);
@@ -382,6 +381,12 @@ enum WorldError {
 
     #[error("Tile is occupied by another player")]
     TileOccupied,
+
+    #[error("Movement is on cooldown")]
+    MovementOnCooldown,
+
+    #[error("Movement is out of bounds")]
+    MovementOutOfBounds,
 }
 
 impl WorldError {
@@ -395,5 +400,13 @@ impl WorldError {
 
     fn tile_occupied() -> ServiceError {
         Self::TileOccupied.map_validation_error()
+    }
+
+    fn movement_on_cooldown() -> ServiceError {
+        Self::MovementOnCooldown.map_validation_error()
+    }
+
+    fn movement_out_of_bounds() -> ServiceError {
+        Self::MovementOutOfBounds.map_validation_error()
     }
 }

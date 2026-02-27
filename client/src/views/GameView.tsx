@@ -20,6 +20,16 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   const [nearbyCharacters] = useTable(tables.vw_nearby_characters_v1);
   const [nearbyPositions] = useTable(tables.vw_nearby_character_positions_v1);
   const runMoveCharacter = useReducer(reducers.moveCharacterV1);
+  const runUnselectCharacter = useReducer(reducers.unselectCharacterV1);
+
+  const handleLeaveGame = async () => {
+    try {
+      await runUnselectCharacter();
+    } catch {
+      // best-effort: still navigate back even if unselect fails
+    }
+    onLeaveGame();
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -132,13 +142,13 @@ export function GameView({ onLeaveGame }: GameViewProps) {
         >
           <Spinner animation="border" role="status" className="mb-3" />
           <p className="text-muted">Loading map...</p>
-          <Button variant="outline-secondary" size="sm" onClick={onLeaveGame}>
+          <Button variant="outline-secondary" size="sm" onClick={handleLeaveGame}>
             Back to characters
           </Button>
         </Stack>
       )}
       <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 10 }}>
-        <Button variant="outline-light" size="sm" onClick={onLeaveGame}>
+        <Button variant="outline-light" size="sm" onClick={handleLeaveGame}>
           Back to characters
         </Button>
       </div>

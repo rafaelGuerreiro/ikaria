@@ -19,3 +19,9 @@ pub fn select_character_v1(ctx: &ReducerContext, character_id: u64) -> ServiceRe
     ctx.character_services().select_character(ctx.sender(), character_id)?;
     Ok(())
 }
+
+#[reducer]
+pub fn unselect_character_v1(ctx: &ReducerContext) -> ServiceResult<()> {
+    ctx.character_services().unselect_character(ctx.sender())?;
+    Ok(())
+}

@@ -12,6 +12,7 @@ pub enum EventV1 {
     UserSignedOut { user_id: Identity },
     CharacterCreated { user_id: Identity, character_id: u64 },
     CharacterSelected { user_id: Identity, character_id: u64 },
+    CharacterUnselected { user_id: Identity },
 }
 
 #[derive(Debug, Clone, Copy, SpacetimeType)]
@@ -53,5 +54,9 @@ impl EventPublisher<'_> {
     pub fn character_selected(&self, user_id: Identity, character_id: u64) -> ServiceResult<()> {
         self.event_services()
             .fire(EventV1::CharacterSelected { user_id, character_id })
+    }
+
+    pub fn character_unselected(&self, user_id: Identity) -> ServiceResult<()> {
+        self.event_services().fire(EventV1::CharacterUnselected { user_id })
     }
 }
