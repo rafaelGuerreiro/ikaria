@@ -1,6 +1,9 @@
-use self::types::{DirectionV1, MapTileV1};
-use crate::repository::world::types::MovementV1;
-use spacetimedb::{Timestamp, table};
+use self::{
+    services::WorldReducerContext,
+    types::{DirectionV1, MapTileV1},
+};
+use crate::{error::ServiceResult, extend::validate::ReducerContextRequirements, repository::world::types::MovementV1};
+use spacetimedb::{ReducerContext, ScheduleAt, Timestamp, reducer, table};
 
 pub mod reducers;
 pub mod services;
@@ -51,4 +54,20 @@ pub struct CharacterPositionV1 {
     pub z: u8,
     pub movement: MovementV1,
     pub direction: DirectionV1,
+}
+
+#[table(accessor = oneshot_movement_intention_v1, private, scheduled(oneshot_movement_intention_scheduled_v1))]
+pub struct OneshotMovementIntentionV1 {
+    #[primary_key]
+    pub character_id: u64,
+    pub scheduled_at: ScheduleAt,
+    pub movement: MovementV1,
+}
+
+#[reducer]
+pub fn oneshot_movement_intention_scheduled_v1(ctx: &ReducerContext, timer: OneshotMovementIntentionV1) -> ServiceResult<()> {
+    ctx.require_internal_access()?;
+    ctx.world_services()
+        .execute_movement_intention(timer.character_id, timer.movement);
+    Ok(())
 }

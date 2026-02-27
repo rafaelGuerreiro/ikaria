@@ -1,17 +1,20 @@
 use crate::{
-    constants::{DEFAULT_CHARACTER_SPEED, DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, MOVEMENT_COOLDOWN_FACTOR, SECTOR_SIZE},
+    constants::{
+        DEFAULT_CHARACTER_SPEED, DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, MOVEMENT_COOLDOWN_FACTOR, MOVEMENT_INTENTION_WINDOW_MS,
+        SECTOR_SIZE,
+    },
     error::{ErrorMapper, ServiceError, ServiceResult},
     repository::{
         character::{character_v1, services::CharacterReducerContext},
         world::{
-            CharacterPositionV1, MapV1, MovementCooldownV1, map_v1, movement_cooldown_v1, offline_character_position_v1,
-            online_character_position_v1,
+            CharacterPositionV1, MapV1, MovementCooldownV1, OneshotMovementIntentionV1, map_v1, movement_cooldown_v1,
+            offline_character_position_v1, oneshot_movement_intention_v1, online_character_position_v1,
             types::{DirectionV1, MapTileV1, MovementV1, Rect, Vec2, Vec3},
         },
     },
 };
 use ikaria_shared::constants::GROUND_LEVEL;
-use spacetimedb::{Identity, ReducerContext, Table};
+use spacetimedb::{Identity, ReducerContext, Table, Timestamp};
 use std::{ops::Deref, time::Duration};
 use thiserror::Error;
 
@@ -126,6 +129,7 @@ impl WorldServices<'_> {
             }
             self.db.online_character_position_v1().character_id().delete(character_id);
             self.db.movement_cooldown_v1().character_id().delete(character_id);
+            self.db.oneshot_movement_intention_v1().character_id().delete(character_id);
         }
     }
 
@@ -204,10 +208,28 @@ impl WorldServices<'_> {
     }
 
     pub fn move_character(&self, character_id: u64, movement: MovementV1) -> ServiceResult<()> {
-        if !self.is_movement_allowed(character_id) {
+        if let Some(cooldown) = self.find_cooldown(character_id)
+            && self.timestamp < cooldown.can_move_at
+        {
+            let remaining = cooldown.can_move_at.duration_since(self.timestamp).unwrap_or_default();
+            if remaining <= Duration::from_millis(MOVEMENT_INTENTION_WINDOW_MS) {
+                self.schedule_movement_intention(character_id, movement, cooldown.can_move_at);
+            }
+
             return Ok(());
         }
 
+        self.execute_movement(character_id, movement)
+    }
+
+    pub fn execute_movement_intention(&self, character_id: u64, movement: MovementV1) {
+        if !self.is_movement_allowed(character_id) {
+            return;
+        }
+        let _ = self.execute_movement(character_id, movement);
+    }
+
+    fn execute_movement(&self, character_id: u64, movement: MovementV1) -> ServiceResult<()> {
         let character = self.character_services().get_online(character_id)?;
         let Ok(position) = self.get_online_position(character.character_id) else {
             return Ok(());
@@ -220,7 +242,7 @@ impl WorldServices<'_> {
 
         let target = Vec3::new(target_x, target_y, position.z);
         if !self.is_walkable(target) {
-            return Err(ServiceError::BadRequest("Target tile is not walkable".into()));
+            return Err(WorldError::tile_not_walkable());
         }
 
         self.db
@@ -236,18 +258,33 @@ impl WorldServices<'_> {
                 direction: movement.into(),
             });
 
-        self.set_movement_cooldown(character.character_id);
+        self.set_movement_cooldown(character.character_id, movement);
         Ok(())
     }
 
-    fn set_movement_cooldown(&self, character_id: u64) {
+    fn schedule_movement_intention(&self, character_id: u64, movement: MovementV1, can_move_at: Timestamp) {
+        self.db
+            .oneshot_movement_intention_v1()
+            .character_id()
+            .insert_or_update(OneshotMovementIntentionV1 {
+                character_id,
+                scheduled_at: can_move_at.into(),
+                movement,
+            });
+    }
+
+    fn set_movement_cooldown(&self, character_id: u64, movement: MovementV1) {
         let speed = self
             .character_services()
             .find_stats(character_id)
             .map(|s| s.speed as u64)
             .unwrap_or(DEFAULT_CHARACTER_SPEED as u64);
 
-        let cooldown_ms = MOVEMENT_COOLDOWN_FACTOR / speed;
+        let mut cooldown_ms = MOVEMENT_COOLDOWN_FACTOR / speed;
+        if movement.is_diagonal() {
+            cooldown_ms = cooldown_ms * 1_414_213 / 1_000_000;
+        }
+
         self.db
             .movement_cooldown_v1()
             .character_id()
@@ -262,10 +299,17 @@ impl WorldServices<'_> {
 enum WorldError {
     #[error("Character {0} has no position")]
     CharacterPositionNotFound(u64),
+
+    #[error("Tile is not walkable")]
+    TileNotWalkable,
 }
 
 impl WorldError {
     fn character_position_not_found(character_id: u64) -> ServiceError {
         Self::CharacterPositionNotFound(character_id).map_not_found_error()
+    }
+
+    fn tile_not_walkable() -> ServiceError {
+        Self::TileNotWalkable.map_validation_error()
     }
 }

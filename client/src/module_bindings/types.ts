@@ -165,6 +165,15 @@ export const OneshotDeferredEventV1 = __t.object("OneshotDeferredEventV1", {
 });
 export type OneshotDeferredEventV1 = __Infer<typeof OneshotDeferredEventV1>;
 
+export const OneshotMovementIntentionV1 = __t.object("OneshotMovementIntentionV1", {
+  characterId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+  get movement() {
+    return MovementV1;
+  },
+});
+export type OneshotMovementIntentionV1 = __Infer<typeof OneshotMovementIntentionV1>;
+
 export const OnlineCharacterV1 = __t.object("OnlineCharacterV1", {
   userId: __t.identity(),
   characterId: __t.u64(),

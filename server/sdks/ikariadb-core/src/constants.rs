@@ -19,3 +19,4 @@ pub const MAP_VIEW_RADIUS: u16 = 32;
 pub const SECTOR_SIZE: u16 = 256;
 
 pub const MOVEMENT_COOLDOWN_FACTOR: u64 = 40_000;
+pub const MOVEMENT_INTENTION_WINDOW_MS: u64 = 100;

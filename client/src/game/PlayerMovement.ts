@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 const TILE_SIZE = 16;
 const SPEED_TO_MS = 40_000;
 // slightly slower than the server cooldown so held keys produce smooth continuous movement
-const ANIMATION_SLOWDOWN = 1.15;
+const ANIMATION_SLOWDOWN = 1;
 
 export type Movement =
   | 'North'
@@ -44,6 +44,7 @@ export class PlayerMovement {
   private serverX = 0;
   private serverY = 0;
   private isLerping = false;
+  private pendingMovement: Movement | null = null;
   private speed = 120;
   private initialized = false;
 
@@ -72,8 +73,17 @@ export class PlayerMovement {
     return { x: this.predictedX, y: this.predictedY };
   }
 
+  clearPending() {
+    this.pendingMovement = null;
+  }
+
   tryMove(movement: Movement) {
-    if (this.isLerping || !this.moveCallback || !this.playerSprite) return;
+    if (!this.moveCallback || !this.playerSprite) return;
+
+    if (this.isLerping) {
+      this.pendingMovement = movement;
+      return;
+    }
 
     const delta = MOVEMENT_DELTA[movement];
     const targetX = this.predictedX + delta.dx;
@@ -87,7 +97,8 @@ export class PlayerMovement {
     this.predictedX = targetX;
     this.predictedY = targetY;
 
-    const duration = (SPEED_TO_MS / this.speed) * ANIMATION_SLOWDOWN;
+    const isDiagonal = delta.dx !== 0 && delta.dy !== 0;
+    const duration = (SPEED_TO_MS / this.speed) * ANIMATION_SLOWDOWN * (isDiagonal ? Math.SQRT2 : 1);
     this.isLerping = true;
 
     this.scene.tweens.add({
@@ -99,6 +110,11 @@ export class PlayerMovement {
       onComplete: () => {
         this.isLerping = false;
         this.reconcile();
+        if (this.pendingMovement) {
+          const next = this.pendingMovement;
+          this.pendingMovement = null;
+          this.tryMove(next);
+        }
       },
     });
 

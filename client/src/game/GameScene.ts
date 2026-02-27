@@ -88,7 +88,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update() {
-    if (!this.cursors || !this.movement || this.movement.moving) return;
+    if (!this.cursors || !this.movement) return;
 
     const up = this.cursors.up.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W).isDown;
     const down = this.cursors.down.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S).isDown;
@@ -105,7 +105,11 @@ export class GameScene extends Phaser.Scene {
     else if (left) dir = 'West';
     else if (right) dir = 'East';
 
-    if (dir) this.movement.tryMove(dir);
+    if (dir) {
+      this.movement.tryMove(dir);
+    } else {
+      this.movement.clearPending();
+    }
   }
 
   setMoveCallback(callback: (movement: Movement) => void) {

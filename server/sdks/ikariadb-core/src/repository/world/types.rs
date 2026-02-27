@@ -138,6 +138,10 @@ pub enum MovementV1 {
 }
 
 impl MovementV1 {
+    pub fn is_diagonal(&self) -> bool {
+        matches!(self, Self::NorthEast | Self::SouthEast | Self::SouthWest | Self::NorthWest)
+    }
+
     pub fn translate(&self, x: u16, y: u16) -> (u16, u16) {
         match self {
             MovementV1::North => (x, y.saturating_sub(1)),
