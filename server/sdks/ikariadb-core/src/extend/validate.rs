@@ -93,7 +93,7 @@ impl ValidationError {
 
 #[cfg(test)]
 mod tests {
-    use super::{validate_str, validate_u64};
+    use super::*;
 
     #[test]
     fn validate_u64_accepts_values_in_range() {

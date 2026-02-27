@@ -156,6 +156,7 @@ export type MovementV1 = __Infer<typeof MovementV1>;
 
 export const OccupiedTileV1 = __t.object("OccupiedTileV1", {
   mapId: __t.u64(),
+  sectorKey: __t.u64(),
   characterIds: __t.array(__t.u64()),
 });
 export type OccupiedTileV1 = __Infer<typeof OccupiedTileV1>;

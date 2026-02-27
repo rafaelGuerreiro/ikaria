@@ -66,7 +66,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::IterExt;
+    use super::*;
 
     #[test]
     fn chunked_collects_in_chunks() {

@@ -84,7 +84,7 @@ impl ReducerContextExt for ReducerContext {
 
 #[cfg(test)]
 mod tests {
-    use super::IdentityExt;
+    use super::*;
     use spacetimedb::Identity;
 
     #[test]

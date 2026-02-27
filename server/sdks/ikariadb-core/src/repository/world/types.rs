@@ -1,7 +1,8 @@
-use crate::constants::SECTOR_SIZE;
+use crate::{
+    constants::SECTOR_SIZE,
+    repository::world::{MapV1, WalkedMapChunkV1},
+};
 use spacetimedb::SpacetimeType;
-
-use super::{MapV1, WalkedMapChunkV1};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vec2 {

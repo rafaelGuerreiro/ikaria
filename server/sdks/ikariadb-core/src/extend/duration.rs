@@ -60,7 +60,7 @@ impl TimestampExt for Timestamp {
 
 #[cfg(test)]
 mod tests {
-    use super::{DurationExt, TimestampExt};
+    use super::*;
     use spacetimedb::Timestamp;
     use std::time::Duration;
 

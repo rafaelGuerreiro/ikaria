@@ -3,7 +3,9 @@ use crate::{
     repository::{
         character::{CharacterV1, character_v1__view, online_character_v1__view},
         world::{
-            CharacterPositionV1, MapV1, map_v1__view, occupied_tile_v1__view, online_character_position_v1__view, types::Rect,
+            CharacterPositionV1, MapV1, OccupiedTileV1, map_v1__view, occupied_tile_v1__view,
+            online_character_position_v1__view,
+            types::{Rect, Vec3},
         },
     },
 };
@@ -50,10 +52,7 @@ pub fn vw_world_my_character_position_v1(ctx: &ViewContext) -> Option<CharacterP
 #[view(accessor = vw_nearby_characters_v1, public)]
 pub fn vw_nearby_characters_v1(ctx: &ViewContext) -> Vec<CharacterV1> {
     let mut characters = Vec::with_capacity(12);
-    for map_id in iter_map_ids(ctx) {
-        let Some(occupied) = ctx.db.occupied_tile_v1().map_id().find(map_id) else {
-            continue;
-        };
+    for occupied in iter_nearby_occupied(ctx) {
         for &character_id in &occupied.character_ids {
             if let Some(character) = ctx.db.character_v1().character_id().find(character_id) {
                 characters.push(character);
@@ -66,10 +65,7 @@ pub fn vw_nearby_characters_v1(ctx: &ViewContext) -> Vec<CharacterV1> {
 #[view(accessor = vw_nearby_character_positions_v1, public)]
 pub fn vw_nearby_character_positions_v1(ctx: &ViewContext) -> Vec<CharacterPositionV1> {
     let mut positions = Vec::with_capacity(12);
-    for map_id in iter_map_ids(ctx) {
-        let Some(occupied) = ctx.db.occupied_tile_v1().map_id().find(map_id) else {
-            continue;
-        };
+    for occupied in iter_nearby_occupied(ctx) {
         for &character_id in &occupied.character_ids {
             if let Some(position) = ctx.db.online_character_position_v1().character_id().find(character_id) {
                 positions.push(position);
@@ -101,11 +97,29 @@ fn find_ranges(ctx: &ViewContext) -> Option<(Rect, ZRange)> {
     Some((rect, (min_z, max_z)))
 }
 
-fn iter_map_ids(ctx: &ViewContext) -> impl Iterator<Item = u64> + '_ {
-    use super::types::Vec3;
-    find_ranges(ctx).into_iter().flat_map(|(rect, (min_z, max_z))| {
-        (rect.min.x..=rect.max.x).flat_map(move |x| {
-            (rect.min.y..=rect.max.y).flat_map(move |y| (min_z..=max_z).map(move |z| Vec3::new(x, y, z).map_id()))
-        })
-    })
+fn iter_nearby_occupied(ctx: &ViewContext) -> Vec<OccupiedTileV1> {
+    let Some((rect, (min_z, max_z))) = find_ranges(ctx) else {
+        return Vec::new();
+    };
+
+    let sec_min_x = rect.min.x / SECTOR_SIZE;
+    let sec_max_x = rect.max.x / SECTOR_SIZE;
+    let sec_min_y = rect.min.y / SECTOR_SIZE;
+    let sec_max_y = rect.max.y / SECTOR_SIZE;
+
+    let mut occupied = Vec::new();
+    for z in min_z..=max_z {
+        for sx in sec_min_x..=sec_max_x {
+            for sy in sec_min_y..=sec_max_y {
+                let sector_key = ((z as u64) << 32) | ((sx as u64) << 16) | (sy as u64);
+                for tile in ctx.db.occupied_tile_v1().sector_key().filter(sector_key) {
+                    let pos = Vec3::from_map_id(tile.map_id);
+                    if pos.z == z && rect.contains(pos.into()) {
+                        occupied.push(tile);
+                    }
+                }
+            }
+        }
+    }
+    occupied
 }

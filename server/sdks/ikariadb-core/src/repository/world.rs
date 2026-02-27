@@ -71,6 +71,8 @@ pub struct WalkedMapChunkV1 {
 pub struct OccupiedTileV1 {
     #[primary_key]
     pub map_id: u64,
+    #[index(btree)]
+    pub sector_key: u64,
     pub character_ids: Vec<u64>,
 }
 

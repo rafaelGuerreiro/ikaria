@@ -117,6 +117,7 @@ impl WorldServices<'_> {
         } else {
             self.db.occupied_tile_v1().insert(OccupiedTileV1 {
                 map_id,
+                sector_key: Vec3::from_map_id(map_id).sector_key(),
                 character_ids: vec![character_id],
             });
         }
