@@ -14,6 +14,8 @@ pub const DEFAULT_CHARACTER_ATTACK_SPEED: u16 = 100;
 pub const DEFAULT_SPAWN_X: u16 = 1152;
 pub const DEFAULT_SPAWN_Y: u16 = 1152;
 
-pub const MAP_VIEW_RADIUS: u16 = 11;
+pub const MAP_VIEW_RADIUS: u16 = 32;
+
+pub const SECTOR_SIZE: u16 = 256;
 
 pub const MOVEMENT_COOLDOWN_FACTOR: u64 = 40_000;

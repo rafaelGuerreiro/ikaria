@@ -1,13 +1,12 @@
 use crate::{
-    constants::{DEFAULT_CHARACTER_SPEED, DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, MOVEMENT_COOLDOWN_FACTOR},
+    constants::{DEFAULT_CHARACTER_SPEED, DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, MOVEMENT_COOLDOWN_FACTOR, SECTOR_SIZE},
     error::{ErrorMapper, ServiceError, ServiceResult},
     repository::{
         character::{character_v1, services::CharacterReducerContext},
         world::{
             CharacterPositionV1, MapV1, MovementCooldownV1, map_v1,
-            math::into_map_id,
             movement_cooldown_v1, offline_character_position_v1, online_character_position_v1,
-            types::{DirectionV1, MapTileV1, MovementV1},
+            types::{DirectionV1, MapTileV1, MovementV1, Rect, Vec2, Vec3},
         },
     },
 };
@@ -59,8 +58,22 @@ impl WorldServices<'_> {
         }
     }
 
-    pub fn find_map_tile(&self, x: u16, y: u16, z: u16) -> Option<MapV1> {
-        self.db.map_v1().map_id().find(into_map_id(x, y, z))
+    pub fn find_tile_at(&self, pos: Vec3) -> Option<MapTileV1> {
+        let point = Vec2::new(pos.x, pos.y);
+        for sector_key in pos.nearby_sector_keys() {
+            for chunk in self.db.map_v1().sector_key().filter(sector_key) {
+                if chunk.z == pos.z && Rect::from(&chunk).contains(point) {
+                    return Some(chunk.tile);
+                }
+            }
+        }
+        None
+    }
+
+    pub fn is_walkable(&self, pos: Vec3) -> bool {
+        self.find_tile_at(pos)
+            .map(|t| t.is_walkable())
+            .unwrap_or(false)
     }
 
     pub fn get_online_position(&self, character_id: u64) -> ServiceResult<CharacterPositionV1> {
@@ -73,13 +86,7 @@ impl WorldServices<'_> {
             .ok_or_else(|| WorldError::character_position_not_found(character_id))
     }
 
-    pub fn get_map_tile(&self, x: u16, y: u16, z: u16) -> ServiceResult<MapV1> {
-        self.find_map_tile(x, y, z)
-            .ok_or_else(|| WorldError::map_tile_not_found(x, y, z))
-    }
-
     pub fn spawn_character(&self, user_id: Identity) {
-        // Ensure any existing character is despawned for this user.
         self.despawn_character(user_id);
 
         let Ok(character) = self.character_services().get_current(user_id) else {
@@ -91,13 +98,13 @@ impl WorldServices<'_> {
             .find_offline_position(character_id)
             .or_else(|| self.find_online_position(character_id))
             .unwrap_or_else(|| {
-                let (x, y, z) = (DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, GROUND_LEVEL);
+                let spawn = Vec3::new(DEFAULT_SPAWN_X, DEFAULT_SPAWN_Y, GROUND_LEVEL);
                 CharacterPositionV1 {
                     character_id,
-                    map_id: into_map_id(x, y, z),
-                    x,
-                    y,
-                    z,
+                    map_id: spawn.map_id(),
+                    x: spawn.x,
+                    y: spawn.y,
+                    z: spawn.z,
                     movement: MovementV1::default(),
                     direction: DirectionV1::default(),
                 }
@@ -127,33 +134,54 @@ impl WorldServices<'_> {
     pub fn seed_initial_map(&self) {
         let existing_count = self.db.map_v1().count();
         if existing_count > 0 {
-            // Already seeded, do not attempt to insert duplicates
             return;
         }
 
-        let water_margin = 16;
-        let grass_start = 1024;
-        let grass_end = grass_start + 256;
+        let grass_start: u16 = 1024;
+        let grass_end: u16 = grass_start + 256;
+        let water_margin: u16 = 16;
         let edge_start = grass_start - water_margin;
         let edge_end = grass_end + water_margin;
 
-        for x in edge_start..edge_end {
-            for y in edge_start..edge_end {
-                let tile = if x < grass_start || x > grass_end || y < grass_start || y > grass_end {
-                    MapTileV1::Water
-                } else {
-                    MapTileV1::Grass
-                };
+        // Grass area
+        self.insert_rect_chunks(Rect::new(grass_start, grass_start, grass_end, grass_end), GROUND_LEVEL, MapTileV1::Grass);
 
-                let tile = MapV1 {
-                    map_id: into_map_id(x, y, GROUND_LEVEL),
-                    x,
-                    y,
-                    z: GROUND_LEVEL,
+        // Water margins: top
+        self.insert_rect_chunks(Rect::new(edge_start, edge_start, edge_end, grass_start - 1), GROUND_LEVEL, MapTileV1::Water);
+        // Water margins: bottom
+        self.insert_rect_chunks(Rect::new(edge_start, grass_end + 1, edge_end, edge_end), GROUND_LEVEL, MapTileV1::Water);
+        // Water margins: left
+        self.insert_rect_chunks(Rect::new(edge_start, grass_start, grass_start - 1, grass_end), GROUND_LEVEL, MapTileV1::Water);
+        // Water margins: right
+        self.insert_rect_chunks(Rect::new(grass_end + 1, grass_start, edge_end, grass_end), GROUND_LEVEL, MapTileV1::Water);
+    }
+
+    fn insert_rect_chunks(&self, rect: Rect, z: u8, tile: MapTileV1) {
+        if rect.min.x > rect.max.x || rect.min.y > rect.max.y {
+            return;
+        }
+
+        let max_chunk = SECTOR_SIZE;
+        let mut cx = rect.min.x;
+        while cx <= rect.max.x {
+            let chunk_x2 = (cx + max_chunk - 1).min(rect.max.x);
+            let mut cy = rect.min.y;
+            while cy <= rect.max.y {
+                let chunk_y2 = (cy + max_chunk - 1).min(rect.max.y);
+                let pos = Vec3::new(cx, cy, z);
+                self.db.map_v1().insert(MapV1 {
+                    map_id: pos.map_id(),
+                    sector_key: pos.sector_key(),
+                    x1: cx,
+                    y1: cy,
+                    x2: chunk_x2,
+                    y2: chunk_y2,
+                    z,
                     tile,
-                };
-                self.db.map_v1().insert(tile);
+                });
+                cy = chunk_y2 + 1;
             }
+            cx = chunk_x2 + 1;
         }
     }
 
@@ -164,17 +192,16 @@ impl WorldServices<'_> {
 
         let character = self.character_services().get_online(character_id)?;
         let Ok(position) = self.get_online_position(character.character_id) else {
-            return Ok(()); // No position, cannot move, but also no need to error
+            return Ok(());
         };
 
         let (target_x, target_y) = movement.translate(position.x, position.y);
         if target_x == position.x && target_y == position.y {
-            return Ok(()); // No movement, stay in place
+            return Ok(());
         }
 
-        let target_tile = self.get_map_tile(target_x, target_y, position.z)?;
-
-        if !target_tile.tile.is_walkable() {
+        let target = Vec3::new(target_x, target_y, position.z);
+        if !self.is_walkable(target) {
             return Err(ServiceError::BadRequest("Target tile is not walkable".into()));
         }
 
@@ -182,12 +209,13 @@ impl WorldServices<'_> {
             .online_character_position_v1()
             .character_id()
             .update(CharacterPositionV1 {
-                x: target_x,
-                y: target_y,
-                z: position.z,
+                character_id: position.character_id,
+                map_id: target.map_id(),
+                x: target.x,
+                y: target.y,
+                z: target.z,
                 movement,
                 direction: movement.into(),
-                ..position
             });
 
         self.set_movement_cooldown(character.character_id);
@@ -214,18 +242,11 @@ impl WorldServices<'_> {
 
 #[derive(Debug, Error)]
 enum WorldError {
-    #[error("Map tile does not exist: ({0}, {1}, {2})")]
-    MapTileNotFound(u16, u16, u16),
-
     #[error("Character {0} has no position")]
     CharacterPositionNotFound(u64),
 }
 
 impl WorldError {
-    fn map_tile_not_found(x: u16, y: u16, z: u16) -> ServiceError {
-        Self::MapTileNotFound(x, y, z).map_not_found_error()
-    }
-
     fn character_position_not_found(character_id: u64) -> ServiceError {
         Self::CharacterPositionNotFound(character_id).map_not_found_error()
     }
