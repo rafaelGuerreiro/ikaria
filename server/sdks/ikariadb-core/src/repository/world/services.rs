@@ -4,8 +4,8 @@ use crate::{
     repository::{
         character::{character_v1, services::CharacterReducerContext},
         world::{
-            CharacterPositionV1, MapV1, MovementCooldownV1, map_v1,
-            movement_cooldown_v1, offline_character_position_v1, online_character_position_v1,
+            CharacterPositionV1, MapV1, MovementCooldownV1, map_v1, movement_cooldown_v1, offline_character_position_v1,
+            online_character_position_v1,
             types::{DirectionV1, MapTileV1, MovementV1, Rect, Vec2, Vec3},
         },
     },
@@ -71,9 +71,7 @@ impl WorldServices<'_> {
     }
 
     pub fn is_walkable(&self, pos: Vec3) -> bool {
-        self.find_tile_at(pos)
-            .map(|t| t.is_walkable())
-            .unwrap_or(false)
+        self.find_tile_at(pos).map(|t| t.is_walkable()).unwrap_or(false)
     }
 
     pub fn get_online_position(&self, character_id: u64) -> ServiceResult<CharacterPositionV1> {
@@ -144,16 +142,36 @@ impl WorldServices<'_> {
         let edge_end = grass_end + water_margin;
 
         // Grass area
-        self.insert_rect_chunks(Rect::new(grass_start, grass_start, grass_end, grass_end), GROUND_LEVEL, MapTileV1::Grass);
+        self.insert_rect_chunks(
+            Rect::new(grass_start, grass_start, grass_end, grass_end),
+            GROUND_LEVEL,
+            MapTileV1::Grass,
+        );
 
         // Water margins: top
-        self.insert_rect_chunks(Rect::new(edge_start, edge_start, edge_end, grass_start - 1), GROUND_LEVEL, MapTileV1::Water);
+        self.insert_rect_chunks(
+            Rect::new(edge_start, edge_start, edge_end, grass_start - 1),
+            GROUND_LEVEL,
+            MapTileV1::Water,
+        );
         // Water margins: bottom
-        self.insert_rect_chunks(Rect::new(edge_start, grass_end + 1, edge_end, edge_end), GROUND_LEVEL, MapTileV1::Water);
+        self.insert_rect_chunks(
+            Rect::new(edge_start, grass_end + 1, edge_end, edge_end),
+            GROUND_LEVEL,
+            MapTileV1::Water,
+        );
         // Water margins: left
-        self.insert_rect_chunks(Rect::new(edge_start, grass_start, grass_start - 1, grass_end), GROUND_LEVEL, MapTileV1::Water);
+        self.insert_rect_chunks(
+            Rect::new(edge_start, grass_start, grass_start - 1, grass_end),
+            GROUND_LEVEL,
+            MapTileV1::Water,
+        );
         // Water margins: right
-        self.insert_rect_chunks(Rect::new(grass_end + 1, grass_start, edge_end, grass_end), GROUND_LEVEL, MapTileV1::Water);
+        self.insert_rect_chunks(
+            Rect::new(grass_end + 1, grass_start, edge_end, grass_end),
+            GROUND_LEVEL,
+            MapTileV1::Water,
+        );
     }
 
     fn insert_rect_chunks(&self, rect: Rect, z: u8, tile: MapTileV1) {

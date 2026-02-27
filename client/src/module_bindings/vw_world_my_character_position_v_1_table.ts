@@ -8,15 +8,19 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from 'spacetimedb';
-import { MovementV1, DirectionV1 } from './types';
+} from "spacetimedb";
+import {
+  MovementV1,
+  DirectionV1,
+} from "./types";
+
 
 export default __t.row({
-  characterId: __t.u64().name('character_id'),
-  mapId: __t.u64().name('map_id'),
+  characterId: __t.u64().name("character_id"),
+  mapId: __t.u64().name("map_id"),
   x: __t.u16(),
   y: __t.u16(),
-  z: __t.u16(),
+  z: __t.u8(),
   get movement() {
     return MovementV1;
   },

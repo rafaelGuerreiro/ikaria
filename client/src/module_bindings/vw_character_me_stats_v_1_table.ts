@@ -8,16 +8,16 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from 'spacetimedb';
+} from "spacetimedb";
 
 export default __t.row({
-  characterId: __t.u64().name('character_id'),
-  userId: __t.identity().name('user_id'),
+  characterId: __t.u64().name("character_id"),
+  userId: __t.identity().name("user_id"),
   level: __t.u16(),
   experience: __t.u64(),
   health: __t.u32(),
   mana: __t.u32(),
   capacity: __t.u32(),
   speed: __t.u16(),
-  attackSpeed: __t.u16().name('attack_speed'),
+  attackSpeed: __t.u16().name("attack_speed"),
 });

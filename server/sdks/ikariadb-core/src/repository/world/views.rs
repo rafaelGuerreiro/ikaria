@@ -2,10 +2,7 @@ use crate::{
     constants::{MAP_VIEW_RADIUS, SECTOR_SIZE},
     repository::{
         character::{CharacterV1, character_v1__view, online_character_v1__view},
-        world::{
-            CharacterPositionV1, MapV1, map_v1__view, online_character_position_v1__view,
-            types::Rect,
-        },
+        world::{CharacterPositionV1, MapV1, map_v1__view, online_character_position_v1__view, types::Rect},
     },
 };
 use spacetimedb::{ViewContext, view};
@@ -87,12 +84,9 @@ fn find_ranges(ctx: &ViewContext) -> Option<(Rect, ZRange)> {
 
 fn iter_map_ids(ctx: &ViewContext) -> impl Iterator<Item = u64> + '_ {
     use super::types::Vec3;
-    find_ranges(ctx)
-        .into_iter()
-        .flat_map(|(rect, (min_z, max_z))| {
-            (rect.min.x..=rect.max.x).flat_map(move |x| {
-                (rect.min.y..=rect.max.y)
-                    .flat_map(move |y| (min_z..=max_z).map(move |z| Vec3::new(x, y, z).map_id()))
-            })
+    find_ranges(ctx).into_iter().flat_map(|(rect, (min_z, max_z))| {
+        (rect.min.x..=rect.max.x).flat_map(move |x| {
+            (rect.min.y..=rect.max.y).flat_map(move |y| (min_z..=max_z).map(move |z| Vec3::new(x, y, z).map_id()))
         })
+    })
 }

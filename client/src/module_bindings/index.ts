@@ -31,109 +31,102 @@ import {
   type RemoteModule as __RemoteModule,
   type SubscriptionEventContextInterface as __SubscriptionEventContextInterface,
   type SubscriptionHandleImpl as __SubscriptionHandleImpl,
-} from 'spacetimedb';
+} from "spacetimedb";
 
 // Import all reducer arg schemas
-import CreateCharacterV1Reducer from './create_character_v_1_reducer';
-import MoveCharacterV1Reducer from './move_character_v_1_reducer';
-import SelectCharacterV1Reducer from './select_character_v_1_reducer';
+import CreateCharacterV1Reducer from "./create_character_v_1_reducer";
+import MoveCharacterV1Reducer from "./move_character_v_1_reducer";
+import SelectCharacterV1Reducer from "./select_character_v_1_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
-import VwCharacterAllMineStatsV1Row from './vw_character_all_mine_stats_v_1_table';
-import VwCharacterAllMineV1Row from './vw_character_all_mine_v_1_table';
-import VwCharacterMeStatsV1Row from './vw_character_me_stats_v_1_table';
-import VwCharacterMeV1Row from './vw_character_me_v_1_table';
-import VwNearbyCharactersV1Row from './vw_nearby_characters_v_1_table';
-import VwUserMeV1Row from './vw_user_me_v_1_table';
-import VwWorldMapV1Row from './vw_world_map_v_1_table';
-import VwWorldMyCharacterPositionV1Row from './vw_world_my_character_position_v_1_table';
+import VwCharacterAllMineStatsV1Row from "./vw_character_all_mine_stats_v_1_table";
+import VwCharacterAllMineV1Row from "./vw_character_all_mine_v_1_table";
+import VwCharacterMeStatsV1Row from "./vw_character_me_stats_v_1_table";
+import VwCharacterMeV1Row from "./vw_character_me_v_1_table";
+import VwNearbyCharactersV1Row from "./vw_nearby_characters_v_1_table";
+import VwUserMeV1Row from "./vw_user_me_v_1_table";
+import VwWorldMapV1Row from "./vw_world_map_v_1_table";
+import VwWorldMyCharacterPositionV1Row from "./vw_world_my_character_position_v_1_table";
 
 /** Type-only namespace exports for generated type groups. */
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
-  vw_character_all_mine_stats_v1: __table(
-    {
-      name: 'vw_character_all_mine_stats_v1',
-      indexes: [],
-      constraints: [],
-    },
-    VwCharacterAllMineStatsV1Row,
-  ),
-  vw_character_all_mine_v1: __table(
-    {
-      name: 'vw_character_all_mine_v1',
-      indexes: [],
-      constraints: [],
-    },
-    VwCharacterAllMineV1Row,
-  ),
-  vw_character_me_stats_v1: __table(
-    {
-      name: 'vw_character_me_stats_v1',
-      indexes: [],
-      constraints: [],
-    },
-    VwCharacterMeStatsV1Row,
-  ),
-  vw_character_me_v1: __table(
-    {
-      name: 'vw_character_me_v1',
-      indexes: [],
-      constraints: [],
-    },
-    VwCharacterMeV1Row,
-  ),
-  vw_nearby_characters_v1: __table(
-    {
-      name: 'vw_nearby_characters_v1',
-      indexes: [],
-      constraints: [],
-    },
-    VwNearbyCharactersV1Row,
-  ),
-  vw_user_me_v1: __table(
-    {
-      name: 'vw_user_me_v1',
-      indexes: [],
-      constraints: [],
-    },
-    VwUserMeV1Row,
-  ),
-  vw_world_map_v1: __table(
-    {
-      name: 'vw_world_map_v1',
-      indexes: [],
-      constraints: [],
-    },
-    VwWorldMapV1Row,
-  ),
-  vw_world_my_character_position_v1: __table(
-    {
-      name: 'vw_world_my_character_position_v1',
-      indexes: [],
-      constraints: [],
-    },
-    VwWorldMyCharacterPositionV1Row,
-  ),
+  vw_character_all_mine_stats_v1: __table({
+    name: 'vw_character_all_mine_stats_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwCharacterAllMineStatsV1Row),
+  vw_character_all_mine_v1: __table({
+    name: 'vw_character_all_mine_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwCharacterAllMineV1Row),
+  vw_character_me_stats_v1: __table({
+    name: 'vw_character_me_stats_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwCharacterMeStatsV1Row),
+  vw_character_me_v1: __table({
+    name: 'vw_character_me_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwCharacterMeV1Row),
+  vw_nearby_characters_v1: __table({
+    name: 'vw_nearby_characters_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwNearbyCharactersV1Row),
+  vw_user_me_v1: __table({
+    name: 'vw_user_me_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwUserMeV1Row),
+  vw_world_map_v1: __table({
+    name: 'vw_world_map_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwWorldMapV1Row),
+  vw_world_my_character_position_v1: __table({
+    name: 'vw_world_my_character_position_v1',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, VwWorldMyCharacterPositionV1Row),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
-  __reducerSchema('create_character_v1', CreateCharacterV1Reducer),
-  __reducerSchema('move_character_v1', MoveCharacterV1Reducer),
-  __reducerSchema('select_character_v1', SelectCharacterV1Reducer),
+  __reducerSchema("create_character_v1", CreateCharacterV1Reducer),
+  __reducerSchema("move_character_v1", MoveCharacterV1Reducer),
+  __reducerSchema("select_character_v1", SelectCharacterV1Reducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
-const proceduresSchema = __procedures();
+const proceduresSchema = __procedures(
+);
 
 /** The remote SpacetimeDB module schema, both runtime and type information. */
 const REMOTE_MODULE = {
   versionInfo: {
-    cliVersion: '2.0.1' as const,
+    cliVersion: "2.0.1" as const,
   },
   tables: tablesSchema.schemaType.tables,
   reducers: reducersSchema.reducersType.reducers,
@@ -145,9 +138,7 @@ const REMOTE_MODULE = {
 >;
 
 /** The tables available in this remote SpacetimeDB module. Each table reference doubles as a query builder. */
-export const tables: __QueryBuilder<typeof tablesSchema.schemaType> = __makeQueryBuilder(
-  tablesSchema.schemaType,
-);
+export const tables: __QueryBuilder<typeof tablesSchema.schemaType> = __makeQueryBuilder(tablesSchema.schemaType);
 
 /** The reducers available in this remote SpacetimeDB module. */
 export const reducers = __convertToAccessorMap(reducersSchema.reducersType.reducers);
@@ -173,10 +164,7 @@ export class DbConnectionBuilder extends __DbConnectionBuilder<DbConnection> {}
 export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
   /** Creates a new {@link DbConnectionBuilder} to configure and connect to the remote SpacetimeDB instance. */
   static builder = (): DbConnectionBuilder => {
-    return new DbConnectionBuilder(
-      REMOTE_MODULE,
-      (config: __DbConnectionConfig<typeof REMOTE_MODULE>) => new DbConnection(config),
-    );
+    return new DbConnectionBuilder(REMOTE_MODULE, (config: __DbConnectionConfig<typeof REMOTE_MODULE>) => new DbConnection(config));
   };
 
   /** Creates a new {@link SubscriptionBuilder} to configure a subscription to the remote SpacetimeDB instance. */
@@ -184,3 +172,4 @@ export class DbConnection extends __DbConnectionImpl<typeof REMOTE_MODULE> {
     return new SubscriptionBuilder(this);
   };
 }
+
