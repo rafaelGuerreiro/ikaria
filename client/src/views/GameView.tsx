@@ -60,11 +60,15 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   useEffect(() => {
     if (!sceneRef.current || mapRows.length === 0) return;
 
-    const tiles: MapTile[] = mapRows.map((row) => ({
-      x: row.x,
-      y: row.y,
-      tag: row.tile.tag,
-    }));
+    const tiles: MapTile[] = mapRows.flatMap((row) => {
+      const result: MapTile[] = [];
+      for (let x = row.x1; x <= row.x2; x++) {
+        for (let y = row.y1; y <= row.y2; y++) {
+          result.push({ x, y, tag: row.tile.tag });
+        }
+      }
+      return result;
+    });
 
     sceneRef.current.updateMap(tiles);
   }, [mapRows]);

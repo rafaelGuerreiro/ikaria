@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { PlayerMovement, tileToPixel, type Movement } from './PlayerMovement';
 
 const TILE_SIZE = 16;
-const VISIBLE_RADIUS = 10;
+const VISIBLE_RADIUS = 11; // tiles visible from center; server sends 32 so rest is buffer
 
 const TILE_KEYS: Record<string, string> = {
   Grass: 'grass',
@@ -27,6 +27,7 @@ type PlacedTile = {
 };
 
 export class GameScene extends Phaser.Scene {
+  private mapContainer: Phaser.GameObjects.Container | null = null;
   private tiles = new Map<string, PlacedTile>();
   private tileTagsByCoord = new Map<string, string>();
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
@@ -55,7 +56,15 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setZoom(3);
     this.cursors = this.input.keyboard!.createCursorKeys();
 
-    this.movement = new PlayerMovement(this);
+    this.mapContainer = this.add.container(0, 0);
+
+    const maskHalf = VISIBLE_RADIUS * TILE_SIZE;
+    const maskShape = this.make.graphics();
+    maskShape.fillStyle(0xffffff);
+    maskShape.fillRect(-maskHalf, -maskHalf, maskHalf * 2, maskHalf * 2);
+    this.mapContainer.setMask(maskShape.createGeometryMask());
+
+    this.movement = new PlayerMovement(this, this.mapContainer);
     this.movement.setTileLookup((x, y) => this.tileTagsByCoord.get(tileKey(x, y)));
 
     this.ready = true;
@@ -144,6 +153,7 @@ export class GameScene extends Phaser.Scene {
         .image(tileToPixel(tile.x), tileToPixel(tile.y), imageKey)
         .setDisplaySize(TILE_SIZE, TILE_SIZE);
 
+      this.mapContainer!.add(image);
       this.tiles.set(key, { tag: tile.tag, image });
     }
 
@@ -154,8 +164,6 @@ export class GameScene extends Phaser.Scene {
         this.tileTagsByCoord.delete(key);
       }
     }
-
-    this.updateTileVisibility();
   }
 
   updatePlayerPosition(x: number, y: number) {
@@ -165,16 +173,5 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.movement?.updateServerPosition(x, y);
-  }
-
-  private updateTileVisibility() {
-    const center = this.movement?.position ?? { x: 0, y: 0 };
-
-    for (const [key, placed] of this.tiles) {
-      const [tx, ty] = key.split(',').map(Number);
-      const dx = Math.abs(tx - center.x);
-      const dy = Math.abs(ty - center.y);
-      placed.image.setVisible(dx <= VISIBLE_RADIUS && dy <= VISIBLE_RADIUS);
-    }
   }
 }

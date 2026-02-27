@@ -34,6 +34,7 @@ type TileLookup = (x: number, y: number) => string | undefined;
 
 export class PlayerMovement {
   private scene: Phaser.Scene;
+  private mapContainer: Phaser.GameObjects.Container;
   private playerSprite: Phaser.GameObjects.Image | null = null;
   private moveCallback: ((movement: Movement) => void) | null = null;
   private tileLookup: TileLookup | null = null;
@@ -46,8 +47,9 @@ export class PlayerMovement {
   private speed = 120;
   private initialized = false;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, mapContainer: Phaser.GameObjects.Container) {
     this.scene = scene;
+    this.mapContainer = mapContainer;
   }
 
   setMoveCallback(callback: (movement: Movement) => void) {
@@ -77,7 +79,6 @@ export class PlayerMovement {
     const targetX = this.predictedX + delta.dx;
     const targetY = this.predictedY + delta.dy;
 
-    // client-side water check — don't even send the request
     if (this.tileLookup) {
       const tag = this.tileLookup(targetX, targetY);
       if (tag === 'Water') return;
@@ -90,9 +91,9 @@ export class PlayerMovement {
     this.isLerping = true;
 
     this.scene.tweens.add({
-      targets: this.playerSprite,
-      x: tileToPixel(targetX),
-      y: tileToPixel(targetY),
+      targets: this.mapContainer,
+      x: -tileToPixel(targetX),
+      y: -tileToPixel(targetY),
       duration,
       ease: 'Linear',
       onComplete: () => {
@@ -108,12 +109,9 @@ export class PlayerMovement {
     this.serverX = x;
     this.serverY = y;
 
-    const pixelX = tileToPixel(x);
-    const pixelY = tileToPixel(y);
-
     if (!this.playerSprite) {
       this.playerSprite = this.scene.add
-        .image(pixelX, pixelY, 'player')
+        .image(0, 0, 'player')
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setDepth(1);
 
@@ -121,6 +119,7 @@ export class PlayerMovement {
 
       this.predictedX = x;
       this.predictedY = y;
+      this.mapContainer.setPosition(-tileToPixel(x), -tileToPixel(y));
       this.initialized = true;
       return;
     }
@@ -128,14 +127,13 @@ export class PlayerMovement {
     if (!this.initialized) {
       this.predictedX = x;
       this.predictedY = y;
-      this.playerSprite.setPosition(pixelX, pixelY);
+      this.mapContainer.setPosition(-tileToPixel(x), -tileToPixel(y));
       this.initialized = true;
       return;
     }
 
     // while lerping, just store the server position — reconcile happens on complete
     if (!this.isLerping) {
-      this.playerSprite.setPosition(pixelX, pixelY);
       this.reconcile();
     }
   }
@@ -148,6 +146,6 @@ export class PlayerMovement {
     this.predictedX = this.serverX;
     this.predictedY = this.serverY;
 
-    this.playerSprite?.setPosition(tileToPixel(this.serverX), tileToPixel(this.serverY));
+    this.mapContainer.setPosition(-tileToPixel(this.serverX), -tileToPixel(this.serverY));
   }
 }
