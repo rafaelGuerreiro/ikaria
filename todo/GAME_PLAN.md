@@ -2,12 +2,11 @@
 
 ## Problem and current state
 - Goal: deliver a pseudo-Tibia style game loop with small, visible, playable tasks.
-- Current repo already has client state flow (`SignIn -> CharacterSelect -> Game`) with world selection before sign-in.
+- Current repo already has client state flow (`WorldSelection -> CharacterSelect -> CharacterCreation -> Game`) with world selection before sign-in.
 - Token-based sign-in already connects directly to the selected world module using a single session connection.
 - Backend is split into world-specific modules (`world-alpha-ikariadb`, `world-draconis-ikariadb`) over shared `ikariadb-core`.
-- Character creation UI exists but backend reducer is still missing.
-- Game view is still placeholder UI; no tile map rendering, no movement loop, and no player sync.
-- Backend currently defines schema/events plus lifecycle reducers, but lacks gameplay reducers for create/spawn/move/chat/inventory/stairs.
+- Client is React + Phaser + SpacetimeDB (TypeScript), using `subscribeToAllTables()` with local table reads.
+- Game view uses Tibia-style panel layout with side panels, top bar, resizable bottom panel, and square center viewport.
 
 ## Confirmed product decisions
 - Milestone 1 focus: **proper character creation workflow**.
@@ -17,7 +16,8 @@
 - World model: **distinct world servers ("Worlds") with different feature sets and maps over time**.
 - Post-milestone-3 priority: **character stats foundation** (`capacity`, `hp`, `mana`, and skills: `melee`, `distance`, `magic`, `shield`).
 - Stats scope includes **progression and regeneration**, delivered in small playable slices.
-- Character creation fields: **name + gender only**.
+- Character creation fields: **name + gender + race**.
+- Character races: **Human and Elf**.
 - Character slots: **unlimited**.
 - Character names: **globally unique**.
 - Name validation: **3-20 chars, letters and spaces only**.
@@ -37,87 +37,100 @@
 - Milestone 5 priority: **stairs traversal between floors**.
 - Stair up control: **left mouse click on stair tile goes up**.
 - Stair down control: **walking into stair hole goes down**.
+- Milestone 6 priority: **mob AI** with two animal types (rats and trolls).
+- Mob spawning: **fixed spawn points seeded with the map**.
+- Mob idle behavior: **wander randomly until a player enters aggro radius**.
+- Mob chase behavior: **once locked on a player, keep chasing until death** (Tibia-style).
+- Mob movement: **server-side scheduled tick** (e.g. every 500ms).
+- Milestone 7 priority: **melee combat** between players and mobs.
+- Combat model: **melee auto-attack** (click target, character attacks automatically when adjacent).
+- Mob death: **respawn after a cooldown timer** at original spawn point.
+- Combat XP: **basic XP from kills feeding into M4 stats system**.
 
 ## Delivery strategy (small playable slices)
 Build vertical slices where each slice can be tested in-game immediately.
 
 ### Milestone 0: world split foundation (before gameplay milestones)
-**Status:** In Progress (playtest blocked by missing backend gameplay reducers)
+**Status:** ✅ Complete
 
 #### Backend track
 - ✅ `m0-split-backend-modules` **COMPLETED**
    - Split backend into distinct world servers/modules that can diverge in features and maps.
-   - Created `bins/world-alpha-ikariadb` as parallel backend module.
-   - Created `bins/world-draconis-ikariadb` as parallel backend module.
-   - Extracted shared backend code into `sdks/ikariadb-core` to eliminate duplication.
-   - Both `bins/world-alpha-ikariadb` and `bins/world-draconis-ikariadb` now delegate to shared core.
+   - Created `server/bins/world-alpha-ikariadb` as parallel backend module.
+   - Created `server/bins/world-draconis-ikariadb` as parallel backend module.
+   - Extracted shared backend code into `server/sdks/ikariadb-core` to eliminate duplication.
+   - Both world modules now delegate to shared core.
    - Playable result: each world can run independently.
-   - **Next:** Keep world simulation schema isolated per world server.
 - ✅ `m0-character-service-schema` **COMPLETED**
    - Define world-scoped character domain so characters are owned by and listed within a single selected world.
    - Playable result: character list is isolated per world.
-- ⚠️ `m0-world-service-schema` **PARTIAL**
+- ✅ `m0-world-service-schema` **COMPLETED**
    - Core world schema tables exist (`map_v1`, `town_temple_v1`, `character_position_v1`, `item_definition_v1`) and are isolated per world module.
-   - Backend gameplay reducers/services that make this simulation playable are still missing.
-   - Playable result: world data foundations exist, but world simulation loop is not implemented.
-- ⚠️ `m0-world-registry-contract` **PARTIAL**
-   - World registry contract currently covers module routing (`module_name`) and world label (`name`).
-   - Feature-set/map-identity metadata contract is not implemented yet.
-   - Playable result: basic world routing exists, richer metadata is still pending.
+   - Gameplay reducers/services exist: `create_character_v1`, `select_character_v1`, `move_character_v1`, `seed_initial_map`.
+   - Playable result: world data and simulation loop are implemented.
+- ✅ `m0-world-registry-contract` **COMPLETED**
+   - World registry covers module routing (`database`) and world label (`name`, `description`).
+   - Client reads world list from `client/src/worlds.ts` config.
+   - Playable result: world routing works for all current needs.
 
 #### Client track
 - ✅ `m0-client-world-selection` **COMPLETED**
-   - Add manual world selection screen before initial sign-in.
+   - Manual world selection screen before initial sign-in.
    - Playable result: player explicitly chooses a world first.
 - ✅ `m0-client-single-connection-flow` **COMPLETED**
-   - Implement single connection flow: connect/authenticate only against selected world module.
+   - Single connection flow: connect/authenticate only against selected world module.
    - Playable result: no second authentication is required to enter gameplay.
 
 #### Shared validation
-- ⛔ `m0-world-split-playtest` **BLOCKED**
-   - Validate loop: choose world -> sign in -> see world-scoped characters -> enter matching world server.
-   - Blocked because backend gameplay reducers are not implemented yet (for example, character creation still does not call a backend reducer).
-   - Playable result: pre-M1 architecture will be proven once backend reducers exist.
+- ✅ `m0-world-split-playtest` **COMPLETED**
+   - Full loop validated: choose world → sign in → see world-scoped characters → enter matching world server.
+   - Playable result: pre-M1 architecture is proven.
 
 ### Milestone 1: character creation + multiplayer walking
-**Status:** Not Started (client has character-creation UI scaffold only)
+**Status:** ✅ Complete
 
 #### Backend track
-- ⚠️ `m1-create-character-schema` **PARTIAL**
-   - Add schema support required for name+gender creation contract.
-   - Current backend has character tables but does not yet model a proper name+gender creation contract end-to-end.
+- ✅ `m1-create-character-schema` **COMPLETED**
+   - Schema supports name+gender+race creation contract with `CharacterV1` and `CharacterStatsV1` tables.
    - Playable result: backend contract supports proper create payload.
-- `m1-create-character-reducer`
-   - Implement reducer/service with validation and global name uniqueness.
+- ✅ `m1-create-character-reducer` **COMPLETED**
+   - Reducer/service with name validation (3-20 chars, letters/spaces, no consecutive separators) and global name uniqueness via `#[unique]` canonical name.
+   - Auto-selects character and initializes stats on creation.
    - Playable result: reducer callable and creates persisted characters.
-- `m1-seed-fixed-map`
-   - Seed deterministic handcrafted map + spawn/temple points at init.
+- ✅ `m1-seed-fixed-map` **COMPLETED**
+   - Deterministic handcrafted map seeded at init: grass area surrounded by water margins, with spawn/temple points.
+   - Idempotent seeding via `seed_initial_map()` triggered by `SystemInit` event.
    - Playable result: world data exists to render and spawn in.
-- `m1-character-spawn-session`
-   - Ensure created/selected character receives world position for session start.
+- ✅ `m1-character-spawn-session` **COMPLETED**
+   - `spawn_character()` assigns world position on character selection (finds existing or creates at default spawn).
+   - Position stored in `online_character_position_v1` table.
    - Playable result: entering game has a valid in-world spawn.
-- `m1-move-reducer`
-   - Add server-authoritative movement reducer with walkability/bounds checks.
+- ✅ `m1-move-reducer` **COMPLETED**
+   - Server-authoritative movement reducer with cooldown, bounds, occupancy, and walkability checks.
+   - 8-direction movement with diagonal Pythagorean cooldown scaling.
    - Playable result: position updates are authoritative on server.
 
 #### Client track
-- ⚠️ `m1-create-character-client-flow` **PARTIAL (UI only)**
-   - Wire CharacterSelect form to reducer, show errors, auto-enter game on success.
-   - Current client collects name/gender but logs TODO/warnings because reducer call is not implemented.
+- ✅ `m1-create-character-client-flow` **COMPLETED**
+   - CharacterCreationView calls `createCharacterV1` reducer with name/gender/race.
+   - Error handling and auto-enter game on success.
    - Playable result: user can create character and transition to game.
-- `m1-game-map-render`
-   - Render simple tile map in Bevy game state.
-   - Playable result: player sees a real map instead of placeholder.
-- `m1-sync-player-entities`
-   - Render local player + other players from synchronized table data.
+- ✅ `m1-game-map-render` **COMPLETED**
+   - Phaser renders tile map from server `vw_world_map_v1` data (grass/water tiles).
+   - Tibia-style panel layout: side panels (200px), top bar (40px), resizable bottom panel, square center viewport showing 10 tiles in each direction.
+   - Playable result: player sees a real map.
+- ✅ `m1-sync-player-entities` **COMPLETED**
+   - Local player + nearby players rendered from `vw_nearby_characters_v1` and `vw_nearby_character_positions_v1` table data.
+   - Smooth movement tweening with timestamp-based interpolation.
    - Playable result: multiplayer visibility in shared map.
-- `m1-wasd-network-input`
-   - Send WASD as movement reducer commands and reflect server state updates.
+- ✅ `m1-wasd-network-input` **COMPLETED**
+   - WASD + arrow keys send `moveCharacterV1` reducer commands (8-direction).
+   - Client-side prediction with server reconciliation.
    - Playable result: walking works end-to-end through server.
 
 #### Shared validation
-- `m1-playtest-multiplayer-loop`
-   - Validate full loop: create -> auto-enter -> walk -> see others.
+- ✅ `m1-playtest-multiplayer-loop` **COMPLETED**
+   - Full loop validated: create → auto-enter → walk → see others.
    - Playable result: first pseudo-Tibia multiplayer walking loop complete.
 
 ### Milestone 2: local chat bubbles
@@ -239,6 +252,99 @@ Build vertical slices where each slice can be tested in-game immediately.
 - `m5-stair-playtest-loop`
    - Validate loop: click stair up -> move around upper floor -> walk into hole -> return down with correct state sync.
    - Playable result: bi-directional stair traversal is fully playable.
+
+### Milestone 6: mob AI (rats and trolls)
+**Status:** Not Started
+
+#### Backend track
+- `m6-mob-definition-schema`
+   - Define mob type table (`MobDefinitionV1`) with species (Rat, Troll), base stats (hp, speed, aggro radius, damage range), and spawn cooldown.
+   - Playable result: mob types are data-driven and extensible.
+- `m6-mob-spawn-points`
+   - Define spawn point table (`MobSpawnV1`) with fixed positions seeded alongside the map in `seed_initial_map`.
+   - Each spawn point references a mob definition, a position, and a respawn timer.
+   - Playable result: world has predefined mob spawn locations.
+- `m6-mob-instance-lifecycle`
+   - Define live mob instance table (`MobInstanceV1`) with current hp, position, target, and state (Idle/Chasing).
+   - Spawn mob instances from spawn points at init and after respawn cooldown.
+   - Playable result: mobs exist as live entities in the world.
+- `m6-mob-tick-scheduler`
+   - Implement server-side scheduled tick (e.g. every 500ms) that drives all mob behavior.
+   - Tick iterates live mob instances and executes AI state per mob.
+   - Playable result: mobs act autonomously on a regular cadence.
+- `m6-mob-idle-wander`
+   - Implement idle behavior: mob picks a random walkable adjacent tile and moves to it.
+   - Respect movement cooldown and walkability/occupancy rules (reuse existing tile checks).
+   - Playable result: mobs wander visibly when no player is nearby.
+- `m6-mob-aggro-chase`
+   - Implement aggro detection: when a player enters the mob's aggro radius, lock on as target.
+   - Implement chase behavior: mob pathfinds toward target player each tick (simple greedy step toward target).
+   - Once locked, mob keeps chasing until it or the target dies (Tibia-style persistent aggro).
+   - Playable result: mobs chase players and don't give up.
+
+#### Client track
+- `m6-render-mobs`
+   - Render mob instances from server table data as sprites with species-specific visuals and name labels.
+   - Smooth movement tweening using the same timestamp interpolation as player entities.
+   - Playable result: mobs are visible and animate smoothly in the game view.
+- `m6-mob-sync-updates`
+   - React to mob position/state changes from server, including spawn and despawn events.
+   - Playable result: mobs appear, move, and disappear in sync with server state.
+
+#### Shared validation
+- `m6-mob-playtest-loop`
+   - Validate loop: enter world → see mobs wandering → approach mob → mob locks on and chases → mob follows persistently.
+   - Playable result: mob AI is visible and responsive in multiplayer.
+
+### Milestone 7: melee combat
+**Status:** Not Started
+
+#### Backend track
+- `m7-combat-target-system`
+   - Add target selection reducer: player clicks a mob to set it as combat target.
+   - Store active combat target per character in server state.
+   - Playable result: player can designate an attack target.
+- `m7-melee-auto-attack`
+   - Implement melee auto-attack loop: when character has a target and is adjacent, deal damage on a combat tick interval.
+   - Damage calculated from character stats (melee skill, base damage) with randomized range.
+   - Playable result: standing next to a targeted mob deals damage automatically.
+- `m7-mob-melee-attack`
+   - Implement mob attack behavior: when mob is adjacent to its chase target, deal damage based on mob definition stats.
+   - Mobs attack on their scheduled tick when in melee range.
+   - Playable result: mobs fight back when close to a player.
+- `m7-damage-and-death`
+   - Apply damage to hp for both players and mobs. When mob hp reaches 0, remove mob instance.
+   - When player hp reaches 0, handle death (e.g. respawn at temple with penalty — keep simple for now).
+   - Playable result: combat has consequences for both sides.
+- `m7-mob-respawn`
+   - After mob death, start respawn cooldown timer on the spawn point.
+   - When cooldown expires, spawn a fresh mob instance at the original spawn position.
+   - Playable result: mobs come back after being killed.
+- `m7-combat-xp`
+   - Award XP on mob kill based on mob definition (rats give less, trolls give more).
+   - Feed XP into M4 stats system (melee skill progression, level/experience).
+   - Playable result: killing mobs progresses character stats.
+
+#### Client track
+- `m7-target-selection-ui`
+   - Implement click-to-target on mob sprites. Show visual indicator on targeted mob (highlight or health bar).
+   - Playable result: player can see which mob is targeted.
+- `m7-health-bars`
+   - Render health bars above mobs and the local player showing current hp relative to max.
+   - Update in real-time as damage is applied.
+   - Playable result: combat damage is visually clear.
+- `m7-combat-feedback`
+   - Show damage numbers or hit indicators when attacks land (on both player and mobs).
+   - Show death animation or visual feedback when a mob is killed.
+   - Playable result: combat feels responsive and readable.
+- `m7-death-respawn-client`
+   - Handle player death: show death state, transition to respawn at temple.
+   - Playable result: dying and respawning works smoothly on client.
+
+#### Shared validation
+- `m7-combat-playtest-loop`
+   - Validate loop: target mob → auto-attack when adjacent → take damage from mob → kill mob → gain XP → mob respawns → die to mob → respawn at temple.
+   - Playable result: full melee combat loop is playable end-to-end.
 
 ## Notes
 - Keep each slice merged only when it is playable and observable in-game.
