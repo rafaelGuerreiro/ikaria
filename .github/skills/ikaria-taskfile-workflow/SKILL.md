@@ -9,24 +9,32 @@ Use this skill when adding/changing automation or deciding how to validate chang
 
 ## Root-first task usage
 
-Run tasks from repository root unless a task is explicitly server-local:
+Run tasks from repository root unless a task is explicitly scoped:
 
-- `task fmt`
-- `task clippy`
-- `task check`
-- `task test`
-- `task build`
-- `task test-server`
-- `task test-client`
+- `task check` (server:check + client:lint)
+- `task test` (check + server:test)
+- `task build` (server wasm + client build)
+
+Server-only tasks (via `server/Taskfile.yml`):
+
+- `task server:fmt`
+- `task server:check` (deps: fmt → clippy → cargo check)
+- `task server:test` (deps: check)
+- `task server:build` (sdk-ts + wasm targets)
+
+Client-only tasks (via `client/Taskfile.yml`):
+
+- `task client:lint`
+- `task client:build`
 
 ## Dependency policy
 
-- All non-format tasks should depend on `clippy`.
-- `clippy` should depend on `fmt`.
-- This guarantees `task test`, `task build`, and other task entrypoints run formatting and linting first.
+- Server: `check` depends on `fmt`, which runs `cargo fmt`. Then clippy runs before cargo check.
+- Client: `lint` runs eslint.
+- Root `test` depends on `check` to guarantee formatting and linting run first.
 
 ## Task design patterns
 
 - Keep tasks small and single-purpose.
 - Prefer explicit `deps` over repeated command blocks.
-- Keep Rust workspace commands at root unless there is a strong server-only reason.
+- Root Taskfile includes server and client via `includes:`.

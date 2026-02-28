@@ -1,44 +1,35 @@
 version: '3'
 
-tasks:
-  sdk-rust:
-    desc: Generate Rust types into sdks/types/src/autogen
-    cmds:
-      - rm -rf sdks/types/src/autogen
-      - mkdir -p sdks/types/src/autogen
-      - spacetime generate --lang rust --out-dir sdks/types/src/autogen --module-path bins/world-draconis-ikariadb
+includes:
+  server:
+    taskfile: server/Taskfile.yml
+    dir: server
+  client:
+    taskfile: client/Taskfile.yml
+    dir: client
 
-  fmt:
-    desc: Format all workspace code
-    cmds:
-      - cargo fmt --all
+tasks:
+  # ── Orchestration ──────────────────────────────────────────────────
 
   check:
-    desc: Check all workspace targets
-    deps: [fmt]
+    desc: Check all projects
     cmds:
-      - cargo clippy --workspace --all-targets
-      - cargo check --workspace --all-targets
+      - task server:check
+      - task client:lint
 
   test:
-    desc: Run all workspace tests
+    desc: Run all tests
     deps: [check]
     cmds:
-      - cargo test --workspace
+      - task server:test
 
   build:
-    desc: Build server wasm target and host workspace targets
+    desc: Build all projects
     cmds:
-      - task sdk-rust
-      - task check
-      - cargo build -p world-alpha-ikariadb --target wasm32-unknown-unknown
-      - cargo build -p world-draconis-ikariadb --target wasm32-unknown-unknown
-      - cargo build --workspace --exclude world-alpha-ikariadb --exclude world-draconis-ikariadb
+      - task server:build
+      - task client:build
 
-  run:
-    desc: Run the ikaria client
-    cmds:
-      - cargo run -p ikaria
+  # ── Deploy ─────────────────────────────────────────────────────────
 
   login:
     desc: Login to Spacetime using .env token
@@ -47,18 +38,18 @@ tasks:
 
   publish:
     desc: Publish world-alpha-ikariadb to maincloud
-    deps: [login, build]
+    deps: [login, server:build]
     cmds:
-      - spacetime publish -p bins/world-alpha-ikariadb -s maincloud -y world-alpha-ikariadb
+      - spacetime publish -p server/bins/world-alpha-ikariadb -s maincloud -y world-alpha-ikariadb
 
   unsafe-overwrite:
     desc: Publish world-alpha-ikariadb to maincloud and delete data
-    deps: [login, build]
+    deps: [login, server:build]
     cmds:
-      - spacetime publish -p bins/world-alpha-ikariadb -s maincloud -y world-alpha-ikariadb --delete-data
+      - spacetime publish -p server/bins/world-alpha-ikariadb -s maincloud -y world-alpha-ikariadb --delete-data
 
   publish-prod:
     desc: Publish world-draconis-ikariadb to maincloud
-    deps: [login, build]
+    deps: [login, server:build]
     cmds:
-      - spacetime publish -p bins/world-draconis-ikariadb -s maincloud -y world-draconis-ikariadb
+      - spacetime publish -p server/bins/world-draconis-ikariadb -s maincloud -y world-draconis-ikariadb
