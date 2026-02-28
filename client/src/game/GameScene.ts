@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { PlayerMovement, tileToPixel, type Movement } from './PlayerMovement';
 
 const TILE_SIZE = 16;
-const VISIBLE_RADIUS = 11; // tiles visible from center; server sends 32 so rest is buffer
+const VISIBLE_TILES = 10; // tiles visible from center in each direction
+const VISIBLE_AREA = (VISIBLE_TILES * 2 + 1) * TILE_SIZE; // 21 tiles in world pixels
 const TILE_KEYS: Record<string, string> = {
   Grass: 'grass',
   Water: 'water',
@@ -70,15 +71,16 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setBackgroundColor('#000000');
-    this.cameras.main.setZoom(3);
+    this.updateZoom();
+    this.scale.on('resize', () => this.updateZoom());
     this.cursors = this.input.keyboard!.createCursorKeys();
 
     this.mapContainer = this.add.container(0, 0);
 
-    const maskHalf = VISIBLE_RADIUS * TILE_SIZE;
+    const maskHalf = VISIBLE_AREA / 2;
     const maskShape = this.make.graphics();
     maskShape.fillStyle(0xffffff);
-    maskShape.fillRect(-maskHalf, -maskHalf, maskHalf * 2, maskHalf * 2);
+    maskShape.fillRect(-maskHalf, -maskHalf, VISIBLE_AREA, VISIBLE_AREA);
     this.mapContainer.setMask(maskShape.createGeometryMask());
 
     this.movement = new PlayerMovement(this, this.mapContainer);
@@ -109,6 +111,13 @@ export class GameScene extends Phaser.Scene {
     if (this.pendingNearbyPlayers) {
       this.updateNearbyPlayers(this.pendingNearbyPlayers);
       this.pendingNearbyPlayers = null;
+    }
+  }
+
+  private updateZoom() {
+    const size = Math.min(this.scale.width, this.scale.height);
+    if (size > 0) {
+      this.cameras.main.setZoom(size / VISIBLE_AREA);
     }
   }
 
@@ -270,11 +279,13 @@ export class GameScene extends Phaser.Scene {
       const label = this.add
         .text(px, py - TILE_SIZE, player.displayName, {
           fontSize: '7px',
-          fontFamily: 'monospace',
+          fontFamily: 'Roboto, sans-serif',
+          fontStyle: '900',
           color: '#ffffff',
           stroke: '#000000',
           strokeThickness: 2,
           align: 'center',
+          resolution: 4,
         })
         .setOrigin(0.5, 1)
         .setDepth(2);

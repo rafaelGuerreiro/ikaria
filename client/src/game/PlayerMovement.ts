@@ -143,11 +143,13 @@ export class PlayerMovement {
       this.playerLabel = this.scene.add
         .text(0, -TILE_SIZE, this.displayName ?? '', {
           fontSize: '7px',
-          fontFamily: 'monospace',
+          fontFamily: 'Roboto, sans-serif',
+          fontStyle: '900',
           color: '#ffffff',
           stroke: '#000000',
           strokeThickness: 2,
           align: 'center',
+          resolution: 4,
         })
         .setOrigin(0.5, 1)
         .setDepth(2);

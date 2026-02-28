@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Card, Container } from 'react-bootstrap';
 import { SpacetimeDBProvider } from 'spacetimedb/react';
 import { DbConnection } from './module_bindings';
+import { SubscriptionProvider } from './hooks/SubscriptionProvider';
 import type { World } from './worlds';
 import { CharacterCreationView } from './views/CharacterCreationView';
 import { CharacterListView } from './views/CharacterListView';
 import { GameView } from './views/GameView';
 import { WorldSelectionView } from './views/WorldSelectionView';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
 type AppView = 'world-selection' | 'character-list' | 'character-creation' | 'game';
@@ -53,7 +53,9 @@ function App() {
   if (currentView === 'game' && connectionBuilder && world) {
     return (
       <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
-        <GameView onLeaveGame={handleLeaveGame} />
+        <SubscriptionProvider>
+          <GameView onLeaveGame={handleLeaveGame} />
+        </SubscriptionProvider>
       </SpacetimeDBProvider>
     );
   }
@@ -66,19 +68,21 @@ function App() {
             <WorldSelectionView onConnect={handleConnect} />
           ) : (
             <SpacetimeDBProvider connectionBuilder={connectionBuilder}>
-              {currentView === 'character-list' ? (
-                <CharacterListView
-                  world={world}
-                  onCreateCharacter={handleCreateCharacter}
-                  onLeaveWorld={handleLeaveWorld}
-                  onEnterGame={handleEnterGame}
-                />
-              ) : (
-                <CharacterCreationView
-                  onBack={handleBack}
-                  onCharacterCreated={handleCharacterCreated}
-                />
-              )}
+              <SubscriptionProvider>
+                {currentView === 'character-list' ? (
+                  <CharacterListView
+                    world={world}
+                    onCreateCharacter={handleCreateCharacter}
+                    onLeaveWorld={handleLeaveWorld}
+                    onEnterGame={handleEnterGame}
+                  />
+                ) : (
+                  <CharacterCreationView
+                    onBack={handleBack}
+                    onCharacterCreated={handleCharacterCreated}
+                  />
+                )}
+              </SubscriptionProvider>
             </SpacetimeDBProvider>
           )}
         </Card.Body>

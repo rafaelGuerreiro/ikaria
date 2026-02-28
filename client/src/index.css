@@ -1,9 +1,20 @@
 :root {
+  /* Dark palette — shared across all views */
+  --bg-base: #111118;
+  --bg-panel: #1a1a28;
+  --bg-surface: #22223a;
+  --border-subtle: #2a2a3a;
+  --text-primary: #dddde8;
+  --text-muted: #8888aa;
+  --text-heading: #aaaacc;
+  --accent-primary: #6366f1;
+  --accent-hover: #818cf8;
+
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #0f172a;
-  background-color: #e6edf9;
+  color: var(--text-primary);
+  background-color: var(--bg-base);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -19,5 +30,73 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: radial-gradient(circle at top, #f8fbff 0%, #e9effb 55%, #e0e8f8 100%);
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* Bootstrap component overrides — all use our palette variables */
+.card,
+.list-group-item,
+.modal-content,
+.form-control,
+.form-select {
+  background: var(--bg-panel);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background: var(--bg-surface);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.list-group-item:hover {
+  background: var(--bg-surface);
+}
+
+.text-muted,
+.form-text {
+  color: var(--text-muted) !important;
+}
+
+.alert-info {
+  background: var(--bg-surface);
+  border-color: var(--border-subtle);
+  color: var(--text-heading);
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-outline-primary {
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary.active,
+.btn-outline-primary:active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--border-subtle);
+  border-color: var(--border-subtle);
 }

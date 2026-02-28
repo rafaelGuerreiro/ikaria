@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Badge, Button, ListGroup, Stack } from 'react-bootstrap';
-import { useReducer, useSpacetimeDB, useTable } from 'spacetimedb/react';
+import { Alert, Badge, Button, ListGroup, Spinner, Stack } from 'react-bootstrap';
+import { useReducer, useSpacetimeDB } from 'spacetimedb/react';
 import { reducers, tables } from '../module_bindings';
+import { useLocalTable } from '../hooks/useLocalTable';
+import { useSubscriptionReady } from '../hooks/useSubscriptionReady';
 import { type World, tokenStorageKey } from '../worlds';
 import type { CharacterSummary } from './types';
+import type { CharacterV1 } from '../module_bindings/types';
 
 type CharacterListViewProps = {
   world: World;
@@ -19,8 +22,9 @@ export function CharacterListView({
   onEnterGame,
 }: CharacterListViewProps) {
   const { getConnection, token } = useSpacetimeDB();
-  const [characterRows] = useTable(tables.vw_character_all_mine_v1);
-  const [selectedRows] = useTable(tables.vw_character_me_v1);
+  const isReady = useSubscriptionReady();
+  const characterRows: CharacterV1[] = useLocalTable(tables.vw_character_all_mine_v1);
+  const selectedRows: CharacterV1[] = useLocalTable(tables.vw_character_me_v1);
   const runSelectCharacter = useReducer(reducers.selectCharacterV1);
 
   const [statusMessage, setStatusMessage] = useState(`Welcome to ${world.name}.`);
@@ -85,7 +89,7 @@ export function CharacterListView({
       </Alert>
 
       <Stack direction="horizontal" gap={2} className="mb-3">
-        <Button onClick={onCreateCharacter} disabled={selectingCharacterId !== null}>
+        <Button onClick={onCreateCharacter} disabled={!isReady || selectingCharacterId !== null}>
           Create new character
         </Button>
         <Button variant="secondary" onClick={handleLeaveWorld}>
@@ -93,7 +97,12 @@ export function CharacterListView({
         </Button>
       </Stack>
 
-      {characters.length === 0 ? (
+      {!isReady ? (
+        <Stack direction="horizontal" gap={2} className="text-muted">
+          <Spinner animation="border" size="sm" />
+          <span>Loading characters...</span>
+        </Stack>
+      ) : characters.length === 0 ? (
         <p className="text-muted">No characters yet.</p>
       ) : (
         <ListGroup>

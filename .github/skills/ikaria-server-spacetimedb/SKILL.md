@@ -1,11 +1,11 @@
 ---
 name: ikariadb-spacetimedb
-description: Use for SpacetimeDB backend work in bins/server, including reducer/service architecture, deterministic state updates, and server validation.
+description: Use for SpacetimeDB backend work in server/, including reducer/service architecture, deterministic state updates, and server validation.
 ---
 
 # Ikaria Server (SpacetimeDB) Workflow
 
-Use this skill for backend implementation under `bins/server`.
+Use this skill for backend implementation under `server/`.
 
 ## Architecture rules
 
@@ -17,12 +17,11 @@ Use this skill for backend implementation under `bins/server`.
 
 ## Repository-specific constraints
 
-- Reuse shared protocol/domain types from `ikaria-shared` (`sdks/shared`) where boundaries are crossed.
-- Add dependencies only in root `[workspace.dependencies]`, then consume with `workspace = true`.
-- Follow server guidance in `bins/server/AGENTS.md`.
+- Reuse shared protocol/domain types from `ikaria-shared` (`server/sdks/shared`) where boundaries are crossed.
+- Add dependencies only in `server/Cargo.toml` `[workspace.dependencies]`, then consume with `workspace = true`.
+- Follow server guidance in `server/sdks/ikariadb-core/AGENTS.md`.
 
 ## Validation
 
-- `task test-server`
-- `task check`
+- `task test` (from repo root — runs check + server tests)
 - `task build` when changing server runtime/module behavior
