@@ -82,6 +82,7 @@ export function GameView({ onLeaveGame }: GameViewProps) {
       parent: containerRef.current,
       width: size,
       height: size,
+      pixelArt: true,
       scene,
       scale: {
         mode: Phaser.Scale.NONE,

@@ -47,6 +47,7 @@ export class GameScene extends Phaser.Scene {
   private tileTagsByCoord = new Map<string, string>();
   private nearbyPlayers = new Map<bigint, PlacedPlayer>();
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
+  private wasd: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key } | null = null;
   private movement: PlayerMovement | null = null;
 
   // buffer updates that arrive before textures are loaded
@@ -74,11 +75,18 @@ export class GameScene extends Phaser.Scene {
     this.updateZoom();
     this.scale.on('resize', () => this.updateZoom());
     this.cursors = this.input.keyboard!.createCursorKeys();
+    this.wasd = {
+      W: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+      A: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+      S: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+      D: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+    };
 
     this.mapContainer = this.add.container(0, 0);
 
     const maskHalf = VISIBLE_AREA / 2;
     const maskShape = this.make.graphics();
+    maskShape.setVisible(false);
     maskShape.fillStyle(0xffffff);
     maskShape.fillRect(-maskHalf, -maskHalf, VISIBLE_AREA, VISIBLE_AREA);
     this.mapContainer.setMask(maskShape.createGeometryMask());
@@ -122,12 +130,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   update() {
-    if (!this.cursors || !this.movement) return;
+    if (!this.cursors || !this.wasd || !this.movement) return;
 
-    const up = this.cursors.up.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W).isDown;
-    const down = this.cursors.down.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S).isDown;
-    const left = this.cursors.left.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.A).isDown;
-    const right = this.cursors.right.isDown || this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.D).isDown;
+    const up = this.cursors.up.isDown || this.wasd.W.isDown;
+    const down = this.cursors.down.isDown || this.wasd.S.isDown;
+    const left = this.cursors.left.isDown || this.wasd.A.isDown;
+    const right = this.cursors.right.isDown || this.wasd.D.isDown;
 
     let dir: Movement | null = null;
     if (up && left) dir = 'NorthWest';
@@ -254,6 +262,8 @@ export class GameScene extends Phaser.Scene {
           continue;
         }
 
+        this.tweens.killTweensOf(existing.sprite);
+        this.tweens.killTweensOf(existing.label);
         this.tweens.add({
           targets: existing.sprite,
           x: px,
