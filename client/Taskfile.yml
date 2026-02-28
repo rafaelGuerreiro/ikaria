@@ -12,6 +12,7 @@ tasks:
       - npm run build
 
   lint:
-    desc: Lint code
+    desc: Type-check and lint code
     cmds:
+      - npx tsc -b --noEmit
       - npm run lint

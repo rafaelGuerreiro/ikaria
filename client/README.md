@@ -1,73 +1,46 @@
-# React + TypeScript + Vite
+# Ikaria – Web Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite web client for Ikaria. Uses [Phaser](https://phaser.io/) for the game canvas and [SpacetimeDB](https://spacetimedb.com/) for real-time backend connectivity.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js ≥ 20
+- [Task](https://taskfile.dev/) (repo-wide task runner)
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# from the repo root
+task client:dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This starts the Vite dev server with HMR.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Other tasks (run from the repo root):
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Command              | Description                     |
+| -------------------- | ------------------------------- |
+| `task client:dev`    | Start dev server                |
+| `task client:build`  | Type-check and build for production |
+| `task client:lint`   | Type-check and lint             |
+
+## Project Structure
+
 ```
+src/
+├── views/           # UI views (CharacterList, CharacterCreation, WorldSelection, Game)
+├── hooks/           # React hooks (SpacetimeDB subscriptions, local tables)
+├── game/            # Phaser game scene and player movement
+├── module_bindings/ # Auto-generated SpacetimeDB client bindings
+├── App.tsx          # Top-level router / view orchestrator
+├── index.css        # Design-system CSS variables
+└── worlds.ts        # World definitions
+```
+
+## SpacetimeDB
+
+Server bindings live in `src/module_bindings/` and are auto-generated from the Rust server schema. The client connects via the `spacetimedb` SDK and uses a `SpacetimeDBProvider` in `App.tsx`.
+
+## Design System
+
+All colours and theming are defined as CSS custom properties in `src/index.css` (e.g. `--bg-base`, `--accent-primary`). Components must use these variables instead of hard-coded colour values.
