@@ -7,11 +7,7 @@ type ChatInputProps = {
   maxLength?: number;
 };
 
-export default function ChatInput({
-  onSend,
-  onChatModeChange,
-  maxLength = 1024,
-}: ChatInputProps) {
+export default function ChatInput({ onSend, onChatModeChange, maxLength = 1024 }: ChatInputProps) {
   const [isChatMode, setIsChatMode] = useState(false);
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);

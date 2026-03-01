@@ -84,6 +84,11 @@ impl CharacterServices<'_> {
             .ok_or_else(|| CharacterError::character_not_selected(user_id))
     }
 
+    pub fn get_stats(&self, character_id: u64) -> ServiceResult<CharacterStatsV1> {
+        self.find_stats(character_id)
+            .ok_or_else(|| CharacterError::character_not_found(character_id))
+    }
+
     pub fn create_character(
         &self,
         user_id: Identity,

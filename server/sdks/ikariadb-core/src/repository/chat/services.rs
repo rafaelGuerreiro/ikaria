@@ -3,9 +3,9 @@ use crate::{
     error::{ErrorMapper, ServiceError, ServiceResult},
     extend::validate::ReducerContextRequirements,
     repository::{
-        character::{character_stats_v1, character_v1},
+        character::services::CharacterReducerContext,
         chat::{ChatBubbleV1, chat_bubble_v1},
-        world::online_character_position_v1,
+        world::services::WorldReducerContext,
     },
 };
 use spacetimedb::{ReducerContext, Table};
@@ -36,43 +36,25 @@ impl Deref for ChatServices<'_> {
 
 impl ChatServices<'_> {
     pub fn send_message(&self, character_id: u64, content: String) -> ServiceResult<()> {
-        let content = content.trim().to_string();
+        let content = content.trim();
         if content.is_empty() {
             return Err(ChatError::message_empty());
         }
-        self.validate_str(&content, "message", CHAT_MESSAGE_MIN_LEN as u64, CHAT_MESSAGE_MAX_LEN as u64)?;
+        self.validate_str(content, "message", CHAT_MESSAGE_MIN_LEN as u64, CHAT_MESSAGE_MAX_LEN as u64)?;
 
-        let position = self
-            .db
-            .online_character_position_v1()
-            .character_id()
-            .find(character_id)
-            .ok_or_else(ChatError::position_not_found)?;
-
-        let character = self
-            .db
-            .character_v1()
-            .character_id()
-            .find(character_id)
-            .ok_or_else(ChatError::character_not_found)?;
-
-        let stats = self
-            .db
-            .character_stats_v1()
-            .character_id()
-            .find(character_id)
-            .ok_or_else(ChatError::stats_not_found)?;
+        let position = self.world_services().get_online_position(character_id)?;
+        let character = self.character_services().get_online(character_id)?;
+        let stats = self.character_services().get_stats(character_id)?;
 
         self.db.chat_bubble_v1().insert(ChatBubbleV1 {
             bubble_id: 0,
             character_name: character.display_name,
             character_level: stats.level,
-            content,
+            content: content.to_string(),
             x: position.x,
             y: position.y,
             sent_at: self.timestamp,
         });
-
         Ok(())
     }
 }
@@ -81,28 +63,10 @@ impl ChatServices<'_> {
 enum ChatError {
     #[error("Chat message cannot be empty")]
     MessageEmpty,
-    #[error("Character position not found")]
-    PositionNotFound,
-    #[error("Character not found")]
-    CharacterNotFound,
-    #[error("Character stats not found")]
-    StatsNotFound,
 }
 
 impl ChatError {
     fn message_empty() -> ServiceError {
         Self::MessageEmpty.map_validation_error()
-    }
-
-    fn position_not_found() -> ServiceError {
-        Self::PositionNotFound.map_validation_error()
-    }
-
-    fn character_not_found() -> ServiceError {
-        Self::CharacterNotFound.map_validation_error()
-    }
-
-    fn stats_not_found() -> ServiceError {
-        Self::StatsNotFound.map_validation_error()
     }
 }

@@ -5,20 +5,20 @@ export type World = {
   description: string;
 };
 
-export const SPACETIME_URI = 'https://maincloud.spacetimedb.com';
+export const SPACETIME_URI = "https://maincloud.spacetimedb.com";
 
 export const WORLDS: World[] = [
   {
-    id: 'alpha',
-    name: 'Alpha',
-    database: 'world-alpha-ikariadb',
-    description: 'The first realm of Ikaria.',
+    id: "alpha",
+    name: "Alpha",
+    database: "world-alpha-ikariadb",
+    description: "The first realm of Ikaria.",
   },
   {
-    id: 'draconis',
-    name: 'Draconis',
-    database: 'world-draconis-ikariadb',
-    description: 'The dragon realm.',
+    id: "draconis",
+    name: "Draconis",
+    database: "world-draconis-ikariadb",
+    description: "The dragon realm.",
   },
 ];
 

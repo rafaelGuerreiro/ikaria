@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Alert, Button, ButtonGroup, Form, Stack, ToggleButton } from 'react-bootstrap';
-import { useReducer } from 'spacetimedb/react';
-import { reducers } from '../module_bindings';
-import type { CharacterGenderTag, CharacterRaceTag } from './types';
+import React, { useState } from "react";
+import { Alert, Button, ButtonGroup, Form, Stack, ToggleButton } from "react-bootstrap";
+import { useReducer } from "spacetimedb/react";
+import { reducers } from "../module_bindings";
+import type { CharacterGenderTag, CharacterRaceTag } from "./types";
 
 type CharacterCreationViewProps = {
   onBack: () => void;
@@ -12,7 +12,7 @@ type CharacterCreationViewProps = {
 export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterCreationViewProps) {
   const runCreateCharacter = useReducer(reducers.createCharacterV1);
 
-  const [displayName, setDisplayName] = useState('');
+  const [displayName, setDisplayName] = useState("");
   const [gender, setGender] = useState<CharacterGenderTag | null>(null);
   const [race, setRace] = useState<CharacterRaceTag | null>(null);
   const [validated, setValidated] = useState(false);
@@ -35,7 +35,7 @@ export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterC
     }
 
     setCreatingCharacter(true);
-    setStatusMessage('Creating character...');
+    setStatusMessage("Creating character...");
 
     try {
       await runCreateCharacter({
@@ -58,7 +58,7 @@ export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterC
       <h2 className="mb-3">Character Creation</h2>
 
       {statusMessage && (
-        <Alert variant={statusMessage.startsWith('Failed') ? 'danger' : 'info'}>
+        <Alert variant={statusMessage.startsWith("Failed") ? "danger" : "info"}>
           {statusMessage}
         </Alert>
       )}
@@ -93,11 +93,11 @@ export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterC
               <ToggleButton
                 id="gender-male"
                 type="radio"
-                variant={gender === 'Male' ? 'primary' : 'outline-primary'}
+                variant={gender === "Male" ? "primary" : "outline-primary"}
                 name="gender"
                 value="Male"
-                checked={gender === 'Male'}
-                onChange={() => setGender('Male')}
+                checked={gender === "Male"}
+                onChange={() => setGender("Male")}
                 disabled={creatingCharacter}
               >
                 Male
@@ -105,11 +105,11 @@ export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterC
               <ToggleButton
                 id="gender-female"
                 type="radio"
-                variant={gender === 'Female' ? 'primary' : 'outline-primary'}
+                variant={gender === "Female" ? "primary" : "outline-primary"}
                 name="gender"
                 value="Female"
-                checked={gender === 'Female'}
-                onChange={() => setGender('Female')}
+                checked={gender === "Female"}
+                onChange={() => setGender("Female")}
                 disabled={creatingCharacter}
               >
                 Female
@@ -128,11 +128,11 @@ export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterC
               <ToggleButton
                 id="race-human"
                 type="radio"
-                variant={race === 'Human' ? 'primary' : 'outline-primary'}
+                variant={race === "Human" ? "primary" : "outline-primary"}
                 name="race"
                 value="Human"
-                checked={race === 'Human'}
-                onChange={() => setRace('Human')}
+                checked={race === "Human"}
+                onChange={() => setRace("Human")}
                 disabled={creatingCharacter}
               >
                 Human
@@ -140,11 +140,11 @@ export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterC
               <ToggleButton
                 id="race-elf"
                 type="radio"
-                variant={race === 'Elf' ? 'primary' : 'outline-primary'}
+                variant={race === "Elf" ? "primary" : "outline-primary"}
                 name="race"
                 value="Elf"
-                checked={race === 'Elf'}
-                onChange={() => setRace('Elf')}
+                checked={race === "Elf"}
+                onChange={() => setRace("Elf")}
                 disabled={creatingCharacter}
               >
                 Elf
@@ -157,7 +157,7 @@ export function CharacterCreationView({ onBack, onCharacterCreated }: CharacterC
         </Form.Group>
 
         <Button type="submit" disabled={creatingCharacter}>
-          {creatingCharacter ? 'Creating...' : 'Create character'}
+          {creatingCharacter ? "Creating..." : "Create character"}
         </Button>
       </Form>
     </>

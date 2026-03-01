@@ -1,5 +1,5 @@
-import Phaser from 'phaser';
-import { PlayerMovement, tileToPixel, type Movement } from './PlayerMovement';
+import Phaser from "phaser";
+import { PlayerMovement, tileToPixel, type Movement } from "./PlayerMovement";
 
 const TILE_SIZE = 16;
 const VISIBLE_TILES = 10; // tiles visible from center in each direction
@@ -8,8 +8,8 @@ const BUBBLE_Y_OFFSET = TILE_SIZE * 1.5;
 const CHAT_BUBBLE_BASE_DURATION_MS = 3000;
 const CHAT_BUBBLE_MS_PER_CHAR = 100;
 const TILE_KEYS: Record<string, string> = {
-  Grass: 'grass',
-  Water: 'water',
+  Grass: "grass",
+  Water: "water",
 };
 
 export type MapTile = {
@@ -64,9 +64,17 @@ export class GameScene extends Phaser.Scene {
   private tileTagsByCoord = new Map<string, string>();
   private nearbyPlayers = new Map<bigint, PlacedPlayer>();
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-  private wasd: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key } | null = null;
+  private wasd: {
+    W: Phaser.Input.Keyboard.Key;
+    A: Phaser.Input.Keyboard.Key;
+    S: Phaser.Input.Keyboard.Key;
+    D: Phaser.Input.Keyboard.Key;
+  } | null = null;
   private movement: PlayerMovement | null = null;
-  private chatBubbles = new Map<bigint, { text: Phaser.GameObjects.Text; expiresAt: number; content: string }>();
+  private chatBubbles = new Map<
+    bigint,
+    { text: Phaser.GameObjects.Text; expiresAt: number; content: string }
+  >();
   private chatModeActive = false;
 
   // buffer updates that arrive before textures are loaded
@@ -80,7 +88,7 @@ export class GameScene extends Phaser.Scene {
   private pendingChatBubbles: ChatBubble[] | null = null;
 
   constructor() {
-    super({ key: 'GameScene' });
+    super({ key: "GameScene" });
   }
 
   setChatMode(active: boolean) {
@@ -88,16 +96,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('grass', '/assets/tiny_town/tile_0000.png');
-    this.load.image('grass_alt', '/assets/tiny_town/tile_0001.png');
-    this.load.image('water', '/assets/tiny_town/tile_0018.png');
-    this.load.image('player', '/assets/tiny_dungeon/tile_0085.png');
+    this.load.image("grass", "/assets/tiny_town/tile_0000.png");
+    this.load.image("grass_alt", "/assets/tiny_town/tile_0001.png");
+    this.load.image("water", "/assets/tiny_town/tile_0018.png");
+    this.load.image("player", "/assets/tiny_dungeon/tile_0085.png");
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#000000');
+    this.cameras.main.setBackgroundColor("#000000");
     this.updateZoom();
-    this.scale.on('resize', () => this.updateZoom());
+    this.scale.on("resize", () => this.updateZoom());
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = {
       W: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -180,14 +188,14 @@ export class GameScene extends Phaser.Scene {
     const right = this.cursors.right.isDown || this.wasd.D.isDown;
 
     let dir: Movement | null = null;
-    if (up && left) dir = 'NorthWest';
-    else if (up && right) dir = 'NorthEast';
-    else if (down && left) dir = 'SouthWest';
-    else if (down && right) dir = 'SouthEast';
-    else if (up) dir = 'North';
-    else if (down) dir = 'South';
-    else if (left) dir = 'West';
-    else if (right) dir = 'East';
+    if (up && left) dir = "NorthWest";
+    else if (up && right) dir = "NorthEast";
+    else if (down && left) dir = "SouthWest";
+    else if (down && right) dir = "SouthEast";
+    else if (up) dir = "North";
+    else if (down) dir = "South";
+    else if (left) dir = "West";
+    else if (right) dir = "East";
 
     if (dir) {
       this.movement.tryMove(dir);
@@ -241,8 +249,8 @@ export class GameScene extends Phaser.Scene {
       }
 
       let imageKey = TILE_KEYS[tile.tag] ?? TILE_KEYS.Grass;
-      if (imageKey === 'grass' && (tile.x + tile.y) % 2 === 1) {
-        imageKey = 'grass_alt';
+      if (imageKey === "grass" && (tile.x + tile.y) % 2 === 1) {
+        imageKey = "grass_alt";
       }
 
       const image = this.add
@@ -311,32 +319,32 @@ export class GameScene extends Phaser.Scene {
           x: px,
           y: py,
           duration: remaining,
-          ease: 'Linear',
+          ease: "Linear",
         });
         this.tweens.add({
           targets: existing.label,
           x: px,
           y: py - TILE_SIZE,
           duration: remaining,
-          ease: 'Linear',
+          ease: "Linear",
         });
         continue;
       }
 
       const sprite = this.add
-        .image(px, py, 'player')
+        .image(px, py, "player")
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setDepth(1);
 
       const label = this.add
         .text(px, py - TILE_SIZE, player.displayName, {
-          fontSize: '7px',
-          fontFamily: 'Roboto, sans-serif',
-          fontStyle: '900',
-          color: '#ffffff',
-          stroke: '#000000',
+          fontSize: "7px",
+          fontFamily: "Roboto, sans-serif",
+          fontStyle: "900",
+          color: "#ffffff",
+          stroke: "#000000",
           strokeThickness: 2,
-          align: 'center',
+          align: "center",
           resolution: 4,
         })
         .setOrigin(0.5, 1)
@@ -344,7 +352,12 @@ export class GameScene extends Phaser.Scene {
 
       this.mapContainer!.add(sprite);
       this.mapContainer!.add(label);
-      this.nearbyPlayers.set(player.characterId, { sprite, label, tileX: player.x, tileY: player.y });
+      this.nearbyPlayers.set(player.characterId, {
+        sprite,
+        label,
+        tileX: player.x,
+        tileY: player.y,
+      });
     }
 
     for (const [id, placed] of this.nearbyPlayers) {
@@ -394,12 +407,12 @@ export class GameScene extends Phaser.Scene {
       const bubbleText = `${bubble.characterName} says:\n${bubble.content}`;
       const text = this.add
         .text(bx, by, bubbleText, {
-          fontSize: '6px',
-          fontFamily: 'Roboto, sans-serif',
-          color: '#ffff88',
-          stroke: '#000000',
+          fontSize: "6px",
+          fontFamily: "Roboto, sans-serif",
+          color: "#ffff88",
+          stroke: "#000000",
           strokeThickness: 2,
-          align: 'center',
+          align: "center",
           wordWrap: { width: 80 },
           resolution: 4,
         })
