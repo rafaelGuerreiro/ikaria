@@ -20,3 +20,8 @@ pub const SECTOR_SIZE: u16 = 256;
 
 pub const MOVEMENT_COOLDOWN_FACTOR: u64 = 40_000;
 pub const MOVEMENT_INTENTION_WINDOW_MS: u64 = 25;
+
+pub const CHAT_MESSAGE_MIN_LEN: usize = 1;
+pub const CHAT_MESSAGE_MAX_LEN: usize = 1024;
+pub const CHAT_BUBBLE_BASE_DURATION_MS: u64 = 3000;
+pub const CHAT_BUBBLE_MS_PER_CHAR: u64 = 100;
