@@ -44,6 +44,8 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   const [chatBubbles, setChatBubbles] = useState<ChatBubble[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const { getConnection, isActive } = useSpacetimeDB();
+  const seenBubbleIds = useRef(new Set<bigint>());
+  const chatListenerRef = useRef<{ table: { removeOnInsert: (cb: unknown) => void }; handler: unknown } | null>(null);
 
   const handleLeaveGame = async () => {
     try {
@@ -57,6 +59,7 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   const handleChatModeChange = useCallback((active: boolean) => {
     chatModeRef.current = active;
     if (sceneRef.current) {
+      sceneRef.current.setChatMode(active);
       if (active) {
         sceneRef.current.input.keyboard?.disableGlobalCapture();
       } else {
@@ -230,37 +233,63 @@ export function GameView({ onLeaveGame }: GameViewProps) {
     sceneRef.current.updateNearbyPlayers(players);
   }, [nearbyCharacters, nearbyPositions, positions]);
 
-  // Listen for chat bubble events from the event table
+  // Listen for chat bubble events from the event table.
+  // SpacetimeDB delivers events twice to the sender (reducer result + subscription),
+  // so we dedup by bubbleId via a ref Set. We also ref-track the handler to ensure
+  // cleanup is reliable across StrictMode remounts and connection changes.
   useEffect(() => {
+    // Remove previous handler if cleanup missed it
+    if (chatListenerRef.current) {
+      chatListenerRef.current.table.removeOnInsert(chatListenerRef.current.handler);
+      chatListenerRef.current = null;
+    }
+
     const connection = getConnection();
     if (!connection) return;
 
-    const table = (connection.db as Record<string, { onInsert: (cb: unknown) => void; removeOnInsert: (cb: unknown) => void }>).chatBubbleV1;
+    const tableDef = tables.chat_bubble_v1 as { table?: { accessorName: string }; accessorName?: string };
+    const accessorName = tableDef.table?.accessorName ?? tableDef.accessorName ?? '';
+    const table = (connection.db as Record<string, { onInsert: (cb: unknown) => void; removeOnInsert: (cb: unknown) => void }>)[accessorName];
     if (!table) return;
 
-    const onInsert = (_ctx: unknown, row: ChatBubbleV1) => {
-      const bubble: ChatBubble = {
+    const handler = (_ctx: unknown, row: ChatBubbleV1) => {
+      if (seenBubbleIds.current.has(row.bubbleId)) return;
+      seenBubbleIds.current.add(row.bubbleId);
+
+      setChatBubbles((prev) => [...prev, {
         bubbleId: row.bubbleId,
-        characterId: row.characterId,
+        characterName: row.characterName,
+        characterLevel: row.characterLevel,
         content: row.content,
         x: row.x,
         y: row.y,
         sentAtMs: Number(row.sentAt.toMillis()),
-      };
-      setChatBubbles((prev) => [...prev, bubble]);
+      }]);
     };
 
-    table.onInsert(onInsert);
-    return () => table.removeOnInsert(onInsert);
+    table.onInsert(handler);
+    chatListenerRef.current = { table, handler };
+
+    return () => {
+      table.removeOnInsert(handler);
+      chatListenerRef.current = null;
+    };
   }, [getConnection, isActive]);
 
-  // Expire old bubbles from local state
+  // Expire old bubbles from local state and clean seenBubbleIds
   useEffect(() => {
     const timer = setInterval(() => {
       setChatBubbles((prev) => {
         const cutoff = Date.now() - MAX_BUBBLE_LIFETIME_MS;
         const alive = prev.filter((b) => b.sentAtMs > cutoff);
-        return alive.length !== prev.length ? alive : prev;
+        if (alive.length !== prev.length) {
+          const aliveIds = new Set(alive.map((b) => b.bubbleId));
+          for (const id of seenBubbleIds.current) {
+            if (!aliveIds.has(id)) seenBubbleIds.current.delete(id);
+          }
+          return alive;
+        }
+        return prev;
       });
     }, 1000);
     return () => clearInterval(timer);
@@ -281,20 +310,14 @@ export function GameView({ onLeaveGame }: GameViewProps) {
 
     sceneRef.current.updateChatBubbles(visibleBubbles);
 
-    const namesByCharacterId = new Map(
-      nearbyCharacters.map((c) => [c.characterId, c.displayName]),
-    );
-    if (characterMe.length > 0) {
-      namesByCharacterId.set(characterMe[0].characterId, characterMe[0].displayName);
-    }
-
     setChatHistory((prev) => {
       const knownIds = new Set(prev.map((m) => m.bubbleId));
       const newMessages = visibleBubbles
         .filter((b) => !knownIds.has(b.bubbleId))
         .map((b) => ({
           bubbleId: b.bubbleId,
-          displayName: namesByCharacterId.get(b.characterId) ?? '???',
+          displayName: b.characterName,
+          characterLevel: b.characterLevel,
           content: b.content,
           sentAtMs: b.sentAtMs,
         }));
@@ -302,7 +325,7 @@ export function GameView({ onLeaveGame }: GameViewProps) {
       if (newMessages.length === 0) return prev;
       return [...prev, ...newMessages];
     });
-  }, [chatBubbles, positions, nearbyCharacters, characterMe]);
+  }, [chatBubbles, positions]);
 
   const isLoading = mapRows.length === 0;
 

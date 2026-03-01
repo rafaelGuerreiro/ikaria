@@ -11,7 +11,8 @@ pub struct ChatBubbleV1 {
     #[auto_inc]
     #[primary_key]
     pub bubble_id: u64,
-    pub character_id: u64,
+    pub character_name: String,
+    pub character_level: u16,
     pub content: String,
     pub x: u16,
     pub y: u16,

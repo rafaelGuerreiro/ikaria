@@ -3,6 +3,7 @@ use crate::{
     error::{ErrorMapper, ServiceError, ServiceResult},
     extend::validate::ReducerContextRequirements,
     repository::{
+        character::{character_stats_v1, character_v1},
         chat::{ChatBubbleV1, chat_bubble_v1},
         world::online_character_position_v1,
     },
@@ -48,9 +49,24 @@ impl ChatServices<'_> {
             .find(character_id)
             .ok_or_else(ChatError::position_not_found)?;
 
+        let character = self
+            .db
+            .character_v1()
+            .character_id()
+            .find(character_id)
+            .ok_or_else(ChatError::character_not_found)?;
+
+        let stats = self
+            .db
+            .character_stats_v1()
+            .character_id()
+            .find(character_id)
+            .ok_or_else(ChatError::stats_not_found)?;
+
         self.db.chat_bubble_v1().insert(ChatBubbleV1 {
             bubble_id: 0,
-            character_id,
+            character_name: character.display_name,
+            character_level: stats.level,
             content,
             x: position.x,
             y: position.y,
@@ -67,6 +83,10 @@ enum ChatError {
     MessageEmpty,
     #[error("Character position not found")]
     PositionNotFound,
+    #[error("Character not found")]
+    CharacterNotFound,
+    #[error("Character stats not found")]
+    StatsNotFound,
 }
 
 impl ChatError {
@@ -76,5 +96,13 @@ impl ChatError {
 
     fn position_not_found() -> ServiceError {
         Self::PositionNotFound.map_validation_error()
+    }
+
+    fn character_not_found() -> ServiceError {
+        Self::CharacterNotFound.map_validation_error()
+    }
+
+    fn stats_not_found() -> ServiceError {
+        Self::StatsNotFound.map_validation_error()
     }
 }

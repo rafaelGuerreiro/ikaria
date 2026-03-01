@@ -12,7 +12,8 @@ import {
 
 export default __t.row({
   bubbleId: __t.u64().primaryKey().name("bubble_id"),
-  characterId: __t.u64().name("character_id"),
+  characterName: __t.string().name("character_name"),
+  characterLevel: __t.u16().name("character_level"),
   content: __t.string(),
   x: __t.u16(),
   y: __t.u16(),

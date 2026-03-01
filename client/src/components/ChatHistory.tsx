@@ -4,6 +4,7 @@ import './ChatHistory.css';
 export type ChatMessage = {
   bubbleId: bigint;
   displayName: string;
+  characterLevel: number;
   content: string;
   sentAtMs: number;
 };
@@ -14,7 +15,7 @@ type ChatHistoryProps = {
 
 function formatTime(ms: number): string {
   const date = new Date(ms);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
 export default function ChatHistory({ messages }: ChatHistoryProps) {
@@ -28,9 +29,7 @@ export default function ChatHistory({ messages }: ChatHistoryProps) {
     <div className="chat-history">
       {messages.map((msg) => (
         <div key={String(msg.bubbleId)} className="chat-history-entry">
-          <span className="chat-history-time">{formatTime(msg.sentAtMs)}</span>
-          <span className="chat-history-name">{msg.displayName}</span>
-          <span className="chat-history-content">{msg.content}</span>
+          {formatTime(msg.sentAtMs)} {msg.displayName} [{msg.characterLevel}]: {msg.content}
         </div>
       ))}
       <div ref={bottomRef} />

@@ -5,30 +5,10 @@
   font-family: 'Roboto Mono', monospace;
   font-size: 0.75rem;
   line-height: 1.4;
+  color: #ffff00;
 }
 
 .chat-history-entry {
-  display: flex;
-  gap: 6px;
   padding: 1px 0;
-}
-
-.chat-history-time {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.chat-history-name {
-  color: #ffff88;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.chat-history-name::after {
-  content: ':';
-}
-
-.chat-history-content {
-  color: var(--text-primary);
   word-break: break-word;
 }

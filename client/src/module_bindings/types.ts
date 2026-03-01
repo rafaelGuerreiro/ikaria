@@ -69,7 +69,8 @@ export type CharacterV1 = __Infer<typeof CharacterV1>;
 
 export const ChatBubbleV1 = __t.object("ChatBubbleV1", {
   bubbleId: __t.u64(),
-  characterId: __t.u64(),
+  characterName: __t.string(),
+  characterLevel: __t.u16(),
   content: __t.string(),
   x: __t.u16(),
   y: __t.u16(),

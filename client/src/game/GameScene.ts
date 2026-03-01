@@ -28,7 +28,8 @@ export type NearbyPlayer = {
 
 export type ChatBubble = {
   bubbleId: bigint;
-  characterId: bigint;
+  characterName: string;
+  characterLevel: number;
   content: string;
   x: number;
   y: number;
@@ -66,6 +67,7 @@ export class GameScene extends Phaser.Scene {
   private wasd: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key } | null = null;
   private movement: PlayerMovement | null = null;
   private chatBubbles = new Map<bigint, { text: Phaser.GameObjects.Text; expiresAt: number; content: string }>();
+  private chatModeActive = false;
 
   // buffer updates that arrive before textures are loaded
   private ready = false;
@@ -79,6 +81,10 @@ export class GameScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'GameScene' });
+  }
+
+  setChatMode(active: boolean) {
+    this.chatModeActive = active;
   }
 
   preload() {
@@ -162,6 +168,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (!this.cursors || !this.wasd || !this.movement) return;
+
+    if (this.chatModeActive) {
+      this.movement.clearPending();
+      return;
+    }
 
     const up = this.cursors.up.isDown || this.wasd.W.isDown;
     const down = this.cursors.down.isDown || this.wasd.S.isDown;
@@ -352,8 +363,8 @@ export class GameScene extends Phaser.Scene {
 
     const incomingIds = new Set<bigint>();
 
-    // Sort bubbles by sentAtMs so oldest is at bottom, newest at top
-    const sorted = [...bubbles].sort((a, b) => a.sentAtMs - b.sentAtMs);
+    // Sort bubbles by sentAtMs descending so newest is closest to player (stackIndex 0)
+    const sorted = [...bubbles].sort((a, b) => b.sentAtMs - a.sentAtMs);
 
     // Track offset per tile position for vertical stacking
     const tileOffsets = new Map<string, number>();
@@ -372,16 +383,17 @@ export class GameScene extends Phaser.Scene {
       if (existing) {
         // Update position for stacking even if bubble already rendered
         const bx = tileToPixel(bubble.x);
-        const by = tileToPixel(bubble.y) - BUBBLE_Y_OFFSET - stackIndex * 8;
+        const by = tileToPixel(bubble.y) - BUBBLE_Y_OFFSET - stackIndex * 12;
         existing.text.setPosition(bx, by);
         continue;
       }
 
       const bx = tileToPixel(bubble.x);
-      const by = tileToPixel(bubble.y) - BUBBLE_Y_OFFSET - stackIndex * 8;
+      const by = tileToPixel(bubble.y) - BUBBLE_Y_OFFSET - stackIndex * 12;
 
+      const bubbleText = `${bubble.characterName} says:\n${bubble.content}`;
       const text = this.add
-        .text(bx, by, bubble.content, {
+        .text(bx, by, bubbleText, {
           fontSize: '6px',
           fontFamily: 'Roboto, sans-serif',
           color: '#ffff88',

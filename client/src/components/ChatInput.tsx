@@ -59,11 +59,13 @@ export default function ChatInput({
 
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Escape") {
+      e.stopPropagation();
       exitChatMode();
       return;
     }
     if (e.key === "Enter" && !e.shiftKey && !e.altKey) {
       e.preventDefault();
+      e.stopPropagation();
       sendMessage();
     }
   };
