@@ -67,6 +67,17 @@ export const CharacterV1 = __t.object("CharacterV1", {
 });
 export type CharacterV1 = __Infer<typeof CharacterV1>;
 
+export const ChatBubbleV1 = __t.object("ChatBubbleV1", {
+  bubbleId: __t.u64(),
+  characterName: __t.string(),
+  characterLevel: __t.u16(),
+  content: __t.string(),
+  x: __t.u16(),
+  y: __t.u16(),
+  sentAt: __t.timestamp(),
+});
+export type ChatBubbleV1 = __Infer<typeof ChatBubbleV1>;
+
 // The tagged union or sum type for the algebraic type `ClassV1`.
 export const ClassV1 = __t.enum("ClassV1", {
   None: __t.unit(),

@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Card, Stack } from 'react-bootstrap';
-import { DbConnection } from '../module_bindings';
-import { type World, SPACETIME_URI, WORLDS, tokenStorageKey } from '../worlds';
+import { useState } from "react";
+import { Card, Stack } from "react-bootstrap";
+import { DbConnection } from "../module_bindings";
+import { type World, SPACETIME_URI, WORLDS, tokenStorageKey } from "../worlds";
 
 type ConnectionBuilder = ReturnType<typeof DbConnection.builder>;
 
@@ -66,7 +66,7 @@ export function WorldSelectionView({ onConnect }: WorldSelectionViewProps) {
                   tabIndex={0}
                   onClick={(e) => handleForgetToken(e, world)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === "Enter" || e.key === " ") {
                       handleForgetToken(e as unknown as React.MouseEvent, world);
                     }
                   }}

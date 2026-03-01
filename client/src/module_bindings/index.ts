@@ -36,12 +36,14 @@ import {
 // Import all reducer arg schemas
 import CreateCharacterV1Reducer from "./create_character_v_1_reducer";
 import MoveCharacterV1Reducer from "./move_character_v_1_reducer";
+import SayV1Reducer from "./say_v_1_reducer";
 import SelectCharacterV1Reducer from "./select_character_v_1_reducer";
 import UnselectCharacterV1Reducer from "./unselect_character_v_1_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import ChatBubbleV1Row from "./chat_bubble_v_1_table";
 import VwCharacterAllMineStatsV1Row from "./vw_character_all_mine_stats_v_1_table";
 import VwCharacterAllMineV1Row from "./vw_character_all_mine_v_1_table";
 import VwCharacterMeStatsV1Row from "./vw_character_me_stats_v_1_table";
@@ -56,6 +58,18 @@ import VwWorldMyCharacterPositionV1Row from "./vw_world_my_character_position_v_
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  chat_bubble_v1: __table({
+    name: 'chat_bubble_v1',
+    indexes: [
+      { name: 'bubble_id', algorithm: 'btree', columns: [
+        'bubbleId',
+      ] },
+    ],
+    constraints: [
+      { name: 'chat_bubble_v1_bubble_id_key', constraint: 'unique', columns: ['bubbleId'] },
+    ],
+    event: true,
+  }, ChatBubbleV1Row),
   vw_character_all_mine_stats_v1: __table({
     name: 'vw_character_all_mine_stats_v1',
     indexes: [
@@ -125,6 +139,7 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("create_character_v1", CreateCharacterV1Reducer),
   __reducerSchema("move_character_v1", MoveCharacterV1Reducer),
+  __reducerSchema("say_v1", SayV1Reducer),
   __reducerSchema("select_character_v1", SelectCharacterV1Reducer),
   __reducerSchema("unselect_character_v1", UnselectCharacterV1Reducer),
 );

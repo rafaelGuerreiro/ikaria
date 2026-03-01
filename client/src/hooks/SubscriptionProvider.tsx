@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useSpacetimeDB } from 'spacetimedb/react';
-import { SubscriptionContext } from './useSubscriptionReady';
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useSpacetimeDB } from "spacetimedb/react";
+import { SubscriptionContext } from "./useSubscriptionReady";
 
 /**
  * Calls subscribeToAllTables() once when the connection becomes active
@@ -23,7 +23,5 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       .subscribeToAllTables();
   }, [isActive, getConnection]);
 
-  return (
-    <SubscriptionContext.Provider value={isReady}>{children}</SubscriptionContext.Provider>
-  );
+  return <SubscriptionContext.Provider value={isReady}>{children}</SubscriptionContext.Provider>;
 }

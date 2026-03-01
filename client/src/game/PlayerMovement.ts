@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 
 const TILE_SIZE = 16;
 const SPEED_TO_MS = 40_000;
@@ -6,14 +6,14 @@ const SPEED_TO_MS = 40_000;
 const ANIMATION_SLOWDOWN = 0.99;
 
 export type Movement =
-  | 'North'
-  | 'NorthEast'
-  | 'East'
-  | 'SouthEast'
-  | 'South'
-  | 'SouthWest'
-  | 'West'
-  | 'NorthWest';
+  | "North"
+  | "NorthEast"
+  | "East"
+  | "SouthEast"
+  | "South"
+  | "SouthWest"
+  | "West"
+  | "NorthWest";
 
 const MOVEMENT_DELTA: Record<Movement, { dx: number; dy: number }> = {
   North: { dx: 0, dy: -1 },
@@ -100,14 +100,15 @@ export class PlayerMovement {
 
     if (this.tileLookup) {
       const tag = this.tileLookup(targetX, targetY);
-      if (tag === 'Water') return;
+      if (tag === "Water") return;
     }
 
     this.predictedX = targetX;
     this.predictedY = targetY;
 
     const isDiagonal = delta.dx !== 0 && delta.dy !== 0;
-    const duration = (SPEED_TO_MS / this.speed) * ANIMATION_SLOWDOWN * (isDiagonal ? Math.SQRT2 : 1);
+    const duration =
+      (SPEED_TO_MS / this.speed) * ANIMATION_SLOWDOWN * (isDiagonal ? Math.SQRT2 : 1);
     this.isLerping = true;
 
     this.scene.tweens.add({
@@ -115,7 +116,7 @@ export class PlayerMovement {
       x: -tileToPixel(targetX),
       y: -tileToPixel(targetY),
       duration,
-      ease: 'Linear',
+      ease: "Linear",
       onComplete: () => {
         this.isLerping = false;
         this.reconcile();
@@ -136,19 +137,19 @@ export class PlayerMovement {
 
     if (!this.playerSprite) {
       this.playerSprite = this.scene.add
-        .image(0, 0, 'player')
+        .image(0, 0, "player")
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setDepth(1);
 
       this.playerLabel = this.scene.add
-        .text(0, -TILE_SIZE, this.displayName ?? '', {
-          fontSize: '7px',
-          fontFamily: 'Roboto, sans-serif',
-          fontStyle: '900',
-          color: '#ffffff',
-          stroke: '#000000',
+        .text(0, -TILE_SIZE, this.displayName ?? "", {
+          fontSize: "7px",
+          fontFamily: "Roboto, sans-serif",
+          fontStyle: "900",
+          color: "#ffffff",
+          stroke: "#000000",
           strokeThickness: 2,
-          align: 'center',
+          align: "center",
           resolution: 4,
         })
         .setOrigin(0.5, 1)

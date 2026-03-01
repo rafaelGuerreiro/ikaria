@@ -1,0 +1,14 @@
+.chat-history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #ffff00;
+}
+
+.chat-history-entry {
+  padding: 1px 0;
+  word-break: break-word;
+}

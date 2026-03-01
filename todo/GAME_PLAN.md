@@ -134,27 +134,32 @@ Build vertical slices where each slice can be tested in-game immediately.
    - Playable result: first pseudo-Tibia multiplayer walking loop complete.
 
 ### Milestone 2: local chat bubbles
-**Status:** Not Started
+**Status:** ✅ Complete
 
 #### Backend track
-- `m2-chat-reducer-nearby`
-   - Add say/chat reducer and delivery scoped by visible radius, receiving already-trimmed bounded messages.
+- ✅ `m2-chat-reducer-nearby` **COMPLETED**
+   - Added `say_v1` reducer and `ChatBubbleV1` event table (auto-deletes after broadcast).
+   - Service validates content (1–1024 chars, trimmed), looks up character name/level/position, inserts event with world coordinates.
+   - Client-side proximity filtering (MAP_VIEW_RADIUS=32) until SpacetimeDB supports views on event tables.
    - Playable result: valid chat messages are distributed to nearby players only.
 
 #### Client track
-- `m2-chat-input-mode`
-   - Implement chat input mode state: Enter turns chat on; Enter sends and turns chat off.
+- ✅ `m2-chat-input-mode` **COMPLETED**
+   - Enter toggles chat mode on/off; Escape cancels; WASD suppressed while typing via `chatModeActive` flag in GameScene.
    - Playable result: players can reliably switch between movement and text input.
-- `m2-chat-message-rules`
-   - Implement text rules: Shift+Enter/Alt+Enter adds newline, trim on send, and 1024-char max.
+- ✅ `m2-chat-message-rules` **COMPLETED**
+   - Shift+Enter/Alt+Enter inserts newline, Enter sends and exits chat mode, trim on send, 1024-char max.
    - Playable result: chat input behaves predictably and bounded.
-- `m2-chat-bubble-client`
-   - Render overhead chat text per player with duration based on message length.
+- ✅ `m2-chat-bubble-client` **COMPLETED**
+   - Position-anchored bubbles with "Name says:\n message" format, duration based on content length.
+   - Newest bubble closest to player, 12px stacking margin, descending sort.
+   - Chat history panel: "HH:MM Name [level]: message" in yellow monospace.
+   - Event table onInsert with seenBubbleIds dedup (handles SpacetimeDB double delivery to sender).
    - Playable result: nearby players see temporary overhead text that clears automatically.
 
 #### Shared validation
-- `m2-chat-playtest-loop`
-   - Validate full loop: enter chat mode -> type/multiline -> send -> exit chat mode -> nearby visibility only.
+- ✅ `m2-chat-playtest-loop` **COMPLETED**
+   - Full loop validated: enter chat mode → type/multiline → send → exit chat mode → nearby visibility only.
    - Playable result: complete chat loop works as intended in multiplayer.
 
 ### Milestone 3: proper inventory foundations

@@ -1,12 +1,15 @@
-import Phaser from 'phaser';
-import { PlayerMovement, tileToPixel, type Movement } from './PlayerMovement';
+import Phaser from "phaser";
+import { PlayerMovement, tileToPixel, type Movement } from "./PlayerMovement";
 
 const TILE_SIZE = 16;
 const VISIBLE_TILES = 10; // tiles visible from center in each direction
 const VISIBLE_AREA = (VISIBLE_TILES * 2 + 1) * TILE_SIZE; // 21 tiles in world pixels
+const BUBBLE_Y_OFFSET = TILE_SIZE * 1.5;
+const CHAT_BUBBLE_BASE_DURATION_MS = 3000;
+const CHAT_BUBBLE_MS_PER_CHAR = 100;
 const TILE_KEYS: Record<string, string> = {
-  Grass: 'grass',
-  Water: 'water',
+  Grass: "grass",
+  Water: "water",
 };
 
 export type MapTile = {
@@ -23,10 +26,24 @@ export type NearbyPlayer = {
   arrivesAtMs: number;
 };
 
+export type ChatBubble = {
+  bubbleId: bigint;
+  characterName: string;
+  characterLevel: number;
+  content: string;
+  x: number;
+  y: number;
+  sentAtMs: number;
+};
+
 export type { Movement };
 
 function tileKey(x: number, y: number): string {
   return `${x},${y}`;
+}
+
+function chatBubbleDurationMs(contentLength: number): number {
+  return CHAT_BUBBLE_BASE_DURATION_MS + CHAT_BUBBLE_MS_PER_CHAR * contentLength;
 }
 
 type PlacedTile = {
@@ -47,8 +64,18 @@ export class GameScene extends Phaser.Scene {
   private tileTagsByCoord = new Map<string, string>();
   private nearbyPlayers = new Map<bigint, PlacedPlayer>();
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
-  private wasd: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key } | null = null;
+  private wasd: {
+    W: Phaser.Input.Keyboard.Key;
+    A: Phaser.Input.Keyboard.Key;
+    S: Phaser.Input.Keyboard.Key;
+    D: Phaser.Input.Keyboard.Key;
+  } | null = null;
   private movement: PlayerMovement | null = null;
+  private chatBubbles = new Map<
+    bigint,
+    { text: Phaser.GameObjects.Text; expiresAt: number; content: string }
+  >();
+  private chatModeActive = false;
 
   // buffer updates that arrive before textures are loaded
   private ready = false;
@@ -58,22 +85,27 @@ export class GameScene extends Phaser.Scene {
   private pendingSpeed: number | null = null;
   private pendingDisplayName: string | null = null;
   private pendingNearbyPlayers: NearbyPlayer[] | null = null;
+  private pendingChatBubbles: ChatBubble[] | null = null;
 
   constructor() {
-    super({ key: 'GameScene' });
+    super({ key: "GameScene" });
+  }
+
+  setChatMode(active: boolean) {
+    this.chatModeActive = active;
   }
 
   preload() {
-    this.load.image('grass', '/assets/tiny_town/tile_0000.png');
-    this.load.image('grass_alt', '/assets/tiny_town/tile_0001.png');
-    this.load.image('water', '/assets/tiny_town/tile_0018.png');
-    this.load.image('player', '/assets/tiny_dungeon/tile_0085.png');
+    this.load.image("grass", "/assets/tiny_town/tile_0000.png");
+    this.load.image("grass_alt", "/assets/tiny_town/tile_0001.png");
+    this.load.image("water", "/assets/tiny_town/tile_0018.png");
+    this.load.image("player", "/assets/tiny_dungeon/tile_0085.png");
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#000000');
+    this.cameras.main.setBackgroundColor("#000000");
     this.updateZoom();
-    this.scale.on('resize', () => this.updateZoom());
+    this.scale.on("resize", () => this.updateZoom());
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.wasd = {
       W: this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -120,6 +152,10 @@ export class GameScene extends Phaser.Scene {
       this.updateNearbyPlayers(this.pendingNearbyPlayers);
       this.pendingNearbyPlayers = null;
     }
+    if (this.pendingChatBubbles) {
+      this.updateChatBubbles(this.pendingChatBubbles);
+      this.pendingChatBubbles = null;
+    }
   }
 
   private updateZoom() {
@@ -130,7 +166,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   update() {
+    // Expire old chat bubbles
+    const now = Date.now();
+    for (const [id, bubble] of this.chatBubbles) {
+      if (now >= bubble.expiresAt) {
+        bubble.text.destroy();
+        this.chatBubbles.delete(id);
+      }
+    }
+
     if (!this.cursors || !this.wasd || !this.movement) return;
+
+    if (this.chatModeActive) {
+      this.movement.clearPending();
+      return;
+    }
 
     const up = this.cursors.up.isDown || this.wasd.W.isDown;
     const down = this.cursors.down.isDown || this.wasd.S.isDown;
@@ -138,14 +188,14 @@ export class GameScene extends Phaser.Scene {
     const right = this.cursors.right.isDown || this.wasd.D.isDown;
 
     let dir: Movement | null = null;
-    if (up && left) dir = 'NorthWest';
-    else if (up && right) dir = 'NorthEast';
-    else if (down && left) dir = 'SouthWest';
-    else if (down && right) dir = 'SouthEast';
-    else if (up) dir = 'North';
-    else if (down) dir = 'South';
-    else if (left) dir = 'West';
-    else if (right) dir = 'East';
+    if (up && left) dir = "NorthWest";
+    else if (up && right) dir = "NorthEast";
+    else if (down && left) dir = "SouthWest";
+    else if (down && right) dir = "SouthEast";
+    else if (up) dir = "North";
+    else if (down) dir = "South";
+    else if (left) dir = "West";
+    else if (right) dir = "East";
 
     if (dir) {
       this.movement.tryMove(dir);
@@ -199,8 +249,8 @@ export class GameScene extends Phaser.Scene {
       }
 
       let imageKey = TILE_KEYS[tile.tag] ?? TILE_KEYS.Grass;
-      if (imageKey === 'grass' && (tile.x + tile.y) % 2 === 1) {
-        imageKey = 'grass_alt';
+      if (imageKey === "grass" && (tile.x + tile.y) % 2 === 1) {
+        imageKey = "grass_alt";
       }
 
       const image = this.add
@@ -269,32 +319,32 @@ export class GameScene extends Phaser.Scene {
           x: px,
           y: py,
           duration: remaining,
-          ease: 'Linear',
+          ease: "Linear",
         });
         this.tweens.add({
           targets: existing.label,
           x: px,
           y: py - TILE_SIZE,
           duration: remaining,
-          ease: 'Linear',
+          ease: "Linear",
         });
         continue;
       }
 
       const sprite = this.add
-        .image(px, py, 'player')
+        .image(px, py, "player")
         .setDisplaySize(TILE_SIZE, TILE_SIZE)
         .setDepth(1);
 
       const label = this.add
         .text(px, py - TILE_SIZE, player.displayName, {
-          fontSize: '7px',
-          fontFamily: 'Roboto, sans-serif',
-          fontStyle: '900',
-          color: '#ffffff',
-          stroke: '#000000',
+          fontSize: "7px",
+          fontFamily: "Roboto, sans-serif",
+          fontStyle: "900",
+          color: "#ffffff",
+          stroke: "#000000",
           strokeThickness: 2,
-          align: 'center',
+          align: "center",
           resolution: 4,
         })
         .setOrigin(0.5, 1)
@@ -302,7 +352,12 @@ export class GameScene extends Phaser.Scene {
 
       this.mapContainer!.add(sprite);
       this.mapContainer!.add(label);
-      this.nearbyPlayers.set(player.characterId, { sprite, label, tileX: player.x, tileY: player.y });
+      this.nearbyPlayers.set(player.characterId, {
+        sprite,
+        label,
+        tileX: player.x,
+        tileY: player.y,
+      });
     }
 
     for (const [id, placed] of this.nearbyPlayers) {
@@ -310,6 +365,70 @@ export class GameScene extends Phaser.Scene {
       placed.sprite.destroy();
       placed.label.destroy();
       this.nearbyPlayers.delete(id);
+    }
+  }
+
+  updateChatBubbles(bubbles: ChatBubble[]) {
+    if (!this.ready) {
+      this.pendingChatBubbles = bubbles;
+      return;
+    }
+
+    const incomingIds = new Set<bigint>();
+
+    // Sort bubbles by sentAtMs descending so newest is closest to player (stackIndex 0)
+    const sorted = [...bubbles].sort((a, b) => b.sentAtMs - a.sentAtMs);
+
+    // Track offset per tile position for vertical stacking
+    const tileOffsets = new Map<string, number>();
+
+    for (const bubble of sorted) {
+      const expiresAt = bubble.sentAtMs + chatBubbleDurationMs(bubble.content.length);
+      if (Date.now() >= expiresAt) continue;
+
+      incomingIds.add(bubble.bubbleId);
+
+      const key = tileKey(bubble.x, bubble.y);
+      const stackIndex = tileOffsets.get(key) ?? 0;
+      tileOffsets.set(key, stackIndex + 1);
+
+      const existing = this.chatBubbles.get(bubble.bubbleId);
+      if (existing) {
+        // Update position for stacking even if bubble already rendered
+        const bx = tileToPixel(bubble.x);
+        const by = tileToPixel(bubble.y) - BUBBLE_Y_OFFSET - stackIndex * 12;
+        existing.text.setPosition(bx, by);
+        continue;
+      }
+
+      const bx = tileToPixel(bubble.x);
+      const by = tileToPixel(bubble.y) - BUBBLE_Y_OFFSET - stackIndex * 12;
+
+      const bubbleText = `${bubble.characterName} says:\n${bubble.content}`;
+      const text = this.add
+        .text(bx, by, bubbleText, {
+          fontSize: "6px",
+          fontFamily: "Roboto, sans-serif",
+          color: "#ffff88",
+          stroke: "#000000",
+          strokeThickness: 2,
+          align: "center",
+          wordWrap: { width: 80 },
+          resolution: 4,
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(10);
+
+      this.mapContainer!.add(text);
+      this.chatBubbles.set(bubble.bubbleId, { text, expiresAt, content: bubble.content });
+    }
+
+    // Remove bubbles no longer in the server data
+    for (const [id, existing] of this.chatBubbles) {
+      if (!incomingIds.has(id)) {
+        existing.text.destroy();
+        this.chatBubbles.delete(id);
+      }
     }
   }
 }

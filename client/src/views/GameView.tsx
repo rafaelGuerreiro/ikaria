@@ -1,16 +1,34 @@
-import Phaser from 'phaser';
-import { useCallback, useEffect, useRef } from 'react';
-import { Button, Spinner, Stack } from 'react-bootstrap';
-import { useReducer } from 'spacetimedb/react';
-import { GameScene, type Movement, type MapTile, type NearbyPlayer } from '../game/GameScene';
-import { reducers, tables } from '../module_bindings';
-import { useLocalTable } from '../hooks/useLocalTable';
-import './GameLayout.css';
-import type { CharacterPositionV1, CharacterStatsV1, CharacterV1, MapV1 } from '../module_bindings/types';
+import Phaser from "phaser";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Spinner, Stack } from "react-bootstrap";
+import { useReducer, useSpacetimeDB } from "spacetimedb/react";
+import {
+  GameScene,
+  type Movement,
+  type MapTile,
+  type NearbyPlayer,
+  type ChatBubble,
+} from "../game/GameScene";
+import { reducers, tables } from "../module_bindings";
+import { useLocalTable, getAccessorName, type AnyTableDef } from "../hooks/useLocalTable";
+import ChatInput from "../components/ChatInput";
+import ChatHistory from "../components/ChatHistory";
+import type { ChatMessage } from "../components/ChatHistory";
+import "./GameLayout.css";
+import type {
+  CharacterPositionV1,
+  CharacterStatsV1,
+  CharacterV1,
+  ChatBubbleV1,
+  MapV1,
+} from "../module_bindings/types";
 
 const DEFAULT_BOTTOM_HEIGHT = 200;
 const MIN_BOTTOM_HEIGHT = 100;
 const MAX_BOTTOM_HEIGHT = 500;
+const MAP_VIEW_RADIUS = 32;
+const MAX_BUBBLE_LIFETIME_MS = 120_000;
+const MAX_CHAT_HISTORY = 200;
 
 type GameViewProps = {
   onLeaveGame: () => void;
@@ -31,9 +49,22 @@ export function GameView({ onLeaveGame }: GameViewProps) {
   const stats: CharacterStatsV1[] = useLocalTable(tables.vw_character_me_stats_v1);
   const characterMe: CharacterV1[] = useLocalTable(tables.vw_character_me_v1);
   const nearbyCharacters: CharacterV1[] = useLocalTable(tables.vw_nearby_characters_v1);
-  const nearbyPositions: CharacterPositionV1[] = useLocalTable(tables.vw_nearby_character_positions_v1);
+  const nearbyPositions: CharacterPositionV1[] = useLocalTable(
+    tables.vw_nearby_character_positions_v1,
+  );
   const runMoveCharacter = useReducer(reducers.moveCharacterV1);
   const runUnselectCharacter = useReducer(reducers.unselectCharacterV1);
+  const runSay = useReducer(reducers.sayV1);
+  const chatModeRef = useRef(false);
+  const [chatBubbles, setChatBubbles] = useState<ChatBubble[]>([]);
+  const chatHistoryKnownIds = useRef(new Set<bigint>());
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const { getConnection, isActive } = useSpacetimeDB();
+  const seenBubbleIds = useRef(new Set<bigint>());
+  const chatListenerRef = useRef<{
+    table: { removeOnInsert: (cb: unknown) => void };
+    handler: unknown;
+  } | null>(null);
 
   const handleLeaveGame = async () => {
     try {
@@ -43,6 +74,29 @@ export function GameView({ onLeaveGame }: GameViewProps) {
     }
     onLeaveGame();
   };
+
+  const handleChatModeChange = useCallback((active: boolean) => {
+    chatModeRef.current = active;
+    if (sceneRef.current) {
+      sceneRef.current.setChatMode(active);
+      if (active) {
+        sceneRef.current.input.keyboard?.disableGlobalCapture();
+      } else {
+        sceneRef.current.input.keyboard?.enableGlobalCapture();
+      }
+    }
+  }, []);
+
+  const handleSendChat = useCallback(
+    async (message: string) => {
+      try {
+        await runSay({ content: message });
+      } catch {
+        // best-effort
+      }
+    },
+    [runSay],
+  );
 
   // Keep game container square based on available space
   useEffect(() => {
@@ -117,15 +171,15 @@ export function GameView({ onLeaveGame }: GameViewProps) {
     const handleMouseUp = () => {
       if (isDraggingRef.current) {
         isDraggingRef.current = false;
-        document.body.style.cursor = '';
+        document.body.style.cursor = "";
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
 
@@ -134,7 +188,7 @@ export function GameView({ onLeaveGame }: GameViewProps) {
     isDraggingRef.current = true;
     dragStartYRef.current = e.clientY;
     dragStartHeightRef.current = bottomHeightRef.current;
-    document.body.style.cursor = 'ns-resize';
+    document.body.style.cursor = "ns-resize";
   }, []);
 
   useEffect(() => {
@@ -187,19 +241,131 @@ export function GameView({ onLeaveGame }: GameViewProps) {
     if (!sceneRef.current) return;
 
     const myCharacterId = positions.length > 0 ? positions[0].characterId : null;
-    const namesByCharacterId = new Map(
-      nearbyCharacters.map((c) => [c.characterId, c.displayName]),
-    );
+    const namesByCharacterId = new Map(nearbyCharacters.map((c) => [c.characterId, c.displayName]));
 
     const players: NearbyPlayer[] = [];
     for (const pos of nearbyPositions) {
       if (pos.characterId === myCharacterId) continue;
-      const displayName = namesByCharacterId.get(pos.characterId) ?? '???';
-      players.push({ characterId: pos.characterId, x: pos.x, y: pos.y, displayName, arrivesAtMs: Number(pos.arrivesAt.toMillis()) });
+      const displayName = namesByCharacterId.get(pos.characterId) ?? "???";
+      players.push({
+        characterId: pos.characterId,
+        x: pos.x,
+        y: pos.y,
+        displayName,
+        arrivesAtMs: Number(pos.arrivesAt.toMillis()),
+      });
     }
 
     sceneRef.current.updateNearbyPlayers(players);
   }, [nearbyCharacters, nearbyPositions, positions]);
+
+  // Listen for chat bubble events from the event table.
+  // SpacetimeDB delivers events twice to the sender (reducer result + subscription),
+  // so we dedup by bubbleId via a ref Set. We also ref-track the handler to ensure
+  // cleanup is reliable across StrictMode remounts and connection changes.
+  useEffect(() => {
+    // Remove previous handler if cleanup missed it
+    if (chatListenerRef.current) {
+      chatListenerRef.current.table.removeOnInsert(chatListenerRef.current.handler);
+      chatListenerRef.current = null;
+    }
+
+    const connection = getConnection();
+    if (!connection) return;
+
+    const accessorName = getAccessorName(tables.chat_bubble_v1 as AnyTableDef);
+    const table = (
+      connection.db as Record<
+        string,
+        { onInsert: (cb: unknown) => void; removeOnInsert: (cb: unknown) => void }
+      >
+    )[accessorName];
+    if (!table) return;
+
+    const handler = (_ctx: unknown, row: ChatBubbleV1) => {
+      if (seenBubbleIds.current.has(row.bubbleId)) return;
+      seenBubbleIds.current.add(row.bubbleId);
+
+      setChatBubbles((prev) => [
+        ...prev,
+        {
+          bubbleId: row.bubbleId,
+          characterName: row.characterName,
+          characterLevel: row.characterLevel,
+          content: row.content,
+          x: row.x,
+          y: row.y,
+          sentAtMs: Number(row.sentAt.toMillis()),
+        },
+      ]);
+    };
+
+    table.onInsert(handler);
+    chatListenerRef.current = { table, handler };
+
+    return () => {
+      table.removeOnInsert(handler);
+      chatListenerRef.current = null;
+    };
+  }, [getConnection, isActive]);
+
+  // Expire old bubbles from local state and clean seenBubbleIds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setChatBubbles((prev) => {
+        const cutoff = Date.now() - MAX_BUBBLE_LIFETIME_MS;
+        const alive = prev.filter((b) => b.sentAtMs > cutoff);
+        if (alive.length !== prev.length) {
+          const aliveIds = new Set(alive.map((b) => b.bubbleId));
+          for (const id of seenBubbleIds.current) {
+            if (!aliveIds.has(id)) seenBubbleIds.current.delete(id);
+          }
+          return alive;
+        }
+        return prev;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Filter visible bubbles by proximity and update scene
+  const visibleBubbles = useMemo(() => {
+    const playerPos = positions.length > 0 ? positions[0] : null;
+    return playerPos
+      ? chatBubbles.filter(
+          (b) =>
+            Math.abs(b.x - playerPos.x) <= MAP_VIEW_RADIUS &&
+            Math.abs(b.y - playerPos.y) <= MAP_VIEW_RADIUS,
+        )
+      : [];
+  }, [chatBubbles, positions]);
+
+  useEffect(() => {
+    sceneRef.current?.updateChatBubbles(visibleBubbles);
+
+    const newMessages = visibleBubbles
+      .filter((b) => !chatHistoryKnownIds.current.has(b.bubbleId))
+      .map((b) => ({
+        bubbleId: b.bubbleId,
+        displayName: b.characterName,
+        characterLevel: b.characterLevel,
+        content: b.content,
+        sentAtMs: b.sentAtMs,
+      }));
+
+    if (newMessages.length > 0) {
+      for (const m of newMessages) chatHistoryKnownIds.current.add(m.bubbleId);
+      setChatHistory((prev) => {
+        const combined = [...prev, ...newMessages];
+        if (combined.length > MAX_CHAT_HISTORY) {
+          const removed = combined.slice(0, combined.length - MAX_CHAT_HISTORY);
+          for (const m of removed) chatHistoryKnownIds.current.delete(m.bubbleId);
+          return combined.slice(-MAX_CHAT_HISTORY);
+        }
+        return combined;
+      });
+    }
+  }, [visibleBubbles]);
 
   const isLoading = mapRows.length === 0;
 
@@ -220,7 +386,7 @@ export function GameView({ onLeaveGame }: GameViewProps) {
             {isLoading && (
               <Stack
                 className="align-items-center justify-content-center"
-                style={{ position: 'absolute', inset: 0, zIndex: 20, background: '#000' }}
+                style={{ position: "absolute", inset: 0, zIndex: 20, background: "#000" }}
               >
                 <Spinner animation="border" role="status" className="mb-3" />
                 <p className="text-muted">Loading map...</p>
@@ -235,6 +401,8 @@ export function GameView({ onLeaveGame }: GameViewProps) {
           style={{ height: DEFAULT_BOTTOM_HEIGHT }}
         >
           <div className="resize-handle" onMouseDown={handleResizeStart} />
+          <ChatHistory messages={chatHistory} />
+          <ChatInput onSend={handleSendChat} onChatModeChange={handleChatModeChange} />
         </div>
       </div>
 

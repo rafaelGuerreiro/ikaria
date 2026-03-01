@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Badge, Button, ListGroup, Spinner, Stack } from 'react-bootstrap';
-import { useReducer, useSpacetimeDB } from 'spacetimedb/react';
-import { reducers, tables } from '../module_bindings';
-import { useLocalTable } from '../hooks/useLocalTable';
-import { useSubscriptionReady } from '../hooks/useSubscriptionReady';
-import { type World, tokenStorageKey } from '../worlds';
-import type { CharacterSummary } from './types';
-import type { CharacterV1 } from '../module_bindings/types';
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Badge, Button, ListGroup, Spinner, Stack } from "react-bootstrap";
+import { useReducer, useSpacetimeDB } from "spacetimedb/react";
+import { reducers, tables } from "../module_bindings";
+import { useLocalTable } from "../hooks/useLocalTable";
+import { useSubscriptionReady } from "../hooks/useSubscriptionReady";
+import { type World, tokenStorageKey } from "../worlds";
+import type { CharacterSummary } from "./types";
+import type { CharacterV1 } from "../module_bindings/types";
 
 type CharacterListViewProps = {
   world: World;
@@ -132,7 +132,7 @@ export function CharacterListView({
                     onClick={() => selectCharacter(character.characterId, character.displayName)}
                     disabled={selectingCharacterId !== null}
                   >
-                    {selectingCharacterId === character.characterId ? 'Selecting...' : 'Select'}
+                    {selectingCharacterId === character.characterId ? "Selecting..." : "Select"}
                   </Button>
                 )}
               </Stack>

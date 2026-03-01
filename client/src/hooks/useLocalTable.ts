@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useSpacetimeDB } from 'spacetimedb/react';
+import { useEffect, useState } from "react";
+import { useSpacetimeDB } from "spacetimedb/react";
 
-type AnyTableDef = { accessorName?: string; table?: { accessorName: string } };
+export type AnyTableDef = { accessorName?: string; table?: { accessorName: string } };
 
-function getAccessorName(tableDef: AnyTableDef): string {
+export function getAccessorName(tableDef: AnyTableDef): string {
   if (tableDef.table) return tableDef.table.accessorName;
   if (tableDef.accessorName) return tableDef.accessorName;
-  throw new Error('Cannot determine table accessor name');
+  throw new Error("Cannot determine table accessor name");
 }
 
 /**
