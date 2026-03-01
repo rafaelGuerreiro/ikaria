@@ -37,6 +37,15 @@ export default function ChatInput({ onSend, onChatModeChange, maxLength = 1024 }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        const target = e.target as HTMLElement;
+        const isInteractive =
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement ||
+          target instanceof HTMLButtonElement ||
+          target.isContentEditable;
+        if (isInteractive) return;
+
         e.preventDefault();
         enterChatMode();
       }

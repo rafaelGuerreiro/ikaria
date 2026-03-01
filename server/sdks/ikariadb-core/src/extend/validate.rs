@@ -55,7 +55,7 @@ fn validate_u64(value: u64, name: impl Into<String>, min_value: u64, max_value: 
 }
 
 fn validate_str(value: &str, name: impl Into<String>, min_len: u64, max_len: u64) -> ServiceResult<()> {
-    let len = value.len() as u64;
+    let len = value.chars().count() as u64;
     if min_len > 0 && value.is_empty() {
         Err(ValidationError::required_field(name))
     } else if len < min_len {

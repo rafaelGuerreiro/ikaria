@@ -28,6 +28,7 @@ const MIN_BOTTOM_HEIGHT = 100;
 const MAX_BOTTOM_HEIGHT = 500;
 const MAP_VIEW_RADIUS = 32;
 const MAX_BUBBLE_LIFETIME_MS = 120_000;
+const MAX_CHAT_HISTORY = 200;
 
 type GameViewProps = {
   onLeaveGame: () => void;
@@ -354,7 +355,15 @@ export function GameView({ onLeaveGame }: GameViewProps) {
 
     if (newMessages.length > 0) {
       for (const m of newMessages) chatHistoryKnownIds.current.add(m.bubbleId);
-      setChatHistory((prev) => [...prev, ...newMessages]);
+      setChatHistory((prev) => {
+        const combined = [...prev, ...newMessages];
+        if (combined.length > MAX_CHAT_HISTORY) {
+          const removed = combined.slice(0, combined.length - MAX_CHAT_HISTORY);
+          for (const m of removed) chatHistoryKnownIds.current.delete(m.bubbleId);
+          return combined.slice(-MAX_CHAT_HISTORY);
+        }
+        return combined;
+      });
     }
   }, [visibleBubbles]);
 
